@@ -1,3 +1,4 @@
+```javascript
 const http = require("http");
 const WebSocket = require("ws");
 
@@ -19,6 +20,8 @@ return 2;
 }
 
 const roomMembers = new Map();
+const roomObservers = new Map();
+const lobbyClients = new Set();
 
 function getMembers(room) {
 let set = roomMembers.get(room);
@@ -29,18 +32,62 @@ roomMembers.set(room, set);
 return set;
 }
 
+function countObservers(room) {
+const obs = roomObservers.get(room);
+return obs ? obs.size : 0;
+}
+
+function playerCount(room) {
+const total = roomMembers.has(room) ? roomMembers.get(room).size : 0;
+return total - countObservers(room);
+}
+
+function broadcastLobbyUpdate(changedRoom) {
+const count = playerCount(changedRoom);
+const max = maxForRoom(changedRoom);
+const obs = countObservers(changedRoom);
+const msg = JSON.stringify({ type: 'room_update', room: changedRoom, count, max, observers: obs });
+for (const client of lobbyClients) {
+  if (client.readyState === WebSocket.OPEN) {
+    client.send(msg);
+  }
+}
+}
+
 function leaveRoom(ws) {
 const room = ws.room;
 if (!room) return;
 
+const isObs = ws.isObserver;
+
 const set = roomMembers.get(room);
 if (set) {
 set.delete(ws);
+
+if (isObs) {
+  const obs = roomObservers.get(room);
+  if (obs) {
+    obs.delete(ws);
+    if (obs.size === 0) roomObservers.delete(room);
+  }
+}
+
+const pc = playerCount(room);
+for (const client of set) {
+  safeSend(client, { type: 'peer_left', room, playerCount: pc });
+}
+
 if (set.size === 0) {
-roomMembers.delete(room);
+  roomMembers.delete(room);
 }
 }
+
 ws.room = null;
+ws.isObserver = false;
+
+lobbyClients.add(ws);
+
+broadcastLobbyUpdate(room);
 }
 
 function safeSend(ws, obj) {
@@ -64,6 +111,9 @@ const wss = new WebSocket.Server({ server });
 
 wss.on("connection", (ws) => {
 ws.room = null;
+ws.isObserver = false;
+
+lobbyClients.add(ws);
 
 safeSend(ws, {
 type: "info",
@@ -80,69 +130,99 @@ try {
   return;
 }
 
-if (msg.type === "join") {
-  const room = String(msg.room || "");
+if (msg.type === 'room_status') {
+  const rooms = ALLOWED_ROOMS.map(room => ({
+    room,
+    count: playerCount(room),
+    max: maxForRoom(room),
+    observers: countObservers(room)
+  }));
+  safeSend(ws, { type: 'room_status', rooms });
+  return;
+}
 
+if (msg.type === 'observe') {
+  const room = String(msg.room || '');
   if (!ALLOWED_SET.has(room)) {
-    safeSend(ws, {
-      type: "error",
-      code: "room_not_allowed",
-      room
-    });
+    safeSend(ws, { type: 'error', code: 'room_not_allowed', room });
     return;
   }
 
   leaveRoom(ws);
+  lobbyClients.delete(ws);
+
+  const members = getMembers(room);
+  members.add(ws);
+  ws.room = room;
+  ws.isObserver = true;
+
+  let obs = roomObservers.get(room);
+  if (!obs) { obs = new Set(); roomObservers.set(room, obs); }
+  obs.add(ws);
+
+  safeSend(ws, {
+    type: 'observing',
+    room,
+    max: maxForRoom(room),
+    playerCount: playerCount(room)
+  });
+
+  broadcastLobbyUpdate(room);
+  return;
+}
+
+if (msg.type === "join") {
+  const room = String(msg.room || "");
+
+  if (!ALLOWED_SET.has(room)) {
+    safeSend(ws, { type: "error", code: "room_not_allowed", room });
+    return;
+  }
+
+  leaveRoom(ws);
+  lobbyClients.delete(ws);
 
   const members = getMembers(room);
   const max = maxForRoom(room);
+  const pc = playerCount(room);
 
-  if (members.size >= max) {
-    safeSend(ws, {
-      type: "error",
-      code: "room_full",
-      room,
-      max
-    });
+  if (pc >= max) {
+    safeSend(ws, { type: "error", code: "room_full", room, max });
+    lobbyClients.add(ws);
     return;
   }
 
   members.add(ws);
   ws.room = room;
+  ws.isObserver = false;
 
-  safeSend(ws, {
-    type: "joined",
-    room,
-    max
-  });
+  safeSend(ws, { type: "joined", room, max });
 
+  const newPc = playerCount(room);
   for (const client of members) {
     if (client !== ws) {
-      safeSend(client, {
-        type: "peer_joined",
-        room
-      });
+      safeSend(client, { type: "peer_joined", room, playerCount: newPc });
     }
   }
+
+  broadcastLobbyUpdate(room);
 
   return;
 }
 
+if (ws.isObserver) {
+  return;
+}
+
 if (!ws.room) {
-  safeSend(ws, {
-    type: "error",
-    code: "not_in_room"
-  });
+  safeSend(ws, { type: "error", code: "not_in_room" });
   return;
 }
 
 const members = roomMembers.get(ws.room);
 if (!members) return;
 
-const outgoing = JSON.stringify({
-  ...msg,
-  room: ws.room
-});
+const outgoing = JSON.stringify({ ...msg, room: ws.room });
 
 for (const client of members) {
   if (client !== ws && client.readyState === WebSocket.OPEN) {
@@ -153,10 +233,12 @@ for (const client of members) {
 });
 
 ws.on("close", () => {
+lobbyClients.delete(ws);
 leaveRoom(ws);
 });
 
 ws.on("error", () => {
+lobbyClients.delete(ws);
 leaveRoom(ws);
 });
 });
@@ -164,3 +246,4 @@ leaveRoom(ws);
 server.listen(port, () => {
 console.log("Relay listening on port", port);
 });
+```
