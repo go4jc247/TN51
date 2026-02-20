@@ -5,7 +5,8 @@ const port = process.env.PORT || 10000;
 
 const ALLOWED_ROOMS = [
 "Tn51room001","Tn51room002","Tn51room003","Tn51room004","Tn51room005",
-"Tx42room001","Tx42room002","Tx42room003","Tx42room004","Tx42room005"
+"Tx42room001","Tx42room002","Tx42room003","Tx42room004","Tx42room005",
+"Moonroom001","Moonroom002","Moonroom003","Moonroom004","Moonroom005"
 ];
 
 const ALLOWED_SET = new Set(ALLOWED_ROOMS);
@@ -13,6 +14,7 @@ const ALLOWED_SET = new Set(ALLOWED_ROOMS);
 function maxForRoom(room) {
 if (room.startsWith("Tn51")) return 6;
 if (room.startsWith("Tx42")) return 4;
+if (room.startsWith("Moon")) return 3;
 return 2;
 }
 
