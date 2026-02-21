@@ -1465,11 +1465,14 @@
 
 <!-- Multiplayer Setup Modal -->
 <div id="mpBackdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1500;align-items:center;justify-content:center;font-family:system-ui,-apple-system,sans-serif;">
-  <div style="background:linear-gradient(135deg,#1a2332 0%,#0f1923 100%);border-radius:16px;padding:24px;max-width:380px;width:90%;color:#fff;box-shadow:0 20px 60px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.1);">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+  <div style="background:linear-gradient(135deg,#1a2332 0%,#0f1923 100%);border-radius:16px;max-width:380px;width:90%;max-height:90vh;display:flex;flex-direction:column;color:#fff;box-shadow:0 20px 60px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.1);">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:24px 24px 16px 24px;flex-shrink:0;">
       <h3 style="margin:0;font-size:18px;color:#60a5fa;">Multiplayer</h3>
       <button id="mpCloseBtn" style="background:none;border:none;color:#aaa;font-size:22px;cursor:pointer;padding:0 4px;">&times;</button>
     </div>
+
+    <!-- Scrollable content area -->
+    <div style="overflow-y:auto;flex:1;padding:0 24px;">
 
     <!-- Connection Status -->
     <div id="mpConnStatus" style="margin-bottom:16px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.05);font-size:13px;color:#9ca3af;">
@@ -1511,13 +1514,6 @@
       <div style="font-size:13px;color:#9ca3af;margin-bottom:8px;">Preferred seat (before connecting):</div>
       <div id="mpSeatGrid" style="display:flex;gap:8px;flex-wrap:wrap;">
       </div>
-    </div>
-
-    <!-- Actions -->
-    <div style="display:flex;gap:10px;">
-      <button id="mpConnect" style="flex:1;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;">Connect</button>
-      <button id="mpDisconnect" style="flex:1;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;display:none;">Disconnect</button>
-      <button id="mpStartGame" style="flex:1;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;display:none;">Start Game</button>
     </div>
 
     <!-- Host Settings — expanded in V10_109 with full game rules -->
@@ -1563,6 +1559,15 @@
     <div style="margin-top:12px;font-size:11px;color:#6b7280;text-align:center;">
       First player to join becomes the host (dealer).<br>
       Free tier server may take 30-50s to wake up.
+    </div>
+
+    </div><!-- end scrollable content area -->
+
+    <!-- Actions — always visible at bottom -->
+    <div style="display:flex;gap:10px;padding:16px 24px;flex-shrink:0;border-top:1px solid rgba(255,255,255,0.1);">
+      <button id="mpConnect" style="flex:1;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;">Connect</button>
+      <button id="mpDisconnect" style="flex:1;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;display:none;">Disconnect</button>
+      <button id="mpStartGame" style="flex:1;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;display:none;">Start Game</button>
     </div>
   </div>
 </div>
@@ -1705,11 +1710,11 @@
 <!-- Start Screen Overlay -->
 <!-- Game Settings Popup -->
 <div class="modalBackdrop" id="gameSettingsBackdrop" style="display:none;z-index:1300;">
-  <div class="modalPanel" style="max-width:320px;background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);border-radius:16px;border:1px solid rgba(255,255,255,0.2);box-shadow:0 8px 32px rgba(0,0,0,0.4);">
-    <div class="modalHeader" style="border-bottom:1px solid rgba(255,255,255,0.15);padding:14px 16px;">
+  <div class="modalPanel" style="max-width:320px;max-height:90vh;display:flex;flex-direction:column;background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);border-radius:16px;border:1px solid rgba(255,255,255,0.2);box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+    <div class="modalHeader" style="border-bottom:1px solid rgba(255,255,255,0.15);padding:14px 16px;flex-shrink:0;">
       <span style="font-size:18px;font-weight:700;color:#fff;">Game Settings</span>
     </div>
-    <div class="modalBody" style="padding:16px;">
+    <div class="modalBody" style="padding:16px;overflow-y:auto;flex:1;">
       <div style="text-align:center;margin-bottom:16px;">
         <div style="font-size:13px;color:rgba(255,255,255,0.8);margin-bottom:10px;font-weight:600;">Game Type</div>
         <div style="display:flex;gap:10px;justify-content:center;">
@@ -1726,7 +1731,6 @@
           <button class="glossBtn gsMarksBtn" data-marks="15" style="padding:8px 18px;font-size:14px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:10px;color:#fff;cursor:pointer;min-width:60px;">15<br><span style="font-size:10px;opacity:0.7;">Long</span></button>
         </div>
       </div>
-    </div>
     <!-- House Rules Section -->
     <div style="border-top:1px solid rgba(255,255,255,0.15);padding:12px 16px;">
       <div style="font-size:13px;color:rgba(255,255,255,0.8);font-weight:600;margin-bottom:10px;">House Rules</div>
@@ -1827,7 +1831,8 @@
         </label>
       </div>
     </div>
-    <div class="modalFooter" style="border-top:1px solid rgba(255,255,255,0.15);padding:12px 16px;text-align:center;display:flex;gap:12px;justify-content:center;">
+    </div><!-- end scrollable modalBody -->
+    <div class="modalFooter" style="border-top:1px solid rgba(255,255,255,0.15);padding:12px 16px;text-align:center;display:flex;gap:12px;justify-content:center;flex-shrink:0;">
       <button class="glossBtn" id="btnGameSettingsBack" style="padding:10px 24px;font-size:14px;font-weight:600;border-radius:10px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;">Back</button>
       <button class="glossBtn glossGreen" id="btnGameSettingsStart" style="padding:10px 32px;font-size:15px;font-weight:700;border-radius:10px;">Start Game</button>
     </div>
