@@ -1,7 +1,7 @@
 /* sw.js - cache the single HTML for offline use */
 
 const CACHE_NAME = 'tn51-single-html-v108';
-const OFFLINE_URL = './TN51_TX42_Dominoes_V10_108.html';
+const OFFLINE_URL = './TN51_TX42_Dominoes_V10_109.html';
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
