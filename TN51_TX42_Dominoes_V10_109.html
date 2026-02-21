@@ -1035,6 +1035,89 @@
   background: #dc3545;
   color: #fff;
 }
+/* Call for Double button bar (bid winner) */
+#callDoubleBtnGroup {
+  display: none;
+  position: fixed;
+  bottom: 18%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 810;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+}
+#btnCallDouble {
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 0.9em;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(96,165,250,0.4);
+  animation: callDoublePulse 2s infinite;
+  white-space: nowrap;
+}
+#btnPlayRegular {
+  background: rgba(255,255,255,0.15);
+  color: #ccc;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.85em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+#btnPlayRegular:hover {
+  background: rgba(255,255,255,0.25);
+  color: #fff;
+}
+@keyframes callDoublePulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(96,165,250,0.4); }
+  50% { box-shadow: 0 2px 16px rgba(96,165,250,0.8); }
+}
+/* CALLED FOR DOUBLE banner (other players see this) */
+#callDoubleBanner {
+  display: none;
+  position: fixed;
+  bottom: 18%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 810;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+}
+#callDoubleBannerBtn {
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 0.9em;
+  font-weight: bold;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(96,165,250,0.4);
+}
+#callDoubleBanner.clickable #callDoubleBannerBtn {
+  cursor: pointer;
+  animation: callDoublePulse 2s infinite;
+}
+#callDoubleBanner:not(.clickable) #callDoubleBannerBtn {
+  cursor: default;
+  opacity: 0.9;
+}
+/* Blue glow + pulsing white on forced double tile */
+.forcedDouble {
+  animation: forcedDoublePulse 1.5s infinite !important;
+  filter: drop-shadow(0 0 8px rgba(96,165,250,0.8)) drop-shadow(0 0 16px rgba(255,255,255,0.4)) !important;
+}
+@keyframes forcedDoublePulse {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(96,165,250,0.8)) drop-shadow(0 0 4px rgba(255,255,255,0.3)); }
+  50% { filter: drop-shadow(0 0 16px rgba(96,165,250,1)) drop-shadow(0 0 12px rgba(255,255,255,0.7)); }
+}
 #layDownBtnGroup {
   display: none;
   position: fixed;
@@ -1574,22 +1657,14 @@
   </div>
 </div>
 
-<!-- Call for the Double Popup -->
-<div id="callDoubleBackdrop" class="modalBackdrop" style="display:none;">
-  <div class="modalPanel" style="max-width:300px;background:linear-gradient(135deg,#1e3a5f 0%,#0f1f33 100%);border-radius:16px;border:1px solid rgba(96,165,250,0.3);box-shadow:0 8px 32px rgba(0,0,0,0.5);">
-    <div class="modalHeader" style="border-bottom:1px solid rgba(96,165,250,0.2);padding:14px 16px;text-align:center;">
-      <span style="font-size:16px;font-weight:700;color:#60a5fa;">Call for the Double?</span>
-    </div>
-    <div class="modalBody" style="padding:16px;text-align:center;">
-      <div id="callDoubleInfo" style="font-size:13px;color:rgba(255,255,255,0.8);margin-bottom:16px;">
-        Force the player with the double trump to play it this trick.
-      </div>
-      <div style="display:flex;gap:10px;justify-content:center;">
-        <button id="btnCallDoubleYes" class="glossBtn" style="flex:1;padding:12px;font-size:14px;font-weight:700;border-radius:10px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;color:#fff;cursor:pointer;">Yes</button>
-        <button id="btnCallDoubleNo" class="glossBtn" style="flex:1;padding:12px;font-size:14px;font-weight:700;border-radius:10px;background:linear-gradient(135deg,#ef4444,#dc2626);border:none;color:#fff;cursor:pointer;">No</button>
-      </div>
-    </div>
-  </div>
+<!-- Call for the Double Button Bar (bid winner sees this) -->
+<div id="callDoubleBtnGroup">
+  <button id="btnCallDouble">Call for the Double</button>
+  <button id="btnPlayRegular">Play Regular</button>
+</div>
+<!-- CALLED FOR DOUBLE Banner (other players see this) -->
+<div id="callDoubleBanner">
+  <button id="callDoubleBannerBtn">CALLED FOR DOUBLE</button>
 </div>
 
 <!-- Nello Doubles Choice Popup -->
@@ -6435,9 +6510,12 @@ function mpHandleMessage(msg) {
         callForDoubleActive = true;
         session.game.force_double_trump = true;
         setStatus('Double has been called!');
+        applyForcedDoubleGlow();
+        showCallDoubleBanner();
       } else {
         callForDoubleActive = false;
         session.game.force_double_trump = false;
+        clearForcedDoubleGlow();
       }
       break;
     case 'nello_doubles':
@@ -7456,6 +7534,8 @@ async function mpHandlePlay(move) {
     if(session.game.force_double_trump){
       session.game.force_double_trump = false;
       callForDoubleActive = false;
+      clearForcedDoubleGlow();
+      hideCallDoubleBanner();
     }
     playedThisTrick = [];
     currentTrick++;
@@ -8149,8 +8229,8 @@ function mpHandleObserverMessage(msg) {
     case 'nello_doubles':
       // Pass through to normal handlers (they update game state)
       if (move.action === 'call_double') {
-        if(move.called) { callForDoubleActive = true; session.game.force_double_trump = true; setStatus('Double has been called!'); }
-        else { callForDoubleActive = false; session.game.force_double_trump = false; }
+        if(move.called) { callForDoubleActive = true; session.game.force_double_trump = true; setStatus('Double has been called!'); applyForcedDoubleGlow(); showCallDoubleBanner(); }
+        else { callForDoubleActive = false; session.game.force_double_trump = false; clearForcedDoubleGlow(); }
       }
       if (move.action === 'nello_doubles') {
         nelloDoublesSuitActive = (move.mode === 'doubles_only');
@@ -13601,6 +13681,9 @@ async function handlePlayer1Click(spriteSlotIndexOrElement){
     // Keep layDownState so it can be restored later
   }
 
+  // Hide Call for Double banner if showing (player clicked their forced double)
+  hideCallDoubleBanner();
+
   isAnimating = true;
   waitingForPlayer1 = false;
   disablePlayer1Clicks();
@@ -13643,6 +13726,27 @@ async function handlePlayer1Click(spriteSlotIndexOrElement){
     return;
   }
 
+  // Check for Call for Double BEFORE animating the lead tile
+  if(shouldShowCallForDouble()){
+    const localSeat = getLocalSeat();
+    const bidder = session.bid_winner_seat !== undefined ? session.bid_winner_seat : 0;
+    if(bidder === localSeat){
+      // Human bidder — show button bar, pause animation until decision
+      _pendingCallDoubleAnim = { seat: MULTIPLAYER_MODE ? mpSeat : ppClickSeat, spriteSlotIndex, isLead, aiRec, prePlayContext, ppClickSeat };
+      document.getElementById('callDoubleBtnGroup').style.display = 'flex';
+      return; // Pause — resumeAfterCallDouble() will continue
+    } else {
+      // AI bidder — decide automatically
+      const shouldCall = aiShouldCallForDouble(bidder);
+      if(shouldCall){
+        callForDoubleActive = true;
+        session.game.force_double_trump = true;
+        setStatus('P' + seatToPlayer(bidder) + ' calls for the double!');
+        applyForcedDoubleGlow();
+      }
+    }
+  }
+
   // Animate the domino to the center (seat 0 = player 1, pass AI rec and pre-play context)
   const animSeat = MULTIPLAYER_MODE ? mpSeat : ppClickSeat;
   await playDomino(animSeat, spriteSlotIndex, isLead, aiRec, prePlayContext);
@@ -13658,6 +13762,8 @@ async function handlePlayer1Click(spriteSlotIndexOrElement){
     if(session.game.force_double_trump){
       session.game.force_double_trump = false;
       callForDoubleActive = false;
+      clearForcedDoubleGlow();
+      hideCallDoubleBanner();
     }
     if (MULTIPLAYER_MODE) {
       playedThisTrick = [];
@@ -13690,26 +13796,9 @@ async function handlePlayer1Click(spriteSlotIndexOrElement){
   // AI/Human players take their turns
   isAnimating = false;
 
-  // Check for Call for Double after trick 1 lead
-  if(shouldShowCallForDouble()){
-    const localSeat = getLocalSeat();
-    const bidder = session.bid_winner_seat !== undefined ? session.bid_winner_seat : 0;
-    if(bidder === localSeat){
-      // Human bidder — show popup
-      const trumpPip = session.game.trump_suit;
-      document.getElementById('callDoubleInfo').textContent =
-        'Force the player with the ' + trumpPip + '-' + trumpPip + ' to play it this trick?';
-      document.getElementById('callDoubleBackdrop').style.display = 'flex';
-      return; // Pause until popup choice
-    } else {
-      // AI bidder — decide automatically
-      const shouldCall = aiShouldCallForDouble(bidder);
-      if(shouldCall){
-        callForDoubleActive = true;
-        session.game.force_double_trump = true;
-        setStatus('P' + seatToPlayer(bidder) + ' calls for the double!');
-      }
-    }
+  // Clear forced double glow when trick 1 ends
+  if(!session.game.force_double_trump){
+    clearForcedDoubleGlow();
   }
 
   if (MULTIPLAYER_MODE) {
@@ -13734,6 +13823,10 @@ function dealDominoes(){
     session.game.force_double_trump = false;
     session.game.nello_doubles_suit = false;
   }
+  // Hide Call for Double UI
+  document.getElementById('callDoubleBtnGroup').style.display = 'none';
+  hideCallDoubleBanner();
+  clearForcedDoubleGlow();
   shadowLayer.innerHTML = '';
   spriteLayer.innerHTML = '';
   sprites.length = 0;
@@ -14816,6 +14909,17 @@ async function ppAIPlayLoop() {
         break;
       }
 
+      // Check for Call for Double after AI lead in PP mode
+      if(shouldShowCallForDouble()){
+        const bidder = session.bid_winner_seat !== undefined ? session.bid_winner_seat : 0;
+        if(aiShouldCallForDouble(bidder)){
+          callForDoubleActive = true;
+          session.game.force_double_trump = true;
+          setStatus('P' + (bidder + 1) + ' calls for the double!');
+          applyForcedDoubleGlow();
+        }
+      }
+
       // Animate the domino (or skip animation if sprite not found)
       if (spriteIdx >= 0) {
         try {
@@ -14952,10 +15056,52 @@ function aiShouldCallForDouble(seat){
   return true;
 }
 
-// Resume after Call for Double popup (or AI decision)
-function resumeAfterCallDouble(){
-  // Clear force after this trick ends
-  // The force_double_trump flag will be cleared after trick 1 completes
+// Pending animation data for Call for Double (set when bidder is local human)
+let _pendingCallDoubleAnim = null;
+
+// Resume after Call for Double decision — animate lead tile then continue play
+async function resumeAfterCallDouble(){
+  const pending = _pendingCallDoubleAnim;
+  _pendingCallDoubleAnim = null;
+
+  if(pending){
+    // Animate the lead tile that was paused
+    await playDomino(pending.seat, pending.spriteSlotIndex, pending.isLead, pending.aiRec, pending.prePlayContext);
+
+    // Continue with post-play logic (trick complete check, etc.)
+    if(session.game._sanitized_trick().length >= session.game.active_players.length){
+      await new Promise(r => setTimeout(r, 800));
+      await collectToHistory();
+      session.game.current_trick = [];
+      if(session.game.force_double_trump){
+        session.game.force_double_trump = false;
+        callForDoubleActive = false;
+        clearForcedDoubleGlow();
+      }
+      if(MULTIPLAYER_MODE){
+        playedThisTrick = [];
+        currentTrick++;
+      }
+      if(session.maybe_finish_hand()){
+        setStatus(session.status);
+        team1Score = session.game.team_points[0];
+        team2Score = session.game.team_points[1];
+        team1Marks = session.team_marks[0];
+        team2Marks = session.team_marks[1];
+        updateScoreDisplay();
+        logEvent('HAND_END', { status: session.status });
+        autoSave();
+        setTimeout(() => {
+          if(MULTIPLAYER_MODE){ mpShowHandEnd(); } else { showHandEndPopup(); }
+        }, 800);
+        isAnimating = false;
+        return;
+      }
+      checkLayDown();
+    }
+    isAnimating = false;
+    clearForcedDoubleGlow();
+  }
 
   // Resume AI/player turns
   if(MULTIPLAYER_MODE){
@@ -14965,6 +15111,63 @@ function resumeAfterCallDouble(){
   } else {
     aiPlayTurn();
   }
+}
+
+// Apply blue glow + pulsing white to the forced double trump tile
+function applyForcedDoubleGlow(){
+  if(!session || !session.game) return;
+  const trumpPip = session.game.trump_suit;
+  const playerCount = session.game.player_count;
+  for(let seat = 0; seat < playerCount; seat++){
+    const seatSprites = sprites[seat] || [];
+    for(const data of seatSprites){
+      if(data && data.tile && data.sprite){
+        if(data.tile[0] === trumpPip && data.tile[1] === trumpPip){
+          data.sprite.classList.add('forcedDouble');
+        }
+      }
+    }
+  }
+}
+
+// Clear forced double glow from all tiles
+function clearForcedDoubleGlow(){
+  const playerCount = session && session.game ? session.game.player_count : 6;
+  for(let seat = 0; seat < playerCount; seat++){
+    const seatSprites = sprites[seat] || [];
+    for(const data of seatSprites){
+      if(data && data.sprite){
+        data.sprite.classList.remove('forcedDouble');
+      }
+    }
+  }
+}
+
+// Show "CALLED FOR DOUBLE" banner for non-bidder players
+function showCallDoubleBanner(){
+  const banner = document.getElementById('callDoubleBanner');
+  const localSeat = getLocalSeat();
+  const trumpPip = session.game.trump_suit;
+  // Check if local player has the double trump
+  const hand = session.game.hands[localSeat] || [];
+  const hasDouble = hand.some(t => t[0] === trumpPip && t[1] === trumpPip);
+  if(hasDouble){
+    banner.classList.add('clickable');
+    document.getElementById('callDoubleBannerBtn').textContent = 'CALLED FOR DOUBLE — Click to Play ' + trumpPip + '-' + trumpPip;
+  } else {
+    banner.classList.remove('clickable');
+    document.getElementById('callDoubleBannerBtn').textContent = 'CALLED FOR DOUBLE';
+  }
+  banner.style.display = 'flex';
+  // Auto-hide banner after 3 seconds (unless player has the double)
+  if(!hasDouble){
+    setTimeout(() => { banner.style.display = 'none'; }, 3000);
+  }
+}
+
+// Hide Call for Double banner
+function hideCallDoubleBanner(){
+  document.getElementById('callDoubleBanner').style.display = 'none';
 }
 
 // ============ NELLO DOUBLES MODE LOGIC ============
@@ -15215,6 +15418,7 @@ async function aiPlayTurn(){
         callForDoubleActive = true;
         session.game.force_double_trump = true;
         setStatus('P' + seatToPlayer(bidder) + ' calls for the double!');
+        applyForcedDoubleGlow();
         await new Promise(r => setTimeout(r, 800)); // Brief pause for status to show
       }
     }
@@ -15298,6 +15502,8 @@ async function aiPlayTurn(){
       if(session.game.force_double_trump){
         session.game.force_double_trump = false;
         callForDoubleActive = false;
+        clearForcedDoubleGlow();
+        hideCallDoubleBanner();
       }
 
       if(session.maybe_finish_hand()){
@@ -15364,6 +15570,10 @@ function startNewHand(){
   document.getElementById('layDownMinDot').style.display = 'none';
   document.getElementById('layDownTraveler').style.display = 'none';
   document.getElementById('layDownBackdrop').style.display = 'none';
+  // Hide Call for Double UI
+  document.getElementById('callDoubleBtnGroup').style.display = 'none';
+  hideCallDoubleBanner();
+  clearForcedDoubleGlow();
 
   shadowLayer.innerHTML = '';
   spriteLayer.innerHTML = '';
@@ -19548,9 +19758,9 @@ document.querySelectorAll('.gsNelloBtn').forEach(btn => {
   }
 })();
 
-// Call for Double popup handlers
-document.getElementById('btnCallDoubleYes').addEventListener('click', () => {
-  document.getElementById('callDoubleBackdrop').style.display = 'none';
+// Call for Double button bar handlers
+document.getElementById('btnCallDouble').addEventListener('click', () => {
+  document.getElementById('callDoubleBtnGroup').style.display = 'none';
   callForDoubleActive = true;
   session.game.force_double_trump = true;
   setStatus('Called for the double!');
@@ -19558,18 +19768,41 @@ document.getElementById('btnCallDoubleYes').addEventListener('click', () => {
   if(MULTIPLAYER_MODE && !mpSuppressSend){
     mpSendMove({ action: 'call_double', seat: mpSeat, called: true });
   }
-  // Continue play — the lead tile was already played, now advance
+  // Apply blue glow to forced double tile in other players' hands
+  applyForcedDoubleGlow();
+  // Resume the paused lead animation + continue play
   resumeAfterCallDouble();
 });
 
-document.getElementById('btnCallDoubleNo').addEventListener('click', () => {
-  document.getElementById('callDoubleBackdrop').style.display = 'none';
+document.getElementById('btnPlayRegular').addEventListener('click', () => {
+  document.getElementById('callDoubleBtnGroup').style.display = 'none';
   callForDoubleActive = false;
   session.game.force_double_trump = false;
   if(MULTIPLAYER_MODE && !mpSuppressSend){
     mpSendMove({ action: 'call_double', seat: mpSeat, called: false });
   }
+  // Resume the paused lead animation + continue play
   resumeAfterCallDouble();
+});
+
+// CALLED FOR DOUBLE banner click handler (for player who has the double)
+document.getElementById('callDoubleBannerBtn').addEventListener('click', () => {
+  const banner = document.getElementById('callDoubleBanner');
+  if(!banner.classList.contains('clickable')) return; // Only clickable for double holder
+  banner.style.display = 'none';
+  // Auto-play the double trump tile
+  const localSeat = getLocalSeat();
+  const trumpPip = session.game.trump_suit;
+  const hand = session.game.hands[localSeat] || [];
+  const p1Sprites = sprites[localSeat] || [];
+  for(let i = 0; i < p1Sprites.length; i++){
+    const data = p1Sprites[i];
+    if(data && data.tile && data.tile[0] === trumpPip && data.tile[1] === trumpPip){
+      // Found the double trump - simulate click
+      handlePlayer1Click(i);
+      return;
+    }
+  }
 });
 
 // Nello Doubles Choice popup handlers
@@ -20045,6 +20278,8 @@ if ('serviceWorker' in navigator) {
       { id:'zi_tableMain', label:'Table Main', selector:'#tableMain', defaultZ:0 },
       { id:'zi_layDownBackdrop', label:'Lay Down Backdrop', selector:'#layDownBackdrop', defaultZ:9000 },
       { id:'zi_layDownBtnGroup', label:'Lay Down Buttons', selector:'#layDownBtnGroup', defaultZ:800 },
+      { id:'zi_callDoubleBtnGroup', label:'Call Double Buttons', selector:'#callDoubleBtnGroup', defaultZ:810 },
+      { id:'zi_callDoubleBanner', label:'Call Double Banner', selector:'#callDoubleBanner', defaultZ:810 },
       { id:'zi_bonesBackdrop', label:'Bones Modal', selector:'#bonesBackdrop', defaultZ:9999 },
       { id:'zi_aboutBackdrop', label:'About Modal', selector:'#aboutBackdrop', defaultZ:1500 },
       { id:'zi_ppBackdrop', label:'Pass & Play Modal', selector:'#ppBackdrop', defaultZ:1500 },
