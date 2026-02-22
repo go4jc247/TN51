@@ -13714,10 +13714,11 @@ async function handlePlayer1Click(spriteSlotIndexOrElement){
   try {
     const playSeat = MULTIPLAYER_MODE ? mpSeat : ppClickSeat;
     session.play(playSeat, gameHandIndex);
-    // Send play via multiplayer
-    if (MULTIPLAYER_MODE && !mpSuppressSend) {
+    // V10_111: Defer MP broadcast if Call for Double might trigger — prevents desync
+    // where remote players see play continue while local player waits for decision
+    const _needCallDoubleCheck = isLead && session.game.trick_number === 0 && callForDoubleEnabled;
+    if (MULTIPLAYER_MODE && !mpSuppressSend && !_needCallDoubleCheck) {
       mpSendMove({ action: 'play', seat: playSeat, tile: clickedTile, trickNumber: session.game.trick_number, nextPlayer: session.game.current_player });
-      // Track play on guest side for host reconnection
       mpGuestTrackPlay(playSeat, clickedTile);
     }
   } catch(e) {
@@ -13735,7 +13736,9 @@ async function handlePlayer1Click(spriteSlotIndexOrElement){
     const bidder = session.bid_winner_seat !== undefined ? session.bid_winner_seat : 0;
     if(bidder === localSeat){
       // Human bidder — show button bar, pause animation until decision
-      _pendingCallDoubleAnim = { seat: MULTIPLAYER_MODE ? mpSeat : ppClickSeat, spriteSlotIndex, isLead, aiRec, prePlayContext, ppClickSeat };
+      // V10_111: Store MP broadcast data so play + call_double can be sent together after decision
+      _pendingCallDoubleAnim = { seat: MULTIPLAYER_MODE ? mpSeat : ppClickSeat, spriteSlotIndex, isLead, aiRec, prePlayContext, ppClickSeat,
+        mpPlayData: MULTIPLAYER_MODE ? { seat: MULTIPLAYER_MODE ? mpSeat : ppClickSeat, tile: clickedTile, trickNumber: session.game.trick_number, nextPlayer: session.game.current_player } : null };
       document.getElementById('callDoubleBtnGroup').style.display = 'flex';
       return; // Pause — resumeAfterCallDouble() will continue
     } else {
@@ -13747,7 +13750,18 @@ async function handlePlayer1Click(spriteSlotIndexOrElement){
         setStatus('P' + seatToPlayer(bidder) + ' calls for the double!');
         applyForcedDoubleGlow();
       }
+      // V10_111: Broadcast the deferred play now (AI decided, no waiting)
+      if(MULTIPLAYER_MODE && !mpSuppressSend){
+        const playSeat = MULTIPLAYER_MODE ? mpSeat : ppClickSeat;
+        mpSendMove({ action: 'play', seat: playSeat, tile: clickedTile, trickNumber: session.game.trick_number, nextPlayer: session.game.current_player });
+        mpGuestTrackPlay(playSeat, clickedTile);
+      }
     }
+  } else if(isLead && callForDoubleEnabled && MULTIPLAYER_MODE && !mpSuppressSend){
+    // V10_111: Call for Double didn't trigger but broadcast was deferred — send now
+    const playSeat = MULTIPLAYER_MODE ? mpSeat : ppClickSeat;
+    mpSendMove({ action: 'play', seat: playSeat, tile: clickedTile, trickNumber: session.game.trick_number, nextPlayer: session.game.current_player });
+    mpGuestTrackPlay(playSeat, clickedTile);
   }
 
   // Animate the domino to the center (seat 0 = player 1, pass AI rec and pre-play context)
@@ -19885,8 +19899,13 @@ document.getElementById('btnCallDouble').addEventListener('click', () => {
   callForDoubleActive = true;
   session.game.force_double_trump = true;
   setStatus('Called for the double!');
-  // Broadcast in MP
+  // V10_111: Broadcast deferred play FIRST, then call_double decision
   if(MULTIPLAYER_MODE && !mpSuppressSend){
+    if(_pendingCallDoubleAnim && _pendingCallDoubleAnim.mpPlayData){
+      const pd = _pendingCallDoubleAnim.mpPlayData;
+      mpSendMove({ action: 'play', seat: pd.seat, tile: pd.tile, trickNumber: pd.trickNumber, nextPlayer: pd.nextPlayer });
+      mpGuestTrackPlay(pd.seat, pd.tile);
+    }
     mpSendMove({ action: 'call_double', seat: mpSeat, called: true });
   }
   // Apply blue glow to forced double tile in other players' hands
@@ -19899,7 +19918,13 @@ document.getElementById('btnPlayRegular').addEventListener('click', () => {
   document.getElementById('callDoubleBtnGroup').style.display = 'none';
   callForDoubleActive = false;
   session.game.force_double_trump = false;
+  // V10_111: Broadcast deferred play FIRST, then call_double=false
   if(MULTIPLAYER_MODE && !mpSuppressSend){
+    if(_pendingCallDoubleAnim && _pendingCallDoubleAnim.mpPlayData){
+      const pd = _pendingCallDoubleAnim.mpPlayData;
+      mpSendMove({ action: 'play', seat: pd.seat, tile: pd.tile, trickNumber: pd.trickNumber, nextPlayer: pd.nextPlayer });
+      mpGuestTrackPlay(pd.seat, pd.tile);
+    }
     mpSendMove({ action: 'call_double', seat: mpSeat, called: false });
   }
   // Resume the paused lead animation + continue play
