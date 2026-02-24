@@ -1,6 +1,0 @@
-# Ignore game files - only deploy the relay server
-TN51_TX42_Dominoes_*.html
-index.html
-sw.js
-robots.txt
-README.md

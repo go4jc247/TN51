@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>TN51 / T42 / Moon Dominoes V10_110</title>
+<title>TN51 / T42 / Moon Dominoes V11</title>
 <style>
   :root{
     --feltA:#1a8f37; --feltB:#0f6e2a; --feltC:#0a4f1d;
@@ -1191,6 +1191,20 @@
   50% { box-shadow: 0 1px 12px rgba(124,58,237,0.8); }
 }
 
+/* V10_FIX4: Syncing overlay spinner animation */
+.syncSpinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: syncSpin 0.8s linear infinite;
+}
+
+@keyframes syncSpin {
+  to { transform: rotate(360deg); }
+}
+
 </style>
 </head>
 <body>
@@ -1297,6 +1311,7 @@
   <div class="settingsItem" id="menuGameLog">Game Log</div>
   <div class="settingsItem" id="menuAdvancedLog">Advanced AI Log</div>
   <div class="settingsItem" id="menuMonteCarlo">Monte Carlo</div>
+  <div class="settingsItem" id="menuMPLog" style="display:none;">Export MP Log</div>
   <div class="settingsDivider"></div>
   <div class="settingsItem" id="menuSoundSettings" style="padding:8px 16px;font-weight:bold;">🔊 Sound Settings</div>
   <div id="soundSettingsPanel" style="display:none;padding:4px 16px 8px;">
@@ -1588,6 +1603,15 @@
       </label>
     </div>
 
+    <!-- V10_119: Per-player option to disable auto-refresh -->
+    <div id="mpRefreshToggleSection" style="display:none;margin-bottom:10px;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 10px;border-radius:8px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);">
+        <input type="checkbox" id="mpDisableRefreshChk" style="accent-color:#ef4444;width:16px;height:16px;">
+        <span style="font-size:12px;color:#ef4444;font-weight:600;">Disable auto-refresh</span>
+        <span style="font-size:11px;color:#6b7280;"> &mdash; prevents stale-state recovery</span>
+      </label>
+    </div>
+
     <!-- Player List -->
     <div id="mpPlayerList" style="display:none;margin-bottom:16px;">
       <div style="font-size:13px;color:#9ca3af;margin-bottom:8px;">Players in room:</div>
@@ -1618,9 +1642,6 @@
         <div style="font-size:12px;color:#9ca3af;margin-bottom:6px;">House Rules:</div>
         <label class="mpRuleLabel" style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:12px;color:#fff;cursor:pointer;">
           <input type="checkbox" id="mpChkCallForDouble" checked style="accent-color:#60a5fa;"> Call for the Double
-        </label>
-        <label class="mpRuleLabel" style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:12px;color:#fff;cursor:pointer;">
-          <input type="checkbox" id="mpChkNello2x" style="accent-color:#60a5fa;"> Nello starts at 2x
         </label>
         <label class="mpRuleLabel" style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:12px;color:#fff;cursor:pointer;">
           <input type="checkbox" id="mpChkNelloDeclare" style="accent-color:#60a5fa;"> Must declare Nello
@@ -1828,12 +1849,7 @@
         </label>
       </div>
 
-      <!-- Nello 2x Start Setting -->
-      <div id="gsNello2xSection" style="margin-bottom:8px;">
-        <label style="font-size:12px;color:#fff;cursor:pointer;display:flex;align-items:center;gap:6px;">
-          <input type="checkbox" id="chkNello2x" style="accent-color:#7c3aed;"> Nello starts at 2x
-        </label>
-      </div>
+      <!-- Nello 2x Start Setting removed in V10_111 -->
       <!-- V10_109: Must Declare Nello -->
       <div id="gsNelloDeclareSection" style="margin-bottom:8px;">
         <label style="font-size:12px;color:#fff;cursor:pointer;display:flex;align-items:center;gap:6px;">
@@ -2619,6 +2635,7 @@ class GameStateV6_4g{
     }
     this.leader=((Number(leader)%this.player_count)+this.player_count)%this.player_count;
     this.current_player=this.leader;
+    if(typeof _trackCpChange==='function') _trackCpChange('reset_hand');
     this.current_trick=[];
     this.tricks_team = GAME_MODE === 'MOON' ? [[],[],[]] : [[],[]];
     this.team_points = GAME_MODE === 'MOON' ? [0,0,0] : [0,0];
@@ -2632,6 +2649,7 @@ class GameStateV6_4g{
     this.hands = hands.map(h => (h||[]).map(t=>[Number(t[0]),Number(t[1])]));
     this.leader=((Number(leader)%this.player_count)+this.player_count)%this.player_count;
     this.current_player=this.leader;
+    if(typeof _trackCpChange==='function') _trackCpChange('set_hands');
     this.current_trick=[];
     this.tricks_team = GAME_MODE === 'MOON' ? [[],[],[]] : [[],[]];
     this.team_points = GAME_MODE === 'MOON' ? [0,0,0] : [0,0];
@@ -2791,10 +2809,12 @@ class GameStateV6_4g{
       this.trick_number += 1;
       this.leader=Number(winner);
       this.current_player=Number(winner);
+      if(typeof _trackCpChange==='function') _trackCpChange('play-trickWon');
       return [tile, Number(winner), true];
     }
 
     this.current_player=this._next_active_player(this.current_player);
+    if(typeof _trackCpChange==='function') _trackCpChange('play-nextPlayer');
     return [tile, null, false];
   }
 
@@ -2987,13 +3007,16 @@ class SessionV6_4g{
 
     this.game.leader = bidderSeat;
     this.game.current_player = bidderSeat;
+    if(typeof _trackCpChange==='function') _trackCpChange('set_trump(bidder=' + bidderSeat + ')');
 
     if(typeof trumpChoice==="string"){
       const upper=trumpChoice.toUpperCase().trim();
       if(upper==="NT"){ trumpChoice=null; }
       else if((upper==="NELLO" || upper==="NELLO_2") && GAME_MODE !== 'MOON'){
         this.contract="NELLO";
-        if(upper==="NELLO_2" || (typeof nello2xEnabled !== 'undefined' && nello2xEnabled)) this.bid_marks=2;
+        // V10_111: bid_marks set from declared marks or biddingState, not nello2xEnabled
+        if(_nelloWasDeclared && _nelloDeclaredMarks > 1) this.bid_marks = _nelloDeclaredMarks;
+        else if(biddingState && biddingState.highMarks > 1) this.bid_marks = biddingState.highMarks;
         this.game.set_trump_suit(null);
         if (GAME_MODE === 'T42') {
           // T42: bidder vs 2 opponents, partner sits out
@@ -3387,7 +3410,8 @@ function aiChooseTrump(hand, bidAmount) {
     if (a === 0 || b === 0) blanks.push(tile);
   }
 
-  if (GAME_MODE !== 'T42' && bidAmount >= 51 && blanks.length >= 4) {
+  // V10_111: AI can only pick Nello at trump selection if nelloDeclareMode is OFF
+  if (!nelloDeclareMode && GAME_MODE !== 'T42' && bidAmount >= 51 && blanks.length >= 4) {
     const has01 = blanks.some(t => (t[0] === 0 && t[1] === 1) || (t[0] === 1 && t[1] === 0));
     let maxSmallPip = 0, maxDoublePip = 0;
     for (const tile of hand) {
@@ -6157,6 +6181,7 @@ let mpPlayers = {};             // {seat: {seat, name, ready}} - connected playe
 let mpConnected = false;        // WebSocket connected flag
 let mpGameStarted = false;      // Game has been started by host
 let mpWaitingForRemote = false;  // Waiting for a remote player's action
+let _mpLastActivityTime = Date.now(); // V10_112: Track last game activity for stale-state detection
 let mpSuppressSend = false;      // Prevent echo loops when applying remote moves
 let mpPlayerId = null;            // Our unique player ID (assigned by host)
 let mpPlayerIds = {};             // Host tracks: {seat: playerId}
@@ -6164,7 +6189,187 @@ let mpMarksToWin = 7;            // Marks to win for MP game (host sets)
 let mpPreferredSeat = -1;         // Guest's preferred seat (-1 = auto)
 let mpHelloNonce = null;           // Unique nonce sent with hello, used to match seat_assign
 const MP_WS_URL = 'wss://tn51-tx42-relay.onrender.com';
-const MP_VERSION = 'V10_110';
+const MP_VERSION = 'V11';
+
+// ═══════════════════════════════════════════════════════════════
+// V10_FIX: Multiplayer Sync Fix Variables
+// ═══════════════════════════════════════════════════════════════
+let _biddingCompleting = false;    // FIX1: Prevents double-advance during bidding completion
+let _aiActionInProgress = false;   // FIX3: Prevents overlapping AI actions
+let _aiActionTimer = null;         // FIX3: Track current AI timer for cleanup
+let _allAITimers = [];             // FIX5: Track all AI timers for cleanup
+
+// V10_113: Connection stability — heartbeat & reconnection
+let _mpHeartbeatInterval = null;  // Interval ID for ping heartbeat
+let _mpLastPongTime = Date.now(); // Track last pong received
+let _mpReconnectAttempts = 0;     // Reconnection retry counter
+const MP_HEARTBEAT_INTERVAL = 15000;  // Send ping every 15s
+const MP_PONG_TIMEOUT = 30000;       // Consider dead if no activity in 30s
+const MP_MAX_RECONNECT_ATTEMPTS = 5; // Max retries before stopping
+const MP_RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 15000]; // Exponential backoff delays
+
+// V10_113: Diagnostic logging system
+const _mpDiagLog = [];
+const MP_DIAG_MAX_ENTRIES = 2000;
+
+function mpLogEntry(direction, category, data, extra) {
+  if(_mpDiagLog.length >= MP_DIAG_MAX_ENTRIES) _mpDiagLog.shift();
+  const entry = {
+    t: Date.now(), ts: new Date().toISOString().substr(11, 12),
+    dir: direction, cat: category, data: data,
+    seat: typeof mpSeat !== 'undefined' ? mpSeat : -1,
+    host: typeof mpIsHost !== 'undefined' ? mpIsHost : false,
+    phase: session ? session.phase : '?',
+    cp: session && session.game ? session.game.current_player : '?',
+    trick: session && session.game ? session.game.trick_number : '?'
+  };
+  if(extra) entry.extra = extra;
+  _mpDiagLog.push(entry);
+}
+
+// V10_115: current_player change tracker — logs every cp change with source
+let _cpTracker = { lastCp: -1, lastPhase: '?' };
+function _trackCpChange(source) {
+  try { if(!session || !session.game) return; } catch(e) { return; } // V10_115: Guard against TDZ during init
+  const cp = session.game.current_player;
+  const phase = session.phase;
+  if(cp !== _cpTracker.lastCp || phase !== _cpTracker.lastPhase) {
+    const msg = source + ': cp ' + _cpTracker.lastCp + '→' + cp + ' phase=' + phase;
+    console.log('[CP-TRACK]', msg);
+    mpLogEntry('STATE', 'cp-change', msg);
+    _cpTracker.lastCp = cp;
+    _cpTracker.lastPhase = phase;
+  }
+}
+
+// V10_115: Bidding timer tracking — so we can cancel stale timers
+let _biddingTimerIds = [];
+function _addBiddingTimer(id) { _biddingTimerIds.push(id); }
+function _clearBiddingTimers() {
+  _biddingTimerIds.forEach(id => clearTimeout(id));
+  _biddingTimerIds = [];
+}
+
+// V10_115: Turn recovery timer — re-enables clicks if our turn but player hasn't played
+let _turnRecoveryTimer = null;
+function _startTurnRecovery() {
+  if(_turnRecoveryTimer) clearTimeout(_turnRecoveryTimer);
+  _turnRecoveryTimer = setTimeout(() => {
+    if(!session || !MULTIPLAYER_MODE || session.phase !== PHASE_PLAYING) return;
+    if(session.game.current_player === mpSeat && !isAnimating) {
+      console.log('[MP] Turn recovery — re-enabling clicks after 8s');
+      mpLogEntry('STATE', 'turn-recovery', 'Re-enabling clicks cp=' + session.game.current_player + ' mpSeat=' + mpSeat);
+      waitingForPlayer1 = true;
+      enablePlayer1Clicks();
+      updatePlayer1ValidStates();
+      showHint();
+      setStatus('Trick ' + (session.game.trick_number + 1) + ' - Click a domino to play');
+      mpHideWaiting();
+    }
+  }, 8000);
+}
+
+function mpGetGameSnapshot() {
+  if(!session || !session.game) return { noSession: true };
+  return {
+    phase: session.phase,
+    currentPlayer: session.game.current_player,
+    trickNumber: session.game.trick_number,
+    activePlayers: session.game.active_players ? session.game.active_players.slice() : [],
+    playedThisTrick: session.game.playedThisTrick ? session.game.playedThisTrick.map(t => t ? [t[0],t[1]] : null) : [],
+    handSizes: session.game.hands ? session.game.hands.map(h => h ? h.length : 0) : [],
+    teamMarks: session.team_marks ? session.team_marks.slice() : [],
+    bidWinner: session.bid_winner_seat,
+    trump: session.game.trump,
+    contract: session.game.contract,
+    mpSeat: mpSeat,
+    mpIsHost: mpIsHost,
+    mpConnected: mpConnected,
+    mpWaitingForRemote: mpWaitingForRemote,
+    socketState: mpSocket ? mpSocket.readyState : -1
+  };
+}
+
+function mpExportDiagLog() {
+  if(_mpDiagLog.length === 0) { alert('No MP diagnostic entries to export.'); return; }
+  let txt = '=== TN51/TX42 MP Diagnostic Log ===\n';
+  txt += 'Exported: ' + new Date().toISOString() + '\n';
+  txt += 'Version: ' + MP_VERSION + '\n';
+  txt += 'Seat: ' + mpSeat + ' | Host: ' + mpIsHost + ' | Room: ' + (mpRoom || '?') + '\n';
+  txt += 'Entries: ' + _mpDiagLog.length + '\n';
+  txt += '========================================\n\n';
+  for(let i = 0; i < _mpDiagLog.length; i++) {
+    const e = _mpDiagLog[i];
+    txt += '[' + e.ts + '] ' + e.dir + ' | ' + e.cat;
+    txt += ' | phase=' + e.phase + ' cp=' + e.cp + ' trick=' + e.trick;
+    txt += ' | ' + (typeof e.data === 'string' ? e.data : JSON.stringify(e.data)) + '\n';
+    if(e.extra) txt += '  SNAPSHOT: ' + JSON.stringify(e.extra) + '\n';
+  }
+  // Show in a modal with copy button
+  let overlay = document.getElementById('mpLogOverlay');
+  if(!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'mpLogOverlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
+    const ta = document.createElement('textarea');
+    ta.id = 'mpLogTextarea';
+    ta.style.cssText = 'width:100%;max-width:600px;height:60vh;background:#1a1a2e;color:#0f0;font-family:monospace;font-size:11px;border:1px solid #333;border-radius:8px;padding:12px;resize:none;';
+    ta.readOnly = true;
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:10px;margin-top:12px;';
+    const copyBtn = document.createElement('button');
+    copyBtn.textContent = 'Copy to Clipboard';
+    copyBtn.style.cssText = 'padding:10px 24px;background:#22c55e;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;';
+    copyBtn.addEventListener('click', () => {
+      const t = document.getElementById('mpLogTextarea');
+      t.select(); t.setSelectionRange(0, 999999);
+      navigator.clipboard.writeText(t.value).then(() => {
+        copyBtn.textContent = 'Copied!';
+        copyBtn.style.background = '#16a34a';
+        setTimeout(() => { copyBtn.textContent = 'Copy to Clipboard'; copyBtn.style.background = '#22c55e'; }, 2000);
+      }).catch(() => { document.execCommand('copy'); copyBtn.textContent = 'Copied!'; setTimeout(() => { copyBtn.textContent = 'Copy to Clipboard'; }, 2000); });
+    });
+    // V10_121d: Save as .txt file button
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Save as File';
+    saveBtn.style.cssText = 'padding:10px 24px;background:#3b82f6;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;';
+    saveBtn.addEventListener('click', () => {
+      try {
+        const t = document.getElementById('mpLogTextarea');
+        const blob = new Blob([t.value], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const now = new Date();
+        const ts = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        a.href = url;
+        a.download = 'MP_Log_' + (mpIsHost ? 'Host' : 'Guest') + '_' + ts + '.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        saveBtn.textContent = 'Saved!';
+        saveBtn.style.background = '#2563eb';
+        setTimeout(() => { saveBtn.textContent = 'Save as File'; saveBtn.style.background = '#3b82f6'; }, 2000);
+      } catch(e) {
+        console.error('Save log error:', e);
+        saveBtn.textContent = 'Save failed';
+        setTimeout(() => { saveBtn.textContent = 'Save as File'; }, 2000);
+      }
+    });
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = 'Close';
+    closeBtn.style.cssText = 'padding:10px 24px;background:#ef4444;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;';
+    closeBtn.addEventListener('click', () => { overlay.style.display = 'none'; });
+    btnRow.appendChild(copyBtn);
+    btnRow.appendChild(saveBtn);
+    btnRow.appendChild(closeBtn);
+    overlay.appendChild(ta);
+    overlay.appendChild(btnRow);
+    document.body.appendChild(overlay);
+  }
+  document.getElementById('mpLogTextarea').value = txt;
+  overlay.style.display = 'flex';
+}
 
 // Win/loss tally for the current MP session
 let mpGamesWon = 0;
@@ -6180,9 +6385,12 @@ let mpStatusRequested = false;    // prevent duplicate room_status requests
 // Player name system (V10_78)
 let playerName = localStorage.getItem('tn51_player_name') || '';
 let playerNoName = localStorage.getItem('tn51_player_noname') === 'true';
-let nello2xEnabled = localStorage.getItem('tn51_nello_2x') === 'true';
-let nelloDeclareMode = localStorage.getItem('tn51_nello_declare') === 'true';  // V10_109: Must declare Nello
-let nelloRestrictFirst = localStorage.getItem('tn51_nello_restrict_first') !== 'false';  // V10_109: Nello restricted to 1x first (default true)
+// V10_111: nello2xEnabled removed — use nelloRestrictFirst instead
+let nelloDeclareMode = localStorage.getItem('tn51_nello_declare') === 'true';  // Must declare Nello
+let nelloRestrictFirst = localStorage.getItem('tn51_nello_restrict_first') !== 'false';  // Nello restricted to 1x first (default true)
+let _nelloWasDeclared = false;  // V10_111: Track whether Nello was declared during bidding (persists until trump selection)
+let _nelloDeclaredMarks = 1;    // V10_111: The marks value when Nello was declared
+let _nelloAllowedAtTrump = true; // V10_111: Whether Nello button should appear at trump selection (computed at end of bidding)
 
 const AI_NAMES = [
   'Alex T.','Sam B.','Casey M.','Jordan R.','Taylor H.','Morgan L.','Riley K.','Drew P.',
@@ -6214,13 +6422,25 @@ function getAIName() {
 }
 
 function getPlayerDisplayName(seat) {
-  // Returns display name for status bar: "John P." for local player, "P2" etc for AI
-  if(seat === 0 && playerName && !playerNoName){
+  // Returns display name for status bar: "John P." for named player, "P2" for unnamed
+  // V10_113: Check MP remote player names
+  if(MULTIPLAYER_MODE && mpPlayers && mpPlayers[seat] && mpPlayers[seat].name) {
+    var mpName = mpPlayers[seat].name;
+    // Skip generic names like "Player 2"
+    if(!/^Player \d/.test(mpName)) {
+      var parts = mpName.trim().split(/\s+/);
+      if(parts.length >= 2) return parts[0] + ' ' + parts[1][0] + '.';
+      return mpName;
+    }
+  }
+  // Local player (seat 0 in SP, mpSeat in MP)
+  var localSeat = MULTIPLAYER_MODE ? mpSeat : 0;
+  if(seat === localSeat && playerName && !playerNoName){
     var parts = playerName.trim().split(/\s+/);
     if(parts.length >= 2) return parts[0] + ' ' + parts[1][0] + '.';
     return playerName;
   }
-  return 'P' + seatToVisual(seat);
+  return 'P' + seatToPlayer(seat);
 }
 
 function getPlayerInitials(name) {
@@ -6291,12 +6511,52 @@ function promptForName() {
   });
 }
 
+// V10_113: Start heartbeat ping interval
+function mpStartHeartbeat() {
+  mpStopHeartbeat();
+  _mpLastPongTime = Date.now();
+  _mpHeartbeatInterval = setInterval(() => {
+    if(!mpSocket || mpSocket.readyState !== WebSocket.OPEN) return;
+    // Check if we missed a pong (connection dead but not closed)
+    const timeSincePong = Date.now() - _mpLastPongTime;
+    if(timeSincePong > MP_PONG_TIMEOUT){
+      console.log('[MP] Heartbeat: no pong for', Math.round(timeSincePong/1000), 's — connection likely dead');
+      mpLogEntry('ERROR', 'heartbeat', 'No pong for ' + Math.round(timeSincePong/1000) + 's — closing socket', mpGetGameSnapshot());
+      mpSocket.close(); // Will trigger onclose → auto-reconnect
+      return;
+    }
+    // Send ping as a game move (goes through relay to peers, who respond)
+    // Also try direct server ping in case server supports it
+    try {
+      mpSocket.send(JSON.stringify({ type: 'ping', t: Date.now() }));
+      mpSocket.send(JSON.stringify({ type: 'move', move: { action: 'heartbeat', seat: mpSeat, t: Date.now() } }));
+    } catch(e) {
+      console.log('[MP] Heartbeat send error:', e);
+    }
+  }, MP_HEARTBEAT_INTERVAL);
+}
+
+// V10_113: Stop heartbeat
+function mpStopHeartbeat() {
+  if(_mpHeartbeatInterval) {
+    clearInterval(_mpHeartbeatInterval);
+    _mpHeartbeatInterval = null;
+  }
+}
+
+// V10_113: Get reconnect delay with exponential backoff
+function mpGetReconnectDelay() {
+  const idx = Math.min(_mpReconnectAttempts, MP_RECONNECT_DELAYS.length - 1);
+  return MP_RECONNECT_DELAYS[idx];
+}
+
 // Multiplayer: Connect to relay server
 function mpConnect(roomName) {
   // V10_104: If we already have an open socket (from status polling), reuse it
   if (mpSocket && mpSocket.readyState === WebSocket.OPEN) {
     mpRoom = roomName;
     mpConnected = false;
+    _mpReconnectAttempts = 0; // V10_113: Reset on successful reuse
     mpUpdateStatus('Joining room...', '#f59e0b');
     mpSocket.send(JSON.stringify({ type: 'join', room: roomName }));
     return;
@@ -6304,6 +6564,7 @@ function mpConnect(roomName) {
   if (mpSocket && mpSocket.readyState <= 1) {
     mpSocket.close();
   }
+  mpStopHeartbeat(); // V10_113: Stop old heartbeat
   mpRoom = roomName;
   mpConnected = false;
   mpUpdateStatus('Connecting...', '#f59e0b');
@@ -6312,20 +6573,35 @@ function mpConnect(roomName) {
 
   mpSocket.onopen = () => {
     console.log('[MP] WebSocket opened, joining room:', roomName);
+    _mpReconnectAttempts = 0; // V10_113: Reset on successful connection
     mpSocket.send(JSON.stringify({ type: 'join', room: roomName }));
+    mpStartHeartbeat(); // V10_113: Begin heartbeat
+    mpLogEntry('INFO', 'socket', 'WebSocket opened, joining ' + roomName);
   };
 
   mpSocket.onmessage = (evt) => {
     let msg;
     try { msg = JSON.parse(evt.data); } catch(e) { return; }
+    // V10_113: Any message from server counts as a pong (connection alive)
+    _mpLastPongTime = Date.now();
+    // V10_113: Don't log pong responses (noise)
+    if(msg.type === 'pong') return;
     console.log('[MP] Received:', msg);
+    // V10_113: Diagnostic log — capture all received messages
+    if(msg.type === 'move' && msg.move) {
+      mpLogEntry('RECV', msg.move.action || 'move', msg.move);
+    } else {
+      mpLogEntry('RECV', msg.type || 'unknown', msg);
+    }
     mpHandleMessage(msg);
   };
 
   mpSocket.onclose = (evt) => {
     console.log('[MP] WebSocket closed:', evt.code, evt.reason);
+    mpLogEntry('INFO', 'socket', 'WebSocket closed code=' + evt.code + ' reason=' + (evt.reason || 'none'), mpGetGameSnapshot());
     mpConnected = false;
     mpStatusRequested = false;
+    mpStopHeartbeat(); // V10_113: Stop heartbeat
     mpUpdateStatus('Disconnected', '#ef4444');
     mpUpdateIndicator();
     // V10_104: Remove observer panel on disconnect
@@ -6334,21 +6610,69 @@ function mpConnect(roomName) {
     mpObserver = false;
     // Save host state on disconnect for potential recovery
     if (mpIsHost && mpGameStarted) mpSaveHostState();
-    // Auto-reconnect if game was in progress
+    // V10_113: Auto-reconnect with exponential backoff
     if (MULTIPLAYER_MODE && mpGameStarted && mpRoom) {
-      mpUpdateStatus('Reconnecting...', '#f59e0b');
-      setTimeout(() => mpConnect(mpRoom), 2000);
+      if(_mpReconnectAttempts < MP_MAX_RECONNECT_ATTEMPTS) {
+        const delay = mpGetReconnectDelay();
+        _mpReconnectAttempts++;
+        console.log('[MP] Auto-reconnect attempt', _mpReconnectAttempts, '/', MP_MAX_RECONNECT_ATTEMPTS, 'in', delay, 'ms');
+        mpLogEntry('INFO', 'reconnect', 'Attempt ' + _mpReconnectAttempts + '/' + MP_MAX_RECONNECT_ATTEMPTS + ' delay=' + delay + 'ms');
+        mpUpdateStatus('Reconnecting (' + _mpReconnectAttempts + '/' + MP_MAX_RECONNECT_ATTEMPTS + ')...', '#f59e0b');
+        setTimeout(() => mpConnect(mpRoom), delay);
+      } else {
+        console.log('[MP] Max reconnect attempts reached');
+        mpLogEntry('ERROR', 'reconnect', 'Max reconnect attempts reached', mpGetGameSnapshot());
+        mpUpdateStatus('Connection lost. Tap Sync to retry.', '#ef4444');
+        setStatus('Connection lost — tap the Sync button to reconnect.');
+      }
     }
   };
 
   mpSocket.onerror = (err) => {
     console.log('[MP] WebSocket error:', err);
+    mpLogEntry('ERROR', 'socket', 'WebSocket error');
     mpUpdateStatus('Connection error', '#ef4444');
   };
 }
 
+// ═══════════════════════════════════════════════════════════════
+// V10_FIX: Helper Functions for Sync Fixes
+// ═══════════════════════════════════════════════════════════════
+
+// FIX4: Show/hide syncing overlay to block input during state_sync
+function showSyncingOverlay() {
+  const overlay = document.getElementById('syncingOverlay');
+  if (overlay) {
+    overlay.style.display = 'flex';
+    console.log('[FIX4] Syncing overlay shown - input blocked');
+  }
+}
+
+function hideSyncingOverlay() {
+  const overlay = document.getElementById('syncingOverlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+    console.log('[FIX4] Syncing overlay hidden - input enabled');
+  }
+}
+
+// FIX5: Clear all AI timers to prevent stale actions
+function _clearAllAITimers() {
+  console.log('[FIX5] Clearing', _allAITimers.length, 'AI timers');
+  _allAITimers.forEach(timer => clearTimeout(timer));
+  _allAITimers = [];
+  _aiActionInProgress = false; // Also release AI lock
+  if (_aiActionTimer) {
+    clearTimeout(_aiActionTimer);
+    _aiActionTimer = null;
+  }
+}
+
 // Handle incoming WebSocket messages
 function mpHandleMessage(msg) {
+  // V10_113: Track activity on ALL message types (not just moves)
+  _mpLastActivityTime = Date.now();
+
   // V10_104: Room status response — update room buttons
   if (msg.type === 'room_status') {
     mpRoomCounts = {};
@@ -6422,6 +6746,20 @@ function mpHandleMessage(msg) {
     const savedMpData = mpLoadSession(mpRoom);
     mpHelloNonce = mpGenerateId();
     mpSendRaw({ type: 'move', move: { action: 'hello', name: playerName || 'Player', playerId: savedMpData ? savedMpData.playerId : null, version: MP_VERSION, preferredSeat: mpPreferredSeat, nonce: mpHelloNonce } });
+    // V10_113: If reconnecting during active game, auto-request state sync after seat assignment
+    if(mpGameStarted && mpSeat >= 0) {
+      console.log('[MP] Reconnected during active game — auto-requesting sync in 2s');
+      setTimeout(() => {
+        if(mpSocket && mpSocket.readyState === WebSocket.OPEN && mpGameStarted){
+          if(mpIsHost){
+            mpRefreshAll();
+            setTimeout(() => mpCheckWhoseTurn(), 500);
+          } else {
+            mpRequestRefresh();
+          }
+        }
+      }, 2000);
+    }
     // If no seat assignment received within 3 seconds, we're the host (first in room)
     setTimeout(() => {
       if (mpConnected && mpSeat < 0) {
@@ -6453,6 +6791,16 @@ function mpHandleMessage(msg) {
   const move = msg.move;
 
   switch(move.action) {
+    case 'heartbeat':
+      // V10_114: Peer heartbeat — respond so they know we're alive
+      // The receipt of this message already reset _mpLastPongTime in onmessage
+      if(move.seat !== mpSeat) {
+        mpSendRaw({ type: 'move', move: { action: 'heartbeat_ack', seat: mpSeat, t: Date.now() } });
+      }
+      return; // Don't process further
+    case 'heartbeat_ack':
+      // Peer responded to our heartbeat — connection confirmed (already handled by onmessage _mpLastPongTime)
+      return;
     case 'hello':
       // Another player joined - track them
       mpHandleHello(move);
@@ -6469,26 +6817,82 @@ function mpHandleMessage(msg) {
       // Host dealt - receive hands
       mpHandleDeal(move);
       break;
+    // ═══ V10_121: PURE HOST AUTHORITY — Intent messages (guest→host) ═══
+    case 'play_intent':
+      if (mpIsHost) mpHandlePlayIntent(move);
+      break;
+    case 'bid_intent':
+      if (mpIsHost) mpHandleBidIntent(move);
+      break;
+    case 'pass_intent':
+      if (mpIsHost) mpHandlePassIntent(move);
+      break;
+    case 'trump_intent':
+      if (mpIsHost) mpHandleTrumpIntent(move);
+      break;
+    case 'widow_swap_intent':
+      if (mpIsHost) mpHandleWidowSwapIntent(move);
+      break;
+    case 'call_double_intent':
+      if (mpIsHost) mpHandleCallDoubleIntent(move);
+      break;
+    case 'nello_intent':
+      if (mpIsHost) mpHandleNelloIntent(move);
+      break;
+    case 'nello_doubles_intent':
+      if (mpIsHost) mpHandleNelloDoublesIntent(move);
+      break;
+    case 'call_double_request':
+      // Host asks guest bid winner to decide on Call for Double
+      if (!mpIsHost && move.seat === mpSeat) {
+        console.log('[MP-HA] Call for Double request received — showing UI');
+        document.getElementById('callDoubleBtnGroup').style.display = 'flex';
+      }
+      break;
+    // ═══ V10_121: Confirmed messages (host→all) ═══
+    case 'play_confirmed':
+      mpHandlePlayConfirmed(move);
+      break;
+    case 'play_rejected':
+      if (!mpIsHost) mpHandlePlayRejected(move);
+      break;
+    case 'bid_confirmed':
+      mpHandleBidConfirmed(move);
+      break;
+    case 'pass_confirmed':
+      mpHandlePassConfirmed(move);
+      break;
+    case 'trump_confirmed':
+      mpHandleTrumpConfirmed(move);
+      break;
+    case 'widow_swap_confirmed':
+      mpHandleWidowSwapConfirmed(move);
+      break;
+    case 'call_double_confirmed':
+      mpHandleCallDoubleConfirmed(move);
+      break;
+    case 'nello_confirmed':
+      mpHandleNelloConfirmed(move);
+      break;
+    case 'nello_doubles_confirmed':
+      mpHandleNelloDoublesConfirmed(move);
+      break;
+    // ═══ Legacy actions (kept for backward compat during transition) ═══
     case 'bid':
-      // Remote player bid
       mpHandleBid(move);
       if (mpIsHost) mpSaveHostState();
       break;
     case 'pass':
-      // Remote player passed
       mpHandlePass(move);
       break;
     case 'trump':
-      // Remote player selected trump
       mpHandleTrump(move);
       if (mpIsHost) mpSaveHostState();
       break;
     case 'play':
-      // Remote player played a tile
       mpHandlePlay(move);
       break;
     case 'nello':
-      // Nello opponent selection
       mpHandleNello(move);
       break;
     case 'seat_ack':
@@ -6508,7 +6912,7 @@ function mpHandleMessage(msg) {
       mpHandleStateSync(move);
       break;
     case 'call_double':
-      // Remote player's call for double decision
+      // Legacy: Remote player's call for double decision
       if(move.called){
         callForDoubleActive = true;
         session.game.force_double_trump = true;
@@ -6522,12 +6926,12 @@ function mpHandleMessage(msg) {
       }
       break;
     case 'nello_doubles':
-      // Remote player's nello doubles choice
+      // Legacy: Remote player's nello doubles choice
       nelloDoublesSuitActive = (move.mode === 'doubles_only');
       session.game.nello_doubles_suit = nelloDoublesSuitActive;
       break;
     case 'widow_swap':
-      // Remote player completed Moon widow swap
+      // Legacy: Remote player completed Moon widow swap
       mpHandleWidowSwap(move);
       if (mpIsHost) mpSaveHostState();
       break;
@@ -6594,12 +6998,34 @@ function mpHandleMessage(msg) {
 function mpSendRaw(msg) {
   if (mpSocket && mpSocket.readyState === WebSocket.OPEN) {
     mpSocket.send(JSON.stringify(msg));
+    if(msg.type !== 'ping') mpLogEntry('SEND', 'raw', msg);
+  } else {
+    mpLogEntry('ERROR', 'raw', 'Socket not open, state=' + (mpSocket ? mpSocket.readyState : 'null'), msg);
   }
 }
+
+// V10_114: Deduplication guard — prevent sending the same play twice
+let _mpLastPlayKey = '';
+let _mpLastPlayTime = 0;
 
 // Send a game move via relay
 function mpSendMove(moveObj) {
   if (!MULTIPLAYER_MODE || mpSuppressSend) return;
+
+  // V10_114: Dedup guard for play actions — if the same seat+tile+trickNumber
+  // was sent within 500ms, skip the duplicate
+  if (moveObj.action === 'play') {
+    const playKey = moveObj.seat + ':' + JSON.stringify(moveObj.tile) + ':' + moveObj.trickNumber;
+    const now = Date.now();
+    if (playKey === _mpLastPlayKey && (now - _mpLastPlayTime) < 500) {
+      console.warn('[MP] Duplicate play blocked:', playKey);
+      mpLogEntry('WARN', 'dedup', 'Duplicate play blocked: ' + playKey);
+      return;
+    }
+    _mpLastPlayKey = playKey;
+    _mpLastPlayTime = now;
+  }
+
   if (mpSocket && mpSocket.readyState === WebSocket.OPEN) {
     mpSocket.send(JSON.stringify({
       type: 'move',
@@ -6607,6 +7033,9 @@ function mpSendMove(moveObj) {
       t: Date.now()
     }));
     console.log('[MP] Sent move:', moveObj);
+    mpLogEntry('SEND', 'move', moveObj);
+  } else {
+    mpLogEntry('ERROR', 'move', 'Socket not open for move', moveObj);
   }
 }
 
@@ -6788,6 +7217,8 @@ function mpBuildModeSelector() {
       document.getElementById('mpRoomSection').style.display = 'block';
       // V10_104: Show observer toggle
       document.getElementById('mpObserverSection').style.display = 'block';
+      // V10_119: Show auto-refresh toggle
+      document.getElementById('mpRefreshToggleSection').style.display = 'block';
       // V10_109: Hide marks and Nello settings for Moon mode in MP
       var _mpMS = document.getElementById('mpMarksSection');
       var _mpHR = document.getElementById('mpHouseRules');
@@ -7003,7 +7434,9 @@ function mpHandleSeatAck(move) {
 // Broadcast player list to all
 function mpBroadcastPlayerList() {
   const list = {};
-  list[mpSeat] = { seat: mpSeat, name: 'Player ' + (mpSeat + 1) + ' (Host)', isHost: true };
+  // V10_121: Use host's actual playerName instead of hardcoded "Player 1 (Host)"
+  const hostDisplayName = playerName || ('Player ' + (mpSeat + 1));
+  list[mpSeat] = { seat: mpSeat, name: hostDisplayName, isHost: true };
   for (const [k, v] of Object.entries(mpPlayers)) {
     if (parseInt(k) !== mpSeat) {
       list[k] = { seat: parseInt(k), name: v.name };
@@ -7069,9 +7502,14 @@ function mpHandleDeal(move) {
 
   mpSuppressSend = true;
   mpGameStarted = true;
+  _staleRefreshCount = 0; // V10_118: Reset refresh counter for new hand
 
   // Close multiplayer modal if open
   document.getElementById('mpBackdrop').style.display = 'none';
+
+  // V10_121: Hide round/game end popups when new deal arrives
+  hideRoundEndSummary();
+  hideGameEndSummary();
 
   // Hide any leftover bid overlay from a previous game
   document.getElementById('bidBackdrop').style.display = 'none';
@@ -7239,47 +7677,137 @@ function mpHandleDeal(move) {
 
 // Multiplayer bidding step - like runBiddingStep but checks for local vs remote vs AI
 function mpRunBiddingStep() {
-  if (!biddingState) return;
+  if (!biddingState) { console.log('[MP-HA] mpRunBiddingStep: biddingState is null, aborting'); mpLogEntry('STATE', 'bid-step', 'biddingState=null ABORT'); return; }
   const currentBidder = biddingState.currentBidder;
+  mpLogEntry('STATE', 'bid-step', 'currentBidder=' + currentBidder + ' mpSeat=' + mpSeat + ' isAI=' + mpIsAI(currentBidder));
 
   if (currentBidder === mpSeat) {
     // It's our turn to bid
     session.phase = PHASE_NEED_BID;
     session.status = biddingState.highBid > 0
-      ? 'Current bid: ' + biddingState.highBid + ' by P' + seatToVisual(biddingState.highBidder) + '. Your bid?'
+      ? 'Current bid: ' + biddingState.highBid + ' by P' + seatToPlayer(biddingState.highBidder) + '. Your bid?'
       : 'Your turn to bid.';
     setStatus(session.status);
     showBidOverlay(true);
     mpHideWaiting();
+    mpLogEntry('STATE', 'bid-overlay', 'SHOWN for seat=' + mpSeat + ' highBid=' + biddingState.highBid);
   } else if (mpIsHost && mpIsAI(currentBidder)) {
+    // FIX3: Check if AI action already in progress
+    if (_aiActionInProgress) {
+      console.log('[FIX3] AI action already in progress, skipping duplicate');
+      mpLogEntry('STATE', 'bid-ai-skip', 'AI action in progress, skipping seat=' + currentBidder);
+      return;
+    }
+    
     // Host handles AI bidding for empty seats
+    _aiActionInProgress = true; // FIX3: Set lock
     mpHideWaiting();
-    session.status = 'P' + seatToVisual(currentBidder) + ' (AI) is thinking...';
+    session.status = getPlayerDisplayName(currentBidder) + ' (AI) is thinking...';
     setStatus(session.status);
-    setTimeout(() => {
-      const result = processAIBid(currentBidder);
-      const playerNum = seatToVisual(currentBidder);
-      if (result.action === 'bid') {
-        session.status = 'P' + playerNum + ' bids ' + result.bid + '!';
-        setPlaceholderText(playerNum, result.bid, 'bid');
-        // Broadcast AI bid to other players
-        mpSendMove({ action: 'bid', seat: currentBidder, bid: result.bid, marks: result.marks || 1, isAI: true });
-      } else {
-        session.status = 'P' + playerNum + ' passes.';
-        setPlaceholderText(playerNum, 'Pass', 'pass');
-        mpSendMove({ action: 'pass', seat: currentBidder, isAI: true });
-      }
-      setStatus(session.status);
-      setTimeout(() => {
-        const advance = advanceBidding();
-        if (!advance.done) {
-          mpRunBiddingStep();
+    // V10_121e: Restructured with try/catch + watchdog to prevent silent hang
+    const _aiBidSeat = currentBidder; // Capture for closure safety
+    let _aiBidCompleted = false;
+    const _aiThinkTimer = setTimeout(() => {
+      try {
+        if (!biddingState) { 
+          mpLogEntry('STATE', 'bid-ai', 'biddingState=null ABORT seat=' + _aiBidSeat); 
+          _aiActionInProgress = false; // FIX3: Release lock
+          return; 
         }
-      }, 600);
+        mpLogEntry('STATE', 'bid-ai-think', 'seat=' + _aiBidSeat + ' FIRED');
+        const result = processAIBid(_aiBidSeat);
+        const visualNum = seatToVisual(_aiBidSeat);
+        const labelNum = seatToPlayer(_aiBidSeat);
+        if (result.action === 'bid') {
+          session.status = 'P' + labelNum + ' bids ' + result.bid + '!';
+          setPlaceholderText(visualNum, result.bid, 'bid');
+        } else {
+          session.status = 'P' + labelNum + ' passes.';
+          setPlaceholderText(visualNum, 'Pass', 'pass');
+        }
+        setStatus(session.status);
+        const _aiAdvanceTimer = setTimeout(() => {
+          try {
+            _aiBidCompleted = true;
+            if (!biddingState) { 
+              mpLogEntry('STATE', 'bid-ai-advance', 'biddingState=null ABORT seat=' + _aiBidSeat); 
+              _aiActionInProgress = false; // FIX3: Release lock
+              return; 
+            }
+            mpLogEntry('STATE', 'bid-ai-advance', 'seat=' + _aiBidSeat + ' action=' + result.action);
+            const advance = advanceBidding() || { done: true }; // V11: defensive null-check
+            if (result.action === 'bid') {
+              const displayBid = (result.marks > 1) ? (result.marks + 'x') : result.bid;
+              mpSendMove({ action: 'bid_confirmed', seat: _aiBidSeat, bid: result.bid, marks: result.marks || 1,
+                displayBid: displayBid, biddingDone: advance.done || false,
+                nextBidder: biddingState ? biddingState.currentBidder : null,
+                bidWinner: advance.done ? (biddingState ? biddingState.highBidder : session.bid_winner_seat) : null,
+                winningBid: advance.done ? (biddingState ? biddingState.highBid : session.current_bid) : null,
+                winningMarks: advance.done ? (biddingState ? biddingState.highMarks : session.bid_marks) : null,
+                redeal: advance.redeal || false, isAI: true });
+            } else {
+              mpSendMove({ action: 'pass_confirmed', seat: _aiBidSeat,
+                biddingDone: advance.done || false,
+                nextBidder: biddingState ? biddingState.currentBidder : null,
+                bidWinner: advance.done ? (biddingState ? biddingState.highBidder : session.bid_winner_seat) : null,
+                winningBid: advance.done ? (biddingState ? biddingState.highBid : session.current_bid) : null,
+                winningMarks: advance.done ? (biddingState ? biddingState.highMarks : session.bid_marks) : null,
+                redeal: advance.redeal || false, isAI: true });
+            }
+            mpSaveHostState();
+            _aiActionInProgress = false; // FIX3: Release lock after completion
+            if (!advance.done) {
+              mpRunBiddingStep();
+            }
+          } catch(err) {
+            console.error('[MP-HA] AI advance error seat ' + _aiBidSeat + ':', err);
+            mpLogEntry('STATE', 'bid-ai-error', 'advance seat=' + _aiBidSeat + ' err=' + err.message);
+            _aiActionInProgress = false; // FIX3: Release lock on error
+          }
+        }, 600);
+        _addBiddingTimer(_aiAdvanceTimer);
+        _allAITimers.push(_aiAdvanceTimer); // FIX5: Track timer
+      } catch(err) {
+        console.error('[MP-HA] AI think error seat ' + _aiBidSeat + ':', err);
+        mpLogEntry('STATE', 'bid-ai-error', 'think seat=' + _aiBidSeat + ' err=' + err.message);
+        _aiActionInProgress = false; // FIX3: Release lock on error
+      }
     }, 400);
+    _addBiddingTimer(_aiThinkTimer);
+    _allAITimers.push(_aiThinkTimer); // FIX5: Track timer
+    // V10_121e: Watchdog — if AI bid doesn't complete within 5s, force-advance
+    const _aiWatchdog = setTimeout(() => {
+      if (_aiBidCompleted) return;
+      mpLogEntry('STATE', 'bid-ai-watchdog', 'FIRED seat=' + _aiBidSeat + ' forcing advance');
+      console.warn('[MP-HA] AI bid watchdog: seat', _aiBidSeat, 'timer never fired — forcing advance');
+      if (!biddingState) {
+        _aiActionInProgress = false; // FIX3: Release lock
+        return;
+      }
+      // Force pass for the stuck AI seat
+      biddingState.passCount++;
+      biddingState.bids.push({ seat: _aiBidSeat, playerNumber: seatToPlayer(_aiBidSeat), bid: 'pass' });
+      setPlaceholderText(seatToVisual(_aiBidSeat), 'Pass', 'pass');
+      const advance = advanceBidding() || { done: true }; // V11: defensive null-check
+      mpSendMove({ action: 'pass_confirmed', seat: _aiBidSeat,
+        biddingDone: advance.done || false,
+        nextBidder: biddingState ? biddingState.currentBidder : null,
+        bidWinner: advance.done ? (biddingState ? biddingState.highBidder : session.bid_winner_seat) : null,
+        winningBid: advance.done ? (biddingState ? biddingState.highBid : session.current_bid) : null,
+        winningMarks: advance.done ? (biddingState ? biddingState.highMarks : session.bid_marks) : null,
+        redeal: advance.redeal || false, isAI: true });
+      mpSaveHostState();
+      _aiBidCompleted = true;
+      _aiActionInProgress = false; // FIX3: Release lock
+      if (!advance.done) {
+        mpRunBiddingStep();
+      }
+    }, 5000);
+    _addBiddingTimer(_aiWatchdog);
+    _allAITimers.push(_aiWatchdog); // FIX5: Track watchdog
   } else {
     // Waiting for remote player — show in status bar only (no overlay)
-    session.status = 'P' + seatToVisual(currentBidder) + ' is thinking...';
+    session.status = getPlayerDisplayName(currentBidder) + ' is thinking...';
     setStatus(session.status);
     mpWaitingForRemote = true;
   }
@@ -7313,16 +7841,16 @@ function mpHandleBid(move) {
   }
   biddingState.bids.push({ seat: bidder, playerNumber: seatToPlayer(bidder), bid: move.bid });
 
-  const playerNum = seatToVisual(bidder);
+  const visualNum = seatToVisual(bidder);
   const displayBid = (move.marks > 1) ? (move.marks + 'x') : move.bid;
-  setPlaceholderText(playerNum, displayBid, 'bid');
+  setPlaceholderText(visualNum, displayBid, 'bid');
 
-  session.status = 'P' + playerNum + ' bids ' + displayBid + '!';
+  session.status = getPlayerDisplayName(bidder) + ' bids ' + displayBid + '!';
   setStatus(session.status);
 
   // Advance bidding
-  setTimeout(() => {
-    const advance = advanceBidding();
+  const _bidTimerA = setTimeout(() => {
+    const advance = advanceBidding() || { done: true }; // V11: defensive null-check
     mpSuppressSend = false;
     if (!advance.done) {
       mpRunBiddingStep();
@@ -7330,6 +7858,7 @@ function mpHandleBid(move) {
       // Bidding finalized - handled inside finalizeBidding
     }
   }, 600);
+  _addBiddingTimer(_bidTimerA);
 }
 
 // Handle remote pass
@@ -7350,18 +7879,18 @@ function mpHandlePass(move) {
   biddingState.passCount++;
   biddingState.bids.push({ seat: passer, playerNumber: seatToPlayer(passer), bid: 'pass' });
 
-  const playerNum = seatToVisual(passer);
-  setPlaceholderText(playerNum, 'Pass', 'pass');
-  session.status = 'P' + playerNum + ' passes.';
+  setPlaceholderText(seatToVisual(passer), 'Pass', 'pass');
+  session.status = getPlayerDisplayName(passer) + ' passes.';
   setStatus(session.status);
 
-  setTimeout(() => {
-    const advance = advanceBidding();
+  const _passTimer = setTimeout(() => {
+    const advance = advanceBidding() || { done: true }; // V11: defensive null-check
     mpSuppressSend = false;
     if (!advance.done) {
       mpRunBiddingStep();
     }
   }, 600);
+  _addBiddingTimer(_passTimer);
 }
 
 // Handle remote Moon widow swap result
@@ -7395,7 +7924,7 @@ function mpHandleWidowSwap(move) {
     // AI on host — shouldn't get here (host handles AI locally)
   } else {
     // Remote player — now waiting for their trump selection
-    setStatus('P' + seatToVisual(bidWinnerSeat) + ' selecting trump...');
+    setStatus(getPlayerDisplayName(bidWinnerSeat) + ' selecting trump...');
   }
 
   mpSuppressSend = false;
@@ -7407,6 +7936,16 @@ function mpHandleTrump(move) {
   mpSuppressSend = true;
   mpWaitingForRemote = false;
   mpHideWaiting();
+
+  // V10_114: Ensure bid_winner_seat is set BEFORE set_trump is called.
+  // Host may send trump before guest's bidding finalization setTimeout fires,
+  // so bid_winner_seat could still be default (0). The trump move includes
+  // the seat of whoever selected trump = the bid winner.
+  if (move.seat !== undefined) {
+    session.bid_winner_seat = move.seat;
+    session.current_bid = move.bid || session.current_bid;
+    session.bid_marks = move.marks || session.bid_marks || 1;
+  }
 
   let trumpValue = move.trump;
   if (trumpValue === 'NT') trumpValue = null;
@@ -7431,22 +7970,47 @@ function mpHandleTrump(move) {
     }
     session.game.leader = session.bid_winner_seat;
     session.game.current_player = session.bid_winner_seat;
+    _trackCpChange('mpHandleTrump-nello');
     session.phase = PHASE_PLAYING;
     setStatus('Nel-O: Lose all tricks to win.');
   } else {
     session.set_trump(trumpValue);
+    _trackCpChange('mpHandleTrump-setTrump');
     syncSpritesWithGameState();
-    if (mpSeat === session.bid_winner_seat) {
-      sortPlayerHandByTrump();
-    }
+    // V10_119: Sort local player's hand by trump regardless of who won bid.
+    // Previously only sorted if mpSeat === bid_winner, but ALL players need
+    // their hand sorted visually after trump is set.
+    sortPlayerHandByTrump();
+    // V10_119: Sort all other players' hands + flip tiles for trump pip orientation
+    sortAllHandsByTrump();
+    flipTilesForTrump();
     updateTrumpDisplay();
     setStatus(session.status);
   }
+
+  // V10_119: Hide trump selection overlay — guest may have it visible if they
+  // were the bid winner selecting trump, or if it was left over from a previous state.
+  const _trumpBd = document.getElementById('trumpBackdrop');
+  if (_trumpBd) _trumpBd.style.display = 'none';
+  // Also clear any leftover trump selection state
+  trumpSelectionActive = false;
+  disableTrumpDominoClicks();
+  clearTrumpHighlights();
 
   mpSuppressSend = false;
 
   // Continue to play phase
   mpCheckWhoseTurn();
+
+  // V10_119: Process any plays that were queued while waiting for trump.
+  // Network reordering can cause play messages to arrive before trump message.
+  if (_mpPlayQueue.length > 0) {
+    console.log('[MP] Processing', _mpPlayQueue.length, 'queued play(s) after trump selection');
+    const queued = _mpPlayQueue.splice(0);
+    for (const qp of queued) {
+      setTimeout(() => mpHandlePlay(qp), 100);
+    }
+  }
 }
 
 // Queue for pending remote plays during animation
@@ -7457,6 +8021,16 @@ async function mpHandlePlay(move) {
   // Queue plays that arrive while we're still animating a previous play
   if (isAnimating) {
     console.log('[MP] Queuing play (animation in progress):', move.seat, move.tile);
+    _mpPlayQueue.push(move);
+    return;
+  }
+  // V10_119: Queue plays that arrive before trump selection is complete.
+  // Network reordering can cause a play to arrive before the trump message.
+  // Without this guard, the play processes but mpCheckWhoseTurn exits silently
+  // (phase != PLAYING), leaving the guest stuck.
+  if (session.phase !== PHASE_PLAYING) {
+    console.warn('[MP] Queuing play — phase is', session.phase, 'not PLAYING:', move.seat, move.tile);
+    mpLogEntry('WARN', 'play-queued', 'Play queued — phase=' + session.phase + ' seat=' + move.seat);
     _mpPlayQueue.push(move);
     return;
   }
@@ -7475,7 +8049,9 @@ async function mpHandlePlay(move) {
   // our state drifted (e.g. due to timing). Force-sync to allow the play.
   if (seat !== session.game.current_player) {
     console.warn('[MP] Turn out of sync! Expected seat', session.game.current_player, 'but got play from seat', seat, '— force-syncing');
+    mpLogEntry('ERROR', 'desync', 'Turn out of sync: expected seat ' + session.game.current_player + ' got seat ' + seat, mpGetGameSnapshot());
     session.game.current_player = seat;
+    _trackCpChange('mpHandlePlay-desync');
   }
 
   // Find the tile in the game hand
@@ -7491,6 +8067,7 @@ async function mpHandlePlay(move) {
 
   if (gameHandIndex < 0) {
     console.log('[MP] Could not find tile in hand:', tile, 'hand:', hand);
+    mpLogEntry('ERROR', 'tile-not-found', 'Tile ' + JSON.stringify(tile) + ' not in hand for seat ' + seat, { hand: hand.map(t=>[t[0],t[1]]), snapshot: mpGetGameSnapshot() });
     mpSuppressSend = false;
     return;
   }
@@ -7565,6 +8142,7 @@ async function mpHandlePlay(move) {
   if (move.nextPlayer !== undefined && move.nextPlayer !== session.game.current_player) {
     console.warn('[MP] Post-play sync: adjusting current_player from', session.game.current_player, 'to', move.nextPlayer);
     session.game.current_player = move.nextPlayer;
+    _trackCpChange('mpHandlePlay-postSync');
   }
 
   // Process any queued plays
@@ -7587,6 +8165,1072 @@ function mpHandleNello(move) {
   // Handled via mpHandleTrump with nello flag
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+//  V10_121: PURE HOST AUTHORITY — Intent handlers (host only) +
+//           Confirmed handlers (all clients)
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── Pending intent state for guest "lift tile" UX ──
+let _pendingPlayIntent = null;  // {seat, tile, spriteIdx, spriteElement, originalTransform}
+let _pendingCallDoubleHostData = null;  // Host: deferred play data waiting for guest's call_double_intent
+let _pendingPlayTimeout = null;
+
+// V11: Generic intent timeout — covers bid/pass/trump intents that lack
+// the play_intent's specific lift/drop UX but still need timeout recovery
+// when the host is unreachable.
+let _pendingIntentTimeout = null;
+function _startIntentTimeout(intentType) {
+  if (_pendingIntentTimeout) clearTimeout(_pendingIntentTimeout);
+  _pendingIntentTimeout = setTimeout(() => {
+    _pendingIntentTimeout = null;
+    console.warn('[MP-HA] ' + intentType + ' intent timeout — host may be unreachable');
+    mpLogEntry('WARN', intentType + '_timeout', 'No confirmation after 10s');
+    setStatus('Host not responding — retrying...');
+    if (mpSocket && mpSocket.readyState === WebSocket.OPEN) {
+      mpSendMove({ action: 'refresh_request', seat: mpSeat });
+    } else if (mpRoom) {
+      _mpReconnectAttempts = 0;
+      mpConnect(mpRoom);
+    }
+  }, 10000);
+}
+function _clearIntentTimeout() {
+  if (_pendingIntentTimeout) {
+    clearTimeout(_pendingIntentTimeout);
+    _pendingIntentTimeout = null;
+  }
+}
+
+// ── HOST: Handle play intent from guest ──
+async function mpHandlePlayIntent(move) {
+  if (!mpIsHost) return;
+  console.log('[MP-HA] Play intent from seat', move.seat, 'tile:', move.tile);
+  mpLogEntry('RECV', 'play_intent', 'seat=' + move.seat + ' tile=' + JSON.stringify(move.tile));
+
+  // Validate: correct turn?
+  if (move.seat !== session.game.current_player) {
+    console.warn('[MP-HA] Rejecting play — wrong turn. Expected', session.game.current_player, 'got', move.seat);
+    mpSendMove({ action: 'play_rejected', seat: move.seat, reason: 'Not your turn (expected seat ' + session.game.current_player + ')' });
+    return;
+  }
+
+  // Find tile in hand
+  const hand = session.game.hands[move.seat] || [];
+  let gameHandIndex = -1;
+  for (let i = 0; i < hand.length; i++) {
+    const ht = hand[i];
+    if ((ht[0] === move.tile[0] && ht[1] === move.tile[1]) || (ht[0] === move.tile[1] && ht[1] === move.tile[0])) {
+      gameHandIndex = i;
+      break;
+    }
+  }
+  if (gameHandIndex < 0) {
+    console.warn('[MP-HA] Rejecting play — tile not found in hand:', move.tile);
+    mpSendMove({ action: 'play_rejected', seat: move.seat, reason: 'Tile not in hand' });
+    return;
+  }
+
+  // Validate: legal move?
+  const legal = session.game.legal_indices_for_player(move.seat);
+  if (!legal.includes(gameHandIndex)) {
+    console.warn('[MP-HA] Rejecting play — illegal move:', move.tile, 'legal:', legal);
+    mpSendMove({ action: 'play_rejected', seat: move.seat, reason: 'Illegal move' });
+    return;
+  }
+
+  // ── Execute play in engine ──
+  const isLead = session.game.current_trick.length === 0;
+  try {
+    session.play(move.seat, gameHandIndex);
+  } catch(e) {
+    console.error('[MP-HA] Engine error on play:', e);
+    mpSendMove({ action: 'play_rejected', seat: move.seat, reason: 'Engine error' });
+    return;
+  }
+
+  // Determine trick/hand state AFTER play
+  const trickComplete = session.game._sanitized_trick().length >= session.game.active_players.length;
+  let trickWinner = null;
+  let handComplete = false;
+  let handResult = null;
+
+  if (trickComplete) {
+    trickWinner = session.game._determine_trick_winner();
+  }
+
+  // Build confirmed payload
+  const confirmed = {
+    action: 'play_confirmed',
+    seat: move.seat,
+    tile: move.tile,
+    isLead: isLead,
+    trickNumber: session.game.trick_number,
+    nextPlayer: session.game.current_player,
+    currentPlayer: session.game.current_player,
+    trickComplete: trickComplete,
+    trickWinner: trickWinner,
+    handComplete: false,
+    handResult: null
+  };
+
+  // ── V10_121: Check for Call for Double before broadcasting ──
+  // If bid winner played lead on trick 0 and Call for Double should trigger,
+  // we need to defer the play_confirmed broadcast until the decision is made
+  if (isLead && shouldShowCallForDouble()) {
+    const bidder = session.bid_winner_seat !== undefined ? session.bid_winner_seat : 0;
+    if (bidder === move.seat && !mpIsAI(move.seat)) {
+      // The guest who played IS the bid winner — ask them to decide
+      console.log('[MP-HA] Call for Double check — sending request to guest seat', move.seat);
+      _pendingCallDoubleHostData = { confirmed: confirmed, move: move, spriteIdx: -1 };
+      // Find sprite for later animation
+      const _seatSprites = sprites[move.seat] || [];
+      for (let _si = 0; _si < _seatSprites.length; _si++) {
+        const _sd = _seatSprites[_si];
+        if (_sd && _sd.tile && ((_sd.tile[0] === move.tile[0] && _sd.tile[1] === move.tile[1]) || (_sd.tile[0] === move.tile[1] && _sd.tile[1] === move.tile[0]))) {
+          _pendingCallDoubleHostData.spriteIdx = _si;
+          break;
+        }
+      }
+      mpSendMove({ action: 'call_double_request', seat: move.seat });
+      return; // Wait for call_double_intent from guest
+    } else if (mpIsAI(bidder)) {
+      // AI decides Call for Double on host
+      const shouldCall = aiShouldCallForDouble(bidder);
+      if (shouldCall) {
+        callForDoubleActive = true;
+        session.game.force_double_trump = true;
+        setStatus(getPlayerDisplayName(bidder) + ' calls for the double!');
+        applyForcedDoubleGlow();
+      }
+      confirmed.callDouble = shouldCall;
+      mpSendMove({ action: 'call_double_confirmed', called: shouldCall, seat: bidder });
+    }
+  }
+
+  // ── Broadcast BEFORE trick collection so guests can animate ──
+  mpSendMove(confirmed);
+  mpLogEntry('SEND', 'play_confirmed', 'seat=' + move.seat + ' tile=' + JSON.stringify(move.tile) + ' trickComplete=' + trickComplete);
+
+  // ── Animate on host side ──
+  const seatSprites = sprites[move.seat] || [];
+  let spriteIdx = -1;
+  for (let i = 0; i < seatSprites.length; i++) {
+    const sd = seatSprites[i];
+    if (sd && sd.tile && ((sd.tile[0] === move.tile[0] && sd.tile[1] === move.tile[1]) || (sd.tile[0] === move.tile[1] && sd.tile[1] === move.tile[0]))) {
+      spriteIdx = i;
+      break;
+    }
+  }
+
+  isAnimating = true;
+  if (spriteIdx >= 0) {
+    try { await playDomino(move.seat, spriteIdx, isLead, null, null); } catch(e) { console.warn('[MP-HA] playDomino error:', e); }
+  }
+
+  // ── Handle trick completion on host ──
+  if (trickComplete) {
+    await new Promise(r => setTimeout(r, 800));
+    await collectToHistory();
+    session.game.current_trick = [];
+    if (session.game.force_double_trump) {
+      session.game.force_double_trump = false;
+      callForDoubleActive = false;
+      clearForcedDoubleGlow();
+      hideCallDoubleBanner();
+    }
+    playedThisTrick = [];
+    currentTrick++;
+
+    if (session.maybe_finish_hand()) {
+      // Hand is over — broadcast updated confirmed with hand result
+      const handEndConfirmed = {
+        action: 'play_confirmed',
+        seat: move.seat,
+        tile: move.tile,
+        isLead: isLead,
+        trickNumber: session.game.trick_number,
+        nextPlayer: session.game.current_player,
+        currentPlayer: session.game.current_player,
+        trickComplete: true,
+        trickWinner: trickWinner,
+        handComplete: true,
+        handResult: {
+          status: session.status,
+          teamPoints: [session.game.team_points[0], session.game.team_points[1]],
+          teamMarks: [session.team_marks[0], session.team_marks[1]]
+        }
+      };
+      mpSendMove(handEndConfirmed);
+
+      setStatus(session.status);
+      team1Score = session.game.team_points[0];
+      team2Score = session.game.team_points[1];
+      team1Marks = session.team_marks[0];
+      team2Marks = session.team_marks[1];
+      updateScoreDisplay();
+      logEvent('HAND_END', { status: session.status });
+      setTimeout(() => mpShowHandEnd(), 800);
+      isAnimating = false;
+      mpSaveHostState();
+      return;
+    }
+  }
+
+  isAnimating = false;
+  mpSaveHostState();
+  mpCheckWhoseTurn();
+}
+
+// ── GUEST: Handle confirmed play from host ──
+async function mpHandlePlayConfirmed(move) {
+  // Host already animated locally — skip
+  if (mpIsHost) return;
+
+  console.log('[MP-HA] Play confirmed: seat', move.seat, 'tile:', move.tile, 'trickComplete:', move.trickComplete, 'handComplete:', move.handComplete);
+  mpLogEntry('RECV', 'play_confirmed', 'seat=' + move.seat + ' tile=' + JSON.stringify(move.tile));
+
+  // Clear pending intent if this was our play
+  if (_pendingPlayIntent && move.seat === mpSeat) {
+    _clearPendingPlayIntent();
+  }
+
+  // Queue if animating
+  if (isAnimating) {
+    console.log('[MP-HA] Queuing confirmed play (animating):', move.seat);
+    _mpPlayQueue.push(move);
+    return;
+  }
+
+  _mpLastActivityTime = Date.now();
+
+  // Update guest's local session state (read-only updates)
+  // Remove tile from hand
+  const hand = session.game.hands[move.seat] || [];
+  let gameHandIndex = -1;
+  for (let i = 0; i < hand.length; i++) {
+    const ht = hand[i];
+    if ((ht[0] === move.tile[0] && ht[1] === move.tile[1]) || (ht[0] === move.tile[1] && ht[1] === move.tile[0])) {
+      gameHandIndex = i;
+      break;
+    }
+  }
+
+  // Update engine state on guest (without calling session.play)
+  if (gameHandIndex >= 0) {
+    // Add to current trick
+    session.game.current_trick.push([move.seat, hand[gameHandIndex]]);
+    // Remove from hand
+    session.game.hands[move.seat].splice(gameHandIndex, 1);
+  }
+  // Sync current_player from host
+  session.game.current_player = move.currentPlayer;
+
+  // Find and animate sprite
+  const seatSprites = sprites[move.seat] || [];
+  let spriteIdx = -1;
+  for (let i = 0; i < seatSprites.length; i++) {
+    const sd = seatSprites[i];
+    if (sd && sd.tile && ((sd.tile[0] === move.tile[0] && sd.tile[1] === move.tile[1]) || (sd.tile[0] === move.tile[1] && sd.tile[1] === move.tile[0]))) {
+      spriteIdx = i;
+      break;
+    }
+  }
+
+  // V10_121: Handle Call for Double flag from host
+  if (move.callDouble === true) {
+    callForDoubleActive = true;
+    session.game.force_double_trump = true;
+    applyForcedDoubleGlow();
+    showCallDoubleBanner();
+  } else if (move.callDouble === false) {
+    // Explicitly not called — ensure clean state
+    callForDoubleActive = false;
+    session.game.force_double_trump = false;
+  }
+
+  isAnimating = true;
+  const isLead = move.isLead;
+  if (spriteIdx >= 0) {
+    try { await playDomino(move.seat, spriteIdx, isLead, null, null); } catch(e) { console.warn('[MP-HA] Guest playDomino error:', e); }
+  }
+
+  // Handle trick completion
+  if (move.trickComplete) {
+    await new Promise(r => setTimeout(r, 800));
+    await collectToHistory();
+    session.game.current_trick = [];
+    if (session.game.force_double_trump) {
+      session.game.force_double_trump = false;
+      callForDoubleActive = false;
+      clearForcedDoubleGlow();
+      hideCallDoubleBanner();
+    }
+    playedThisTrick = [];
+    currentTrick++;
+
+    // Handle hand completion
+    if (move.handComplete && move.handResult) {
+      session.game.team_points = move.handResult.teamPoints || [0, 0];
+      session.team_marks = move.handResult.teamMarks || [0, 0];
+      // V11: Set session.status so showHandEndPopup() can detect "wins the game"
+      session.status = move.handResult.status || 'Hand over';
+      setStatus(session.status);
+      team1Score = session.game.team_points[0];
+      team2Score = session.game.team_points[1];
+      team1Marks = session.team_marks[0];
+      team2Marks = session.team_marks[1];
+      updateScoreDisplay();
+      logEvent('HAND_END', { status: move.handResult.status });
+      setTimeout(() => mpShowHandEnd(), 800);
+      isAnimating = false;
+      return;
+    }
+  }
+
+  isAnimating = false;
+
+  // Process queued plays
+  if (_mpPlayQueue.length > 0) {
+    const nextPlay = _mpPlayQueue.shift();
+    mpHandlePlayConfirmed(nextPlay);
+    return;
+  }
+
+  mpCheckWhoseTurn();
+}
+
+// ── GUEST: Handle play rejection from host ──
+function mpHandlePlayRejected(move) {
+  if (move.seat !== mpSeat) return;
+  console.warn('[MP-HA] Play rejected:', move.reason);
+  mpLogEntry('RECV', 'play_rejected', 'reason=' + move.reason);
+
+  // Drop tile back and re-enable
+  _dropTileFromIntent();
+
+  setStatus('Move rejected: ' + (move.reason || 'Unknown error'));
+  // Request state sync to recover
+  setTimeout(() => {
+    mpSendMove({ action: 'refresh_request', seat: mpSeat });
+  }, 1000);
+}
+
+// ── Helper: Lift tile for pending intent (guest UX) ──
+function _liftTileForIntent(spriteSlotIndex) {
+  const localSeat = getLocalSeat();
+  const spriteData = sprites[localSeat] ? sprites[localSeat][spriteSlotIndex] : null;
+  if (!spriteData || !spriteData.sprite) return;
+
+  const el = spriteData.sprite;
+  const currentTransform = el.style.transform || '';
+
+  _pendingPlayIntent = {
+    seat: mpSeat,
+    tile: spriteData.tile,
+    spriteIdx: spriteSlotIndex,
+    spriteElement: el,
+    originalTransform: currentTransform
+  };
+
+  // Lift tile 20px upward
+  el.style.transition = 'transform 0.2s ease';
+  el.style.transform = currentTransform + ' translateY(-20px)';
+
+  // Disable other tiles (no visual change, just unclickable)
+  const p1Sprites = sprites[localSeat] || [];
+  p1Sprites.forEach((data, idx) => {
+    if (data && data.sprite && idx !== spriteSlotIndex) {
+      data.sprite.style.pointerEvents = 'none';
+    }
+  });
+
+  // Start timeout
+  _pendingPlayTimeout = setTimeout(() => {
+    console.warn('[MP-HA] Play intent timeout — requesting state sync');
+    mpLogEntry('WARN', 'play_timeout', 'No response to play intent');
+    _dropTileFromIntent(); // Restores waitingForPlayer1, enables clicks
+    showHint(); // V11: Also re-show hint after timeout recovery
+    setStatus('Connection issue — syncing with host...');
+    if(mpSocket && mpSocket.readyState === WebSocket.OPEN){
+      mpSendMove({ action: 'refresh_request', seat: mpSeat });
+    }
+  }, 5000);
+}
+
+// ── Helper: Drop tile back from intent (reject/timeout) ──
+function _dropTileFromIntent() {
+  if (!_pendingPlayIntent) return;
+
+  const el = _pendingPlayIntent.spriteElement;
+  if (el) {
+    el.style.transition = 'transform 0.2s ease';
+    el.style.transform = _pendingPlayIntent.originalTransform;
+    // Clean up transition after it completes
+    setTimeout(() => { if (el) el.style.transition = ''; }, 250);
+  }
+
+  // Re-enable all tiles
+  const localSeat = getLocalSeat();
+  const p1Sprites = sprites[localSeat] || [];
+  p1Sprites.forEach((data) => {
+    if (data && data.sprite) {
+      data.sprite.style.pointerEvents = '';
+    }
+  });
+
+  // Play rejection sound
+  if (typeof SFX !== 'undefined' && SFX.invalidSelection) SFX.invalidSelection();
+
+  _clearPendingPlayIntent();
+
+  // Re-enable clicks for player's turn
+  waitingForPlayer1 = true;
+  enablePlayer1Clicks();
+  updatePlayer1ValidStates();
+}
+
+// ── Helper: Clear pending intent state ──
+function _clearPendingPlayIntent() {
+  if (_pendingPlayTimeout) {
+    clearTimeout(_pendingPlayTimeout);
+    _pendingPlayTimeout = null;
+  }
+
+  if (_pendingPlayIntent && _pendingPlayIntent.spriteElement) {
+    const el = _pendingPlayIntent.spriteElement;
+    el.style.transition = '';
+    // Restore pointer events on all tiles
+    const localSeat = getLocalSeat();
+    const p1Sprites = sprites[localSeat] || [];
+    p1Sprites.forEach((data) => {
+      if (data && data.sprite) data.sprite.style.pointerEvents = '';
+    });
+  }
+
+  _pendingPlayIntent = null;
+}
+
+// ═══ HOST: Bidding intent handlers ═══
+
+function mpHandleBidIntent(move) {
+  if (!mpIsHost || !biddingState) return;
+  console.log('[MP-HA] Bid intent from seat', move.seat, 'bid:', move.bid, 'marks:', move.marks);
+  mpLogEntry('RECV', 'bid_intent', 'seat=' + move.seat + ' bid=' + move.bid);
+
+  // Validate: correct bidder?
+  if (move.seat !== biddingState.currentBidder) {
+    console.warn('[MP-HA] Bid from wrong seat, expected:', biddingState.currentBidder, 'got:', move.seat);
+    return;
+  }
+
+  // Update biddingState on host
+  biddingState.highBid = move.bid;
+  biddingState.highBidder = move.seat;
+  biddingState.highMarks = move.marks || 1;
+  if (move.multiplier) {
+    biddingState.inMultiplierMode = true;
+    biddingState.highMultiplier = move.multiplier;
+  }
+  if (move.moonShoot) {
+    biddingState.moonShoot = true;
+  }
+  biddingState.bids.push({ seat: move.seat, playerNumber: seatToPlayer(move.seat), bid: move.bid });
+
+  // Display on host
+  const visualNum = seatToVisual(move.seat);
+  const displayBid = (move.marks > 1) ? (move.marks + 'x') : move.bid;
+  setPlaceholderText(visualNum, displayBid, 'bid');
+  session.status = getPlayerDisplayName(move.seat) + ' bids ' + displayBid + '!';
+  setStatus(session.status);
+
+  // Advance bidding on host
+  setTimeout(() => {
+    if (!biddingState) return;
+    const advance = advanceBidding() || { done: true }; // V11: defensive null-check
+
+    // Broadcast confirmed bid to all (including guests)
+    const confirmed = {
+      action: 'bid_confirmed',
+      seat: move.seat,
+      bid: move.bid,
+      marks: move.marks || 1,
+      multiplier: move.multiplier || 0,
+      moonShoot: move.moonShoot || false,
+      displayBid: displayBid,
+      biddingDone: advance.done || false,
+      nextBidder: biddingState ? biddingState.currentBidder : null,
+      // If bidding done, include result
+      bidWinner: advance.done ? (biddingState ? biddingState.highBidder : session.bid_winner_seat) : null,
+      winningBid: advance.done ? (biddingState ? biddingState.highBid : session.current_bid) : null,
+      winningMarks: advance.done ? (biddingState ? biddingState.highMarks : session.bid_marks) : null,
+      redeal: advance.redeal || false
+    };
+    mpSendMove(confirmed);
+    mpSaveHostState();
+
+    if (!advance.done) {
+      mpRunBiddingStep();
+    }
+    // If done, finalizeBidding() was called inside advanceBidding()
+  }, 600);
+}
+
+function mpHandlePassIntent(move) {
+  if (!mpIsHost || !biddingState) return;
+  console.log('[MP-HA] Pass intent from seat', move.seat);
+  mpLogEntry('RECV', 'pass_intent', 'seat=' + move.seat);
+
+  // Validate: correct bidder?
+  if (move.seat !== biddingState.currentBidder) {
+    console.warn('[MP-HA] Pass from wrong seat, expected:', biddingState.currentBidder, 'got:', move.seat);
+    return;
+  }
+
+  // Update biddingState on host
+  biddingState.passCount++;
+  biddingState.bids.push({ seat: move.seat, playerNumber: seatToPlayer(move.seat), bid: 'pass' });
+
+  // Display on host
+  setPlaceholderText(seatToVisual(move.seat), 'Pass', 'pass');
+  session.status = getPlayerDisplayName(move.seat) + ' passes.';
+  setStatus(session.status);
+
+  // Advance bidding on host
+  setTimeout(() => {
+    if (!biddingState) return;
+    const advance = advanceBidding() || { done: true }; // V11: defensive null-check
+
+    // Broadcast confirmed pass to all
+    const confirmed = {
+      action: 'pass_confirmed',
+      seat: move.seat,
+      biddingDone: advance.done || false,
+      nextBidder: biddingState ? biddingState.currentBidder : null,
+      bidWinner: advance.done ? (biddingState ? biddingState.highBidder : session.bid_winner_seat) : null,
+      winningBid: advance.done ? (biddingState ? biddingState.highBid : session.current_bid) : null,
+      winningMarks: advance.done ? (biddingState ? biddingState.highMarks : session.bid_marks) : null,
+      redeal: advance.redeal || false
+    };
+    mpSendMove(confirmed);
+    mpSaveHostState();
+
+    if (!advance.done) {
+      mpRunBiddingStep();
+    }
+  }, 600);
+}
+
+// ═══ GUEST: Confirmed bid/pass handlers ═══
+
+// V11: When the guest wins the bid, show trump selection overlay on the guest's screen.
+// In pure host authority, the guest doesn't run finalizeBidding() — so we need to
+// explicitly show the trump overlay when the guest learns they won.
+function _guestShowTrumpSelection() {
+  if (mpIsHost) return; // Only for guest
+  console.log('[MP-HA] Guest won the bid — showing trump selection');
+  mpLogEntry('STATE', 'guest-trump', 'Guest won bid, showing trump overlay');
+
+  // Compute Nello eligibility (same logic as finalizeBidding host path)
+  if(typeof nelloDeclareMode !== 'undefined' && nelloDeclareMode){
+    _nelloAllowedAtTrump = false;
+  } else if(typeof nelloRestrictFirst !== 'undefined' && nelloRestrictFirst && biddingState){
+    const winMarks = biddingState.highMarks || 1;
+    if(!biddingState.inMultiplierMode && biddingState.highBid < (GAME_MODE === 'T42' ? 42 : 51)){
+      _nelloAllowedAtTrump = (winMarks <= 1);
+    } else if(!biddingState.inMultiplierMode){
+      _nelloAllowedAtTrump = (winMarks <= 2);
+    } else {
+      _nelloAllowedAtTrump = (winMarks <= (biddingState.highMultiplier || 1) + 1);
+    }
+  } else {
+    _nelloAllowedAtTrump = true;
+  }
+
+  // Show winner placeholder
+  const bidWinnerVisual = seatToVisual(mpSeat);
+  const highBid = biddingState ? biddingState.highBid : session.current_bid;
+  setPlaceholderText(bidWinnerVisual, highBid, 'winner');
+
+  // Initialize off-tracker
+  if (typeof initOffTracker === 'function') initOffTracker();
+
+  biddingState = null; // Clear bidding state — we're done bidding
+
+  // Show trump selection
+  session.phase = PHASE_NEED_TRUMP;
+  setStatus('You won the bid! Select trump.');
+  mpHideWaiting();
+  showTrumpOverlay(true);
+}
+
+function mpHandleBidConfirmed(move) {
+  if (mpIsHost) return; // Host already processed locally
+  console.log('[MP-HA] Bid confirmed: seat', move.seat, 'bid:', move.bid);
+  mpLogEntry('RECV', 'bid_confirmed', 'seat=' + move.seat + ' bid=' + move.bid);
+  _clearIntentTimeout(); // V11: Clear bid/pass intent timeout
+
+  if (!biddingState) { mpLogEntry('WARN', 'bid_confirmed', 'biddingState=null, ignoring'); return; }
+  _mpLastActivityTime = Date.now();
+
+  // Update guest biddingState
+  biddingState.highBid = move.bid;
+  biddingState.highBidder = move.seat;
+  biddingState.highMarks = move.marks || 1;
+  if (move.multiplier) {
+    biddingState.inMultiplierMode = true;
+    biddingState.highMultiplier = move.multiplier;
+  }
+  if (move.moonShoot) biddingState.moonShoot = true;
+  biddingState.bids.push({ seat: move.seat, playerNumber: seatToPlayer(move.seat), bid: move.bid });
+
+  // Display — V11: log placeholder update for diagnostics
+  const visualNum = seatToVisual(move.seat);
+  const displayBid = move.displayBid || ((move.marks > 1) ? (move.marks + 'x') : move.bid);
+  const phEl = placeholderElements['p' + visualNum];
+  mpLogEntry('STATE', 'bid-placeholder', 'seat=' + move.seat + ' visual=p' + visualNum + ' text=' + displayBid + ' elExists=' + !!phEl);
+  setPlaceholderText(visualNum, displayBid, 'bid');
+  session.status = getPlayerDisplayName(move.seat) + ' bids ' + displayBid + '!';
+  setStatus(session.status);
+
+  // Advance guest's bidding state
+  if (move.biddingDone) {
+    // Update local session state from confirmed info
+    if (move.bidWinner !== null && move.bidWinner !== undefined) {
+      session.bid_winner_seat = move.bidWinner;
+      session.current_bid = move.winningBid;
+      session.bid_marks = move.winningMarks;
+    }
+    // V11: If the GUEST won the bid, show trump selection overlay
+    if (move.bidWinner === mpSeat && !move.redeal) {
+      _guestShowTrumpSelection();
+    }
+    // Otherwise wait for host's trump_confirmed or deal
+    return;
+  }
+
+  // Not done — advance to next bidder on guest
+  if (move.nextBidder !== null && move.nextBidder !== undefined) {
+    biddingState.currentBidder = move.nextBidder;
+  } else {
+    advanceBidding(); // Fallback
+  }
+  mpRunBiddingStep();
+}
+
+function mpHandlePassConfirmed(move) {
+  if (mpIsHost) return;
+  console.log('[MP-HA] Pass confirmed: seat', move.seat);
+  mpLogEntry('RECV', 'pass_confirmed', 'seat=' + move.seat);
+  _clearIntentTimeout(); // V11: Clear bid/pass intent timeout
+
+  if (!biddingState) { mpLogEntry('WARN', 'pass_confirmed', 'biddingState=null, ignoring'); return; }
+  _mpLastActivityTime = Date.now();
+
+  // Update guest biddingState
+  biddingState.passCount++;
+  biddingState.bids.push({ seat: move.seat, playerNumber: seatToPlayer(move.seat), bid: 'pass' });
+
+  // Display — V11: log placeholder update for diagnostics
+  const _passVisual = seatToVisual(move.seat);
+  const _passPhEl = placeholderElements['p' + _passVisual];
+  mpLogEntry('STATE', 'pass-placeholder', 'seat=' + move.seat + ' visual=p' + _passVisual + ' elExists=' + !!_passPhEl);
+  setPlaceholderText(_passVisual, 'Pass', 'pass');
+  session.status = getPlayerDisplayName(move.seat) + ' passes.';
+  setStatus(session.status);
+
+  if (move.biddingDone) {
+    if (move.bidWinner !== null && move.bidWinner !== undefined) {
+      session.bid_winner_seat = move.bidWinner;
+      session.current_bid = move.winningBid;
+      session.bid_marks = move.winningMarks;
+    }
+    if (move.redeal) {
+      setStatus('Everyone passed. Redealing...');
+      // Host will send new deal
+      return;
+    }
+    // V11: If the GUEST won the bid, show trump selection overlay
+    if (move.bidWinner === mpSeat) {
+      _guestShowTrumpSelection();
+    }
+    // Otherwise wait for host's trump_confirmed or deal
+    return;
+  }
+
+  if (move.nextBidder !== null && move.nextBidder !== undefined) {
+    biddingState.currentBidder = move.nextBidder;
+  } else {
+    advanceBidding();
+  }
+  mpRunBiddingStep();
+}
+
+// ═══ HOST: Trump intent handler ═══
+
+function mpHandleTrumpIntent(move) {
+  if (!mpIsHost) return;
+  console.log('[MP-HA] Trump intent from seat', move.seat, 'trump:', move.trump);
+  mpLogEntry('RECV', 'trump_intent', 'seat=' + move.seat + ' trump=' + move.trump);
+
+  // Convert 'NT' to null for engine
+  let trumpValue = move.trump;
+  if (trumpValue === 'NT') trumpValue = null;
+
+  // Execute trump selection on host engine
+  if (move.nello) {
+    // V11: Use set_trump('NELLO') so partner-sit-out logic runs correctly.
+    // Previously did manual setup that skipped active_players computation when guest selected Nello.
+    session.bid_marks = move.marks || 1;
+    session.set_trump('NELLO');
+    // set_trump sets leader, current_player, phase, contract, active_players, and clears partner hand
+  } else {
+    session.set_trump(trumpValue);
+  }
+
+  syncSpritesWithGameState();
+  sortPlayerHandByTrump();
+  sortAllHandsByTrump();
+  flipTilesForTrump();
+  updateTrumpDisplay();
+
+  // Broadcast confirmed trump to all
+  const confirmed = {
+    action: 'trump_confirmed',
+    trump: move.trump,
+    seat: move.seat,
+    marks: move.marks || session.bid_marks,
+    nello: move.nello || false,
+    activePlayers: session.game.active_players ? session.game.active_players.slice() : null,
+    firstPlayer: session.game.current_player
+  };
+  mpSendMove(confirmed);
+  mpSaveHostState();
+
+  // Start playing
+  setTimeout(() => mpCheckWhoseTurn(), 300);
+}
+
+// ═══ GUEST: Confirmed trump handler ═══
+
+function mpHandleTrumpConfirmed(move) {
+  if (mpIsHost) return;
+  console.log('[MP-HA] Trump confirmed: trump=', move.trump, 'seat=', move.seat, 'nello=', move.nello);
+  mpLogEntry('RECV', 'trump_confirmed', 'trump=' + move.trump + ' seat=' + move.seat);
+  _clearIntentTimeout(); // V11: Clear trump intent timeout
+
+  _mpLastActivityTime = Date.now();
+
+  // Set bid winner if needed
+  session.bid_winner_seat = move.seat;
+  session.bid_marks = move.marks || 1;
+
+  let trumpValue = move.trump;
+  if (trumpValue === 'NT') trumpValue = null;
+
+  if (move.nello) {
+    session.contract = 'NELLO';
+    session.game.set_trump_suit(null);
+    if (move.activePlayers) {
+      session.game.set_active_players(move.activePlayers);
+      // Clear hands/sprites for non-active players
+      for (let s = 0; s < session.game.player_count; s++) {
+        if (!move.activePlayers.includes(s)) {
+          session.game.hands[s] = [];
+          if (sprites[s]) {
+            sprites[s].forEach(sd => { if (sd && sd.sprite) sd.sprite.remove(); });
+            sprites[s] = [];
+          }
+        }
+      }
+    }
+    session.game.leader = move.seat;
+    session.game.current_player = move.firstPlayer || move.seat;
+    session.phase = PHASE_PLAYING;
+  } else {
+    session.set_trump(trumpValue);
+    if (move.firstPlayer !== undefined) {
+      session.game.current_player = move.firstPlayer;
+    }
+  }
+
+  syncSpritesWithGameState();
+  sortPlayerHandByTrump();
+  sortAllHandsByTrump();
+  flipTilesForTrump();
+  updateTrumpDisplay();
+
+  // Hide trump overlay
+  const _trumpBd = document.getElementById('trumpBackdrop');
+  if (_trumpBd) _trumpBd.style.display = 'none';
+  trumpSelectionActive = false;
+  disableTrumpDominoClicks();
+  clearTrumpHighlights();
+
+  // Process queued plays (V10_119 pattern)
+  if (_mpPlayQueue.length > 0) {
+    const queued = _mpPlayQueue.splice(0);
+    for (const qp of queued) {
+      setTimeout(() => mpHandlePlayConfirmed(qp), 100);
+    }
+  }
+
+  mpCheckWhoseTurn();
+}
+
+// ═══ HOST: Widow swap intent handler ═══
+
+function mpHandleWidowSwapIntent(move) {
+  if (!mpIsHost) return;
+  console.log('[MP-HA] Widow swap intent from seat', move.seat);
+  mpLogEntry('RECV', 'widow_swap_intent', 'seat=' + move.seat);
+
+  // Apply swap on host engine
+  const swapHand = move.hand || move.newHand;
+  if (swapHand) {
+    session.game.hands[move.seat] = swapHand;
+  }
+  if (move.newWidow) {
+    session.moon_widow = move.newWidow;
+  }
+
+  // Broadcast confirmed
+  const confirmed = {
+    action: 'widow_swap_confirmed',
+    seat: move.seat,
+    newWidow: session.moon_widow ? [session.moon_widow[0], session.moon_widow[1]] : null,
+    hand: session.game.hands[move.seat]
+  };
+  mpSendMove(confirmed);
+  mpSaveHostState();
+
+  // Transition to trump selection phase
+  session.phase = PHASE_NEED_TRUMP;
+
+  // Host checks who selects trump (should be bid winner)
+  const bidWinner = session.bid_winner_seat;
+  if (bidWinner === mpSeat) {
+    showTrumpOverlay(true);
+    setStatus('Widow swapped! Select trump.');
+  } else if (mpIsAI(bidWinner)) {
+    const aiHand = session.game.hands[bidWinner];
+    const aiTrump = aiChooseTrump(aiHand, session.current_bid);
+    session.set_trump(aiTrump);
+    syncSpritesWithGameState();
+    updateTrumpDisplay();
+    mpSendMove({ action: 'trump_confirmed', trump: aiTrump === null ? 'NT' : aiTrump, seat: bidWinner, marks: session.bid_marks, firstPlayer: session.game.current_player });
+    setTimeout(() => mpCheckWhoseTurn(), 500);
+  } else {
+    setStatus(getPlayerDisplayName(bidWinner) + ' selecting trump...');
+  }
+}
+
+// ═══ GUEST: Confirmed widow swap handler ═══
+
+function mpHandleWidowSwapConfirmed(move) {
+  if (mpIsHost) return;
+  console.log('[MP-HA] Widow swap confirmed: seat', move.seat);
+  _mpLastActivityTime = Date.now();
+
+  // Update guest state
+  if (move.newWidow) session.moon_widow = move.newWidow;
+  const swapHand = move.hand || move.newHand;
+  if (swapHand && move.seat !== undefined) {
+    session.game.hands[move.seat] = swapHand;
+  }
+
+  session.phase = PHASE_NEED_TRUMP;
+
+  // If we are the bid winner, show trump selection
+  if (session.bid_winner_seat === mpSeat) {
+    showTrumpOverlay(true);
+    setStatus('Widow swapped! Select trump.');
+  } else {
+    setStatus(getPlayerDisplayName(session.bid_winner_seat) + ' selecting trump...');
+  }
+}
+
+// ═══ HOST: Call for Double intent handler ═══
+
+async function mpHandleCallDoubleIntent(move) {
+  if (!mpIsHost) return;
+  console.log('[MP-HA] Call for Double intent: called=', move.called, 'seat=', move.seat);
+
+  if (move.called) {
+    callForDoubleActive = true;
+    session.game.force_double_trump = true;
+    applyForcedDoubleGlow();
+  } else {
+    callForDoubleActive = false;
+    session.game.force_double_trump = false;
+  }
+
+  // Broadcast confirmed to all
+  mpSendMove({ action: 'call_double_confirmed', called: move.called, seat: move.seat });
+
+  // Resume deferred play from mpHandlePlayIntent
+  if (_pendingCallDoubleHostData) {
+    const pending = _pendingCallDoubleHostData;
+    _pendingCallDoubleHostData = null;
+    const confirmed = pending.confirmed;
+    confirmed.callDouble = move.called;
+
+    // Broadcast the deferred play_confirmed
+    mpSendMove(confirmed);
+    mpLogEntry('SEND', 'play_confirmed', 'seat=' + confirmed.seat + ' tile=' + JSON.stringify(confirmed.tile) + ' (deferred after call_double)');
+
+    // Animate on host
+    isAnimating = true;
+    if (pending.spriteIdx >= 0) {
+      try { await playDomino(confirmed.seat, pending.spriteIdx, confirmed.isLead, null, null); } catch(e) { console.warn('[MP-HA] playDomino error:', e); }
+    }
+
+    // Handle trick completion
+    if (confirmed.trickComplete) {
+      await new Promise(r => setTimeout(r, 800));
+      await collectToHistory();
+      session.game.current_trick = [];
+      if (session.game.force_double_trump) {
+        session.game.force_double_trump = false;
+        callForDoubleActive = false;
+        clearForcedDoubleGlow();
+        hideCallDoubleBanner();
+      }
+      playedThisTrick = [];
+      currentTrick++;
+
+      if (session.maybe_finish_hand()) {
+        const handEndConfirmed = Object.assign({}, confirmed, {
+          handComplete: true,
+          handResult: {
+            status: session.status,
+            teamPoints: [session.game.team_points[0], session.game.team_points[1]],
+            teamMarks: [session.team_marks[0], session.team_marks[1]]
+          }
+        });
+        mpSendMove(handEndConfirmed);
+        setStatus(session.status);
+        team1Score = session.game.team_points[0];
+        team2Score = session.game.team_points[1];
+        team1Marks = session.team_marks[0];
+        team2Marks = session.team_marks[1];
+        updateScoreDisplay();
+        logEvent('HAND_END', { status: session.status });
+        setTimeout(() => mpShowHandEnd(), 800);
+        isAnimating = false;
+        mpSaveHostState();
+        return;
+      }
+    }
+
+    isAnimating = false;
+    mpSaveHostState();
+    mpCheckWhoseTurn();
+  } else {
+    mpSaveHostState();
+  }
+}
+
+// ═══ ALL: Confirmed Call for Double ═══
+
+function mpHandleCallDoubleConfirmed(move) {
+  if (mpIsHost) return; // Host already applied
+  console.log('[MP-HA] Call for Double confirmed: called=', move.called);
+
+  if (move.called) {
+    callForDoubleActive = true;
+    session.game.force_double_trump = true;
+    setStatus('Double has been called!');
+    applyForcedDoubleGlow();
+    showCallDoubleBanner();
+  } else {
+    callForDoubleActive = false;
+    session.game.force_double_trump = false;
+    clearForcedDoubleGlow();
+  }
+}
+
+// ═══ HOST: Nello opponent selection intent handler ═══
+
+function mpHandleNelloIntent(move) {
+  if (!mpIsHost) return;
+  console.log('[MP-HA] Nello intent from seat', move.seat, 'opponent=', move.selectedOpponent, 'marks=', move.marks);
+
+  // Guest selected a nello opponent — host executes the nello setup
+  if(move.selectedOpponent !== undefined){
+    // Nello opponent selection (TN51 6-player only)
+    _executeNelloSetup(move.selectedOpponent, move.marks || 1);
+  } else {
+    // Plain nello without opponent selection (T42 4-player) — handled via trump_intent
+    mpHandleTrumpIntent(move);
+  }
+}
+
+// ═══ GUEST: Confirmed nello ═══
+function mpHandleNelloConfirmed(move) {
+  if (mpIsHost) return;
+  console.log('[MP-HA] Nello confirmed: opponent=', move.selectedOpponent, 'activePlayers=', move.activePlayers);
+
+  if(move.selectedOpponent !== undefined){
+    // Apply nello setup on guest from confirmed data
+    const bidderSeat = move.seat;
+    session.contract = 'NELLO';
+    session.bid_marks = move.marks || 1;
+    session.game.set_trump_suit(null);
+    if(move.activePlayers) session.game.set_active_players(move.activePlayers);
+
+    // Apply nello doubles suit from host
+    nelloDoublesSuitActive = !!move.nelloDoublesSuit;
+    session.game.nello_doubles_suit = nelloDoublesSuitActive;
+
+    // Clear hands of sitting-out players
+    for(let s = 0; s < session.game.player_count; s++){
+      if(move.activePlayers && !move.activePlayers.includes(s)){
+        session.game.hands[s] = [];
+      }
+    }
+
+    session.game.leader = bidderSeat;
+    session.game.current_player = move.firstPlayer || bidderSeat;
+    _trackCpChange('mpHandleNelloConfirmed');
+    session.phase = PHASE_PLAYING;
+    const marksStr = (move.marks === 2) ? ' (2 Marks)' : '';
+    session.status = `Nel-O${marksStr}: Lose all tricks to win.`;
+
+    syncSpritesWithGameState();
+    updateTrumpDisplay();
+    renderAll();
+    mpCheckWhoseTurn();
+  } else {
+    // Plain nello (T42) — handled via trump_confirmed
+    mpHandleTrumpConfirmed(move);
+  }
+}
+
+// ═══ HOST: Nello doubles intent handler ═══
+
+function mpHandleNelloDoublesIntent(move) {
+  if (!mpIsHost) return;
+  console.log('[MP-HA] Nello doubles intent: mode=', move.mode);
+
+  nelloDoublesSuitActive = (move.mode === 'doubles_only');
+  session.game.nello_doubles_suit = nelloDoublesSuitActive;
+
+  // Broadcast confirmed
+  mpSendMove({ action: 'nello_doubles_confirmed', mode: move.mode });
+  mpSaveHostState();
+}
+
+// ═══ GUEST: Confirmed nello doubles ═══
+
+function mpHandleNelloDoublesConfirmed(move) {
+  if (mpIsHost) return;
+  console.log('[MP-HA] Nello doubles confirmed: mode=', move.mode);
+  nelloDoublesSuitActive = (move.mode === 'doubles_only');
+  session.game.nello_doubles_suit = nelloDoublesSuitActive;
+}
+
+// ═══ End of V10_121 Host Authority handlers ═══
+
 // Handle start game from host
 function mpHandleStartGame(move) {
   console.log('[MP] Game started by host');
@@ -7597,7 +9241,6 @@ function mpHandleStartGame(move) {
   if(move.houseRules){
     const hr = move.houseRules;
     if(typeof hr.callForDouble === 'boolean') callForDoubleEnabled = hr.callForDouble;
-    if(typeof hr.nello2x === 'boolean') nello2xEnabled = hr.nello2x;
     if(typeof hr.nelloDeclare === 'boolean') nelloDeclareMode = hr.nelloDeclare;
     if(typeof hr.nelloRestrictFirst === 'boolean') nelloRestrictFirst = hr.nelloRestrictFirst;
     if(hr.nelloDoublesMode) nelloDoublesMode = hr.nelloDoublesMode;
@@ -7625,11 +9268,9 @@ function mpHandleStartGame(move) {
   }
   // V10_109: Update MP settings panel to reflect host's rules (for guests viewing later)
   var _gCFD = document.getElementById('mpChkCallForDouble');
-  var _gN2x = document.getElementById('mpChkNello2x');
   var _gNDec = document.getElementById('mpChkNelloDeclare');
   var _gNRes = document.getElementById('mpChkNelloRestrict');
   if(_gCFD) { _gCFD.checked = callForDoubleEnabled; _gCFD.disabled = true; }
-  if(_gN2x) { _gN2x.checked = nello2xEnabled; _gN2x.disabled = true; }
   if(_gNDec) { _gNDec.checked = nelloDeclareMode; _gNDec.disabled = true; }
   if(_gNRes) { _gNRes.checked = nelloRestrictFirst; _gNRes.disabled = true; }
   var _gRole = document.getElementById('mpSettingsRole');
@@ -7658,21 +9299,68 @@ function mpHandleStartGame(move) {
 // Handle next hand from host
 function mpHandleNextHand(move) {
   console.log('[MP] Next hand from host');
-  // The deal message will follow
+  // V10_121: Auto-dismiss round/game end popups for guests
+  hideRoundEndSummary();
+  hideGameEndSummary();
+  SFX.resumeBgmAfterResult();
+  // The deal message will follow from the host
 }
 
 // Handle full game state sync (reconnection)
 function mpHandleStateSync(move) {
+  // ═══════════════════════════════════════════════════════════════
+  // V10_FIX: Critical sync fixes applied here
+  // ═══════════════════════════════════════════════════════════════
+  
+  // FIX5: Clear all AI timers to prevent stale actions
+  _clearAllAITimers();
+  
+  // FIX4: Show syncing overlay to block all input
+  showSyncingOverlay();
+  
+  // FIX2: FORCE CLOSE ALL OVERLAYS FIRST - prevents frozen UI
+  console.log('[FIX2] Closing all overlays before state_sync');
+  const bidBackdrop = document.getElementById('bidBackdrop');
+  const trumpBackdrop = document.getElementById('trumpBackdrop');
+  const handEndBackdrop = document.getElementById('handEndBackdrop');
+  const nelloBackdrop = document.getElementById('nelloOpponentBackdrop');
+  const nelloDoublesBackdrop = document.getElementById('nelloDoublesBackdrop');
+  const widowBackdrop = document.getElementById('widowSwapBackdrop');
+  const layDownBackdrop = document.getElementById('layDownBackdrop');
+  
+  if (bidBackdrop) bidBackdrop.style.display = 'none';
+  if (trumpBackdrop) trumpBackdrop.style.display = 'none';
+  if (handEndBackdrop) handEndBackdrop.style.display = 'none';
+  if (nelloBackdrop) nelloBackdrop.style.display = 'none';
+  if (nelloDoublesBackdrop) nelloDoublesBackdrop.style.display = 'none';
+  if (widowBackdrop) widowBackdrop.style.display = 'none';
+  if (layDownBackdrop) layDownBackdrop.style.display = 'none';
+  
+  // Clear any waiting indicators
+  mpHideWaiting();
+
+  // V11: Clear any pending intents — state_sync will rebuild all sprites
+  if (_pendingPlayIntent) {
+    console.log('[V11] Clearing pending play intent before state_sync rebuild');
+    _clearPendingPlayIntent();
+  }
+  _clearIntentTimeout(); // V11: Clear any bid/pass/trump intent timeout
+
   // Clear any guest-tracked plays since host is sending authoritative state
   mpGuestClearPlays();
   // Only process if this state is meant for us
   if (mpSeat < 0) {
     console.error('[MP] Received state_sync but mpSeat not set! Ignoring.');
+    hideSyncingOverlay(); // FIX4: Hide overlay even on error
     return;
   }
-  if (move.targetSeat !== mpSeat) return;
+  if (move.targetSeat !== mpSeat) {
+    hideSyncingOverlay(); // FIX4: Hide overlay if not for us
+    return;
+  }
 
   console.log('[MP] Received state sync for seat', mpSeat);
+  mpLogEntry('STATE', 'state_sync', 'Received sync for seat ' + mpSeat + ' phase=' + (move.phase || '?') + ' cp=' + (move.currentPlayer || '?') + ' trick=' + (move.trickNumber || '?'), { moveKeys: Object.keys(move) });
 
   mpSuppressSend = true;
   mpGameStarted = true;
@@ -7726,6 +9414,7 @@ function mpHandleStateSync(move) {
     session.game.leader = move.leader;
   }
   session.game.current_player = move.currentPlayer;
+  _trackCpChange('mpHandleStateSync');
 
   // Restore contract
   if (move.contract) {
@@ -7880,6 +9569,39 @@ function mpHandleStateSync(move) {
     }
   }
 
+  // V11: Rebuild trick history sprites from tricksTeam data
+  // Without this, reconnecting mid-hand loses all trick history visuals.
+  if (move.tricksTeam && session.game.tricks_team) {
+    const teamCount = session.game.tricks_team.length;
+    for (let team = 0; team < teamCount; team++) {
+      const teamTricks = session.game.tricks_team[team] || [];
+      for (let trickIdx = 0; trickIdx < teamTricks.length; trickIdx++) {
+        const trick = teamTricks[trickIdx];
+        if (!trick) continue;
+        for (let pIdx = 0; pIdx < trick.length; pIdx++) {
+          const tile = trick[pIdx];
+          if (!tile) continue;
+          const playerRowIndex = pIdx; // seat index within the trick
+          const thPos = getTrickHistoryPosition(trickIdx, team, playerRowIndex);
+          if (thPos) {
+            const thSprite = makeSprite(tile);
+            thSprite.setPose(thPos);
+            thSprite.setFaceUp(true);
+            thSprite._inTrickHistory = true;
+            thSprite._thTeamTrickIndex = trickIdx;
+            thSprite._thWinningTeam = team;
+            thSprite._thPlayerRowIndex = playerRowIndex;
+            if (thSprite._shadow) {
+              shadowLayer.appendChild(thSprite._shadow);
+              thSprite._shadow._inTrickHistory = true;
+            }
+            spriteLayer.appendChild(thSprite);
+          }
+        }
+      }
+    }
+  }
+
   // Show trump display if trump is set
   if (session.game.trump_suit !== null && session.game.trump_suit !== undefined) {
     const trumpEl = document.getElementById('trumpDisplay');
@@ -7907,19 +9629,83 @@ function mpHandleStateSync(move) {
     updateWidowDisplay();
   }
 
-  mpSuppressSend = false;
+  // V10_118: After rebuilding sprites from engine data, re-apply visual transformations.
+  // Without this, hands appear in dealt order (un-shuffled), unhighlighted, and trump
+  // pip orientation is wrong. This was the root cause of "refresh breaks everything."
+  if (session.game.trump_suit !== null && session.game.trump_suit !== undefined &&
+      session.phase === PHASE_PLAYING) {
+    // Re-sort local player's sprites by trump (visual only — rearranges sprites array)
+    sortPlayerHandByTrump();
+    // Re-flip tiles so trump pip faces up (modifies both engine hands and sprite data)
+    flipTilesForTrump();
+    // Update trump display indicator
+    updateTrumpDisplay();
+  }
+
+  // V10_118: Force-reset control flags to a clean state.
+  isAnimating = false;
+  _mpLastActivityTime = Date.now(); // Reset so stale detector doesn't immediately re-fire
+
+  // V10_119: Hide ALL overlays that might be left over from a previous phase.
+  // If state_sync restores PHASE_PLAYING but trump overlay is still visible,
+  // the game appears frozen ("select your trumps" with unclickable tiles).
+  const _ssBd1 = document.getElementById('trumpBackdrop');
+  if (_ssBd1) _ssBd1.style.display = 'none';
+  trumpSelectionActive = false;
+  const _ssBd2 = document.getElementById('callDoubleBtnGroup');
+  if (_ssBd2) _ssBd2.style.display = 'none';
+  const _ssBd3 = document.getElementById('callDoubleBanner');
+  if (_ssBd3) _ssBd3.style.display = 'none';
+
+  // FIX4: Hide syncing overlay after state applied (with small delay for rendering)
+  setTimeout(() => {
+    hideSyncingOverlay();
+    mpSuppressSend = false;
+    console.log('[FIX4] State sync complete, input re-enabled');
+  }, 300);
 
   // Resume game flow based on phase
   if (session.phase === PHASE_PLAYING) {
     setStatus('Reconnected! Resuming game...');
-    // Small delay to let UI settle before checking whose turn
-    setTimeout(() => mpCheckWhoseTurn(), 300);
+    // V10_118: Immediately check turn (no delay) and ensure clicks are enabled.
+    // The 300ms delay could race with stale detector, causing re-triggers.
+    mpCheckWhoseTurn();
   } else if (session.phase === PHASE_NEED_BID) {
-    setStatus('Reconnected! Resuming bidding...');
-    initBiddingRound();
-    setTimeout(() => mpRunBiddingStep(), 300);
+    // V10_121c: Check if bidding is actually done (bidWinner set, currentBid set)
+    // This happens when guest reconnects after their bid was accepted but before trump selection
+    if (move.bidWinner !== null && move.bidWinner !== undefined && move.currentBid > 0 && move.trumpSuit === null) {
+      console.log('[MP] State sync: bidding done (bidWinner=' + move.bidWinner + ' bid=' + move.currentBid + ') but no trump yet');
+      biddingState = null; // Clear stale bidding state
+      if (move.bidWinner === mpSeat) {
+        // WE are the bid winner — show trump selection
+        session.phase = PHASE_NEED_TRUMP;
+        setStatus('You won the bid at ' + move.currentBid + '! Select trump.');
+        showTrumpOverlay(true);
+      } else {
+        // Someone else won — wait for trump_confirmed
+        session.phase = PHASE_NEED_TRUMP;
+        setStatus(getPlayerDisplayName(move.bidWinner) + ' selecting trump...');
+      }
+    } else if (!biddingState) {
+      // V10_116: Don't reset bidding if already in progress — state_sync during
+      // bidding should preserve the current bidding flow, not restart it.
+      // Only init if biddingState is null (actual reconnect, not stale refresh).
+      setStatus('Reconnected! Resuming bidding...');
+      initBiddingRound();
+      setTimeout(() => mpRunBiddingStep(), 300);
+    } else {
+      // Bidding already active — just update activity timer and continue
+      _mpLastActivityTime = Date.now();
+      console.log('[MP] State sync during active bidding — preserving bidding state');
+    }
   } else if (session.phase === PHASE_NEED_TRUMP) {
-    setStatus('Reconnected! Waiting for trump selection...');
+    // V10_121c: If we are the bid winner, show trump selection
+    if (session.bid_winner_seat === mpSeat) {
+      setStatus('Select trump.');
+      showTrumpOverlay(true);
+    } else {
+      setStatus(getPlayerDisplayName(session.bid_winner_seat) + ' selecting trump...');
+    }
   } else if (session.phase === PHASE_MOON_WIDOW) {
     // Moon: reconnected during widow swap phase
     const bidWinnerSeat = session.bid_winner_seat;
@@ -7927,7 +9713,7 @@ function mpHandleStateSync(move) {
       setStatus('Widow swap in progress. Select a tile to swap.');
       showWidowSwap();
     } else {
-      setStatus('P' + seatToVisual(bidWinnerSeat) + ' is swapping with widow...');
+      setStatus(getPlayerDisplayName(bidWinnerSeat) + ' is swapping with widow...');
     }
   } else {
     setStatus('Reconnected!');
@@ -7940,38 +9726,49 @@ function mpCheckWhoseTurn() {
 
   const currentPlayer = session.game.current_player;
   console.log('[MP] Whose turn? seat=' + currentPlayer + ', mpSeat=' + mpSeat + ', visual=P' + seatToVisual(currentPlayer));
+  mpLogEntry('STATE', 'whoseTurn', 'cp=' + currentPlayer + ' mpSeat=' + mpSeat + ' isAI=' + mpIsAI(currentPlayer), mpGetGameSnapshot());
 
   // Validate current_player is an active player
   if (!session.game.active_players.includes(currentPlayer)) {
     console.log("[MP] current_player", currentPlayer, "not in active_players", session.game.active_players, "- fixing");
+    mpLogEntry('ERROR', 'invalid-cp', 'current_player ' + currentPlayer + ' not in active_players ' + JSON.stringify(session.game.active_players));
     session.game.current_player = session.game._next_active_player(currentPlayer);
+    _trackCpChange('mpCheckWhoseTurn-invalidCpFix');
   }
 
   if (currentPlayer === mpSeat) {
     // Our turn
     waitingForPlayer1 = true;
+    mpWaitingForRemote = false; // V10_115: Reset — we're the active player now
+    _mpLastActivityTime = Date.now(); // V10_115: Reset activity timer — our turn started
     enablePlayer1Clicks();
     updatePlayer1ValidStates();
     showHint();
     setStatus('Trick ' + (session.game.trick_number + 1) + ' - Click a domino to play');
     mpHideWaiting();
+    _startTurnRecovery(); // V10_115: Safety net — re-enable clicks if stuck
   } else if (mpIsHost && mpIsAI(currentPlayer)) {
     // Host plays AI for empty seats
     waitingForPlayer1 = false;
+    clearPlayer1ValidStates(); // V10_121: Remove faded tile highlighting
+    mpWaitingForRemote = false; // V10_115: Reset — host is running AI
     mpHideWaiting();
     mpPlayAITurn(currentPlayer);
   } else {
     // Someone else's turn (remote human) — show in status bar only
     waitingForPlayer1 = false;
-    setStatus('P' + seatToVisual(currentPlayer) + ' is thinking...');
+    clearPlayer1ValidStates(); // V10_121: Remove faded tile highlighting
+    setStatus(getPlayerDisplayName(currentPlayer) + ' is thinking...');
     mpWaitingForRemote = true;
   }
 }
 
 // Host plays AI turn for an empty seat and broadcasts the move
 async function mpPlayAITurn(seat) {
+  // V10_121: Only host runs AI turns in host authority mode
+  if (MULTIPLAYER_MODE && !mpIsHost) return;
   isAnimating = true;
-  setStatus('P' + seatToVisual(seat) + ' (AI) plays...');
+  setStatus(getPlayerDisplayName(seat) + ' (AI) plays...');
   // Safety timeout — if AI turn doesn't complete in 10 seconds, unlock
   const _aiTimeout = setTimeout(() => {
     if (isAnimating) {
@@ -8019,8 +9816,22 @@ async function mpPlayAITurn(seat) {
     return;
   }
 
-  // Broadcast to other players
-  mpSendMove({ action: 'play', seat: seat, tile: tileToPlay, trickNumber: session.game.trick_number, isAI: true, nextPlayer: session.game.current_player });
+  // V10_121: Broadcast play_confirmed (NOT old 'play' action) so guests use confirmed handler
+  const _aiTrickComplete = session.game._sanitized_trick().length >= session.game.active_players.length;
+  mpSendMove({
+    action: 'play_confirmed',
+    seat: seat,
+    tile: tileToPlay,
+    isLead: isLead,
+    trickNumber: session.game.trick_number,
+    nextPlayer: session.game.current_player,
+    currentPlayer: session.game.current_player,
+    trickComplete: _aiTrickComplete,
+    trickWinner: _aiTrickComplete ? session.game._determine_trick_winner() : null,
+    handComplete: false,
+    handResult: null,
+    isAI: true
+  });
   // Auto-save host state after AI play
   mpSaveHostState();
 
@@ -8034,7 +9845,7 @@ async function mpPlayAITurn(seat) {
   }
 
   // Check trick complete
-  if (session.game._sanitized_trick().length >= session.game.active_players.length) {
+  if (_aiTrickComplete) {
     await new Promise(r => setTimeout(r, 800));
     await collectToHistory();
     session.game.current_trick = [];
@@ -8042,11 +9853,32 @@ async function mpPlayAITurn(seat) {
     if(session.game.force_double_trump){
       session.game.force_double_trump = false;
       callForDoubleActive = false;
+      clearForcedDoubleGlow();
+      hideCallDoubleBanner();
     }
     playedThisTrick = [];
     currentTrick++;
 
     if (session.maybe_finish_hand()) {
+      // V10_121: Broadcast hand-end to guests so they know the hand is over
+      mpSendMove({
+        action: 'play_confirmed',
+        seat: seat,
+        tile: tileToPlay,
+        isLead: isLead,
+        trickNumber: session.game.trick_number,
+        nextPlayer: session.game.current_player,
+        currentPlayer: session.game.current_player,
+        trickComplete: true,
+        trickWinner: session.game._determine_trick_winner ? session.game._determine_trick_winner() : null,
+        handComplete: true,
+        handResult: {
+          status: session.status,
+          teamPoints: [session.game.team_points[0], session.game.team_points[1]],
+          teamMarks: [session.team_marks[0], session.team_marks[1]]
+        },
+        isAI: true
+      });
       setStatus(session.status);
       team1Score = session.game.team_points[0];
       team2Score = session.game.team_points[1];
@@ -8057,6 +9889,7 @@ async function mpPlayAITurn(seat) {
       setTimeout(() => mpShowHandEnd(), 800);
       isAnimating = false;
       clearTimeout(_aiTimeout);
+      mpSaveHostState();
       return;
     }
   }
@@ -8247,7 +10080,7 @@ function mpHandleObserverMessage(msg) {
         session.moon_widow = move.tile.slice();
         session._widowRevealed = true;
         updateWidowDisplay();
-        setStatus('P' + seatToVisual(move.seat) + ' swapped with widow');
+        setStatus(getPlayerDisplayName(move.seat) + ' swapped with widow');
       }
       break;
     case 'next_hand':
@@ -8464,7 +10297,7 @@ async function mpObserverHandlePlay(move) {
 
   // Show whose turn it is
   const cp = session.game.current_player;
-  setStatus('P' + seatToVisual(cp) + '\'s turn...');
+  setStatus(getPlayerDisplayName(cp) + '\'s turn...');
 
   // Process queued plays
   if (_mpPlayQueue.length > 0) {
@@ -8492,6 +10325,7 @@ function mpObserverHandleBid(move) {
     biddingState.bids_done++;
     // Show bid in placeholder
     const vp = seatToVisual(move.seat);
+    const lp = seatToPlayer(move.seat);
     const ph = document.querySelector('[data-placeholder="p' + vp + '"]');
     if (ph) {
       const bidText = bidValue > 0 ? (bidMarks > 1 ? bidMarks + 'x' : String(bidValue)) : 'Pass';
@@ -8501,9 +10335,9 @@ function mpObserverHandleBid(move) {
     }
     // Update status
     if (bidValue > 0) {
-      setStatus('P' + vp + ' bids ' + (bidMarks > 1 ? bidMarks + 'x' : bidValue));
+      setStatus('P' + lp + ' bids ' + (bidMarks > 1 ? bidMarks + 'x' : bidValue));
     } else {
-      setStatus('P' + vp + ' passes');
+      setStatus('P' + lp + ' passes');
     }
   }
 
@@ -8525,7 +10359,7 @@ function mpObserverHandlePass(move) {
     ph.style.fontSize = '14px';
     ph.style.color = '#666';
   }
-  setStatus('P' + vp + ' passes');
+  setStatus(getPlayerDisplayName(move.seat) + ' passes');
 }
 
 // V10_104: Observer trump handler
@@ -8555,7 +10389,7 @@ function mpObserverHandleTrump(move) {
     session.game.current_player = move.currentPlayer;
   }
 
-  setStatus('Trump is ' + (move.suit === 'doubles' ? 'Doubles' : move.suit) + ' - P' + seatToVisual(session.game.current_player) + '\'s turn');
+  setStatus('Trump is ' + (move.suit === 'doubles' ? 'Doubles' : move.suit) + ' - P' + seatToPlayer(session.game.current_player) + '\'s turn');
 
   positionPlayerIndicators();
 }
@@ -8704,7 +10538,7 @@ function mpObserverHandleStateSync(move) {
 
   // Show current game state
   if (session.phase === PHASE_PLAYING) {
-    setStatus('Observing - P' + seatToVisual(session.game.current_player) + '\'s turn');
+    setStatus('Observing - P' + seatToPlayer(session.game.current_player) + '\'s turn');
   } else if (session.phase === PHASE_NEED_BID) {
     setStatus('Observing - bidding in progress');
   } else if (session.phase === PHASE_NEED_TRUMP) {
@@ -8819,7 +10653,7 @@ function mpObserverRefreshView() {
 
   const cp = session.game.current_player;
   if (session.phase === PHASE_PLAYING) {
-    setStatus('Observing - P' + seatToVisual(cp) + '\'s turn');
+    setStatus('Observing - P' + seatToPlayer(cp) + '\'s turn');
   }
 }
 
@@ -9046,6 +10880,7 @@ function mpResumeFromSavedState(savedState) {
   session.game.trump_mode = snap.trump_mode;
   session.game.trick_number = snap.trick_number || 0;
   session.game.current_player = snap.current_player || 0;
+  _trackCpChange('mpResumeFromSavedState');
   session.game.leader = snap.leader || 0;
   session.game.active_players = snap.active_players || Array.from({length: pc}, (_, i) => i);
   session.game.nello_doubles_suit = snap.nello_doubles_suit || false;
@@ -9428,6 +11263,16 @@ function mpResumeConnection(savedState) {
 
 // Guest: request refresh from host
 function mpRequestRefresh() {
+  // V10_113: If socket is dead, reconnect first (reset attempts so user can always manually retry)
+  if(!mpSocket || mpSocket.readyState !== WebSocket.OPEN){
+    if(mpRoom){
+      _mpReconnectAttempts = 0; // Reset so manual sync always works
+      console.log('[MP] Socket not open — reconnecting before refresh');
+      setStatus('Reconnecting...');
+      mpConnect(mpRoom);
+    }
+    return;
+  }
   if (mpIsHost) { mpRefreshAll(); return; }
   console.log('[MP] Requesting refresh from host');
   mpSendMove({ action: 'refresh_request', seat: mpSeat });
@@ -10166,6 +12011,9 @@ function showBidOverlay(show) {
         _nelloBtn.style.display = '';
         window._nelloDeclared = false;
         window._nelloMarks = 1;
+        _nelloWasDeclared = false;   // V10_111: Reset persistent flag at start of new bid round
+        _nelloDeclaredMarks = 1;
+        _nelloAllowedAtTrump = true; // V10_111: Reset, will be computed at end of bidding
         updateNelloButton();
       } else {
         _nelloBtn.style.display = 'none';
@@ -10660,9 +12508,11 @@ function buildTrumpOptions() {
   biddingPreviewActive = false;  // V10_105: Fix #8 — prevent bidding preview from intercepting trump clicks
   document.getElementById('btnTrumpConfirm').disabled = true;
 
-  // Check if Nello is available (bid at max: 42 for T42, 51 for TN51, or in multiplier mode)
+  // Check if Nello is available at trump selection
+  // V10_111: Use _nelloAllowedAtTrump (computed at end of bidding) to gate by restriction rules
   const maxBidForNello = GAME_MODE === 'MOON' ? 999 : (GAME_MODE === 'T42' ? 42 : 51);
-  const showNello = session.current_bid >= maxBidForNello || (biddingState && biddingState.inMultiplierMode);
+  const bidQualifies = session.current_bid >= maxBidForNello || (biddingState && biddingState.inMultiplierMode);
+  const showNello = bidQualifies && _nelloAllowedAtTrump;
 
   // Enable clicking on player's dominoes for trump selection
   enableTrumpDominoClicks();
@@ -10927,6 +12777,20 @@ function confirmNelloOpponent(){
 
   document.getElementById('nelloBackdrop').style.display = 'none';
 
+  // V10_121 Host Authority: Guest sends intent, host applies engine mutations
+  if(MULTIPLAYER_MODE && !mpIsHost){
+    // Guest: just send the opponent selection to host. Host will set up nello and broadcast nello_confirmed.
+    mpSendMove({ action: 'nello_intent', seat: mpSeat, selectedOpponent: selectedNelloOpponent, marks: pendingNelloMarks });
+    setStatus('Waiting for host to confirm nello...');
+    return;
+  }
+
+  // Host or single-player: execute nello setup
+  _executeNelloSetup(selectedNelloOpponent, pendingNelloMarks);
+}
+
+// Shared nello setup logic — called by host directly or via mpHandleNelloIntent
+function _executeNelloSetup(opponent, marks){
   // Get bidder seat and teammates (both partners on bidder's team sit out)
   const bidderSeat = session.bid_winner_seat !== undefined ? session.bid_winner_seat : 0;
 
@@ -10944,14 +12808,14 @@ function confirmNelloOpponent(){
   const activePlayers = [bidderSeat];
   for(let s = 0; s < session.game.player_count; s++){
     // Add opponents who are NOT sitting out
-    if((s % 2) !== (bidderSeat % 2) && s !== selectedNelloOpponent){
+    if((s % 2) !== (bidderSeat % 2) && s !== opponent){
       activePlayers.push(s);
     }
   }
 
   // Set up Nello with custom active players
   session.contract = 'NELLO';
-  session.bid_marks = pendingNelloMarks;
+  session.bid_marks = marks;
   session.game.set_trump_suit(null);
   session.game.set_active_players(activePlayers);
 
@@ -10964,6 +12828,12 @@ function confirmNelloOpponent(){
     const _ndBidder = session.bid_winner_seat !== undefined ? session.bid_winner_seat : 0;
     if(_ndBidder === getLocalSeat()){
       _needNelloDoublesPopup = true; // Show popup after setup
+    } else if(mpIsHost && mpIsAI && typeof mpIsAI === 'function' && mpIsAI(_ndBidder)){
+      // AI on host decides nello doubles mode
+      const _ndHand = session.game.hands[_ndBidder] || [];
+      nelloDoublesSuitActive = aiChooseNelloDoublesMode(_ndHand);
+      session.game.nello_doubles_suit = nelloDoublesSuitActive;
+      if(nelloDoublesSuitActive) setStatus('Nello: Doubles are their own suit');
     } else {
       const _ndHand = session.game.hands[_ndBidder] || [];
       nelloDoublesSuitActive = aiChooseNelloDoublesMode(_ndHand);
@@ -10979,14 +12849,15 @@ function confirmNelloOpponent(){
   for(const t of teammates){
     session.game.hands[t] = [];
   }
-  session.game.hands[selectedNelloOpponent] = [];
+  session.game.hands[opponent] = [];
 
   // Set leader to bidder
   session.game.leader = bidderSeat;
   session.game.current_player = bidderSeat;
+  _trackCpChange('confirmNelloOpponent');
 
   session.phase = PHASE_PLAYING;
-  const marksStr = pendingNelloMarks === 2 ? ' (2 Marks)' : '';
+  const marksStr = marks === 2 ? ' (2 Marks)' : '';
   session.status = `Nel-O${marksStr}: Lose all tricks to win.`;
 
   // Keep bid placeholders visible during play (user preference)
@@ -11006,6 +12877,13 @@ function confirmNelloOpponent(){
     bidderSeat,       // Bidder leads
     { team1: session.team_marks[0] || 0, team2: session.team_marks[1] || 0 }
   );
+
+  // V10_121: Host broadcasts nello_confirmed to all clients
+  if(MULTIPLAYER_MODE && mpIsHost){
+    mpSendMove({ action: 'nello_confirmed', seat: bidderSeat, selectedOpponent: opponent,
+      marks: marks, activePlayers: activePlayers.slice(), firstPlayer: bidderSeat,
+      nelloDoublesSuit: nelloDoublesSuitActive });
+  }
 
   // Sync sprites and update display
   syncSpritesWithGameState();
@@ -11097,6 +12975,7 @@ function setupAINello(bidderSeat, marks = 1){
   // Set leader to bidder
   session.game.leader = bidderSeat;
   session.game.current_player = bidderSeat;
+  _trackCpChange('aiNelloOpponent');
 
   session.phase = PHASE_PLAYING;
   const sitOutOpponentPlayer = seatToPlayer(sitOutOpponent);
@@ -12237,14 +14116,20 @@ function afterWidowSwap(){
     // Multiplayer: broadcast swap result and route trump selection through MP logic
     if(MULTIPLAYER_MODE){
       // If local player did the swap, broadcast it
-      if(bidderSeat === mpSeat && !mpSuppressSend){
+      if(bidderSeat === mpSeat){
         const newWidow = session.moon_widow ? [session.moon_widow[0], session.moon_widow[1]] : null;
-        mpSendMove({
-          action: 'widow_swap',
+        const swapPayload = {
           seat: bidderSeat,
           newWidow: newWidow,
           hand: session.game.hands[bidderSeat].map(t => [t[0], t[1]])
-        });
+        };
+        if(!mpIsHost){
+          // Guest: send intent to host
+          mpSendMove(Object.assign({ action: 'widow_swap_intent' }, swapPayload));
+        } else {
+          // Host: broadcast confirmed
+          mpSendMove(Object.assign({ action: 'widow_swap_confirmed' }, swapPayload));
+        }
       }
 
       // Route to MP trump selection
@@ -12256,14 +14141,15 @@ function afterWidowSwap(){
         // AI on host picks trump after swap
         const hand = session.game.hands[bidderSeat] || [];
         const trump = aiChooseTrump(hand, session.current_bid);
-        setStatus('P' + seatToVisual(bidderSeat) + ' (AI) selects trump: ' + (trump || 'NT'));
+        setStatus(getPlayerDisplayName(bidderSeat) + ' (AI) selects trump: ' + (trump || 'NT'));
         session.set_trump(trump);
         syncSpritesWithGameState();
         updateTrumpDisplay();
-        mpSendMove({ action: 'trump', trump: trump === null ? 'NT' : trump, seat: bidderSeat, marks: session.bid_marks, isAI: true });
+        mpSendMove({ action: 'trump_confirmed', trump: trump === null ? 'NT' : trump, seat: bidderSeat, marks: session.bid_marks, isAI: true,
+          activePlayers: session.game.active_players ? session.game.active_players.slice() : null, firstPlayer: session.game.current_player });
         setTimeout(() => mpCheckWhoseTurn(), 500);
       } else {
-        setStatus('P' + seatToVisual(bidderSeat) + ' selecting trump...');
+        setStatus(getPlayerDisplayName(bidderSeat) + ' selecting trump...');
       }
       return;
     }
@@ -12277,7 +14163,7 @@ function afterWidowSwap(){
       const hand = session.game.hands[bidderSeat] || [];
       const trump = aiChooseTrump(hand, session.current_bid);
       const trumpDisplay = trump === "NT" ? "No Trumps" : trump + "s";
-      session.status = `P${seatToVisual(bidderSeat)} bid ${session.current_bid}. Trump: ${trumpDisplay}`;
+      session.status = `P${seatToPlayer(bidderSeat)} bid ${session.current_bid}. Trump: ${trumpDisplay}`;
       setStatus(session.status);
       session.set_trump(trump);
       syncSpritesWithGameState();
@@ -13676,6 +15562,34 @@ async function handlePlayer1Click(spriteSlotIndexOrElement){
     return;
   }
 
+  // ═══ V10_121: GUEST PATH — Send intent, lift tile, wait for host confirmation ═══
+  if (MULTIPLAYER_MODE && !mpIsHost) {
+    console.log('[MP-HA] Guest sending play intent:', clickedTile);
+    waitingForPlayer1 = false;
+    disablePlayer1Clicks();
+    clearHint();
+    clearPlayer1ValidStates();
+
+    // Minimize lay down button if showing
+    if (layDownState && !layDownMinimized) {
+      document.getElementById('layDownBtnGroup').style.display = 'none';
+      document.getElementById('layDownMinDot').style.display = 'block';
+      layDownMinimized = true;
+    }
+    hideCallDoubleBanner();
+    if (_turnRecoveryTimer) { clearTimeout(_turnRecoveryTimer); _turnRecoveryTimer = null; }
+
+    // Lift tile for visual feedback
+    _liftTileForIntent(spriteSlotIndex);
+
+    // Send intent to host
+    mpSendMove({ action: 'play_intent', seat: mpSeat, tile: clickedTile });
+    setStatus('Playing...');
+    return; // ← Guest stops here. mpHandlePlayConfirmed() continues on receipt.
+  }
+
+  // ═══ HOST / SINGLE-PLAYER PATH — Execute locally ═══
+
   // If lay down button is showing, minimize to dot (player chose to play a tile)
   if(layDownState && !layDownMinimized) {
     document.getElementById('layDownBtnGroup').style.display = 'none';
@@ -13687,10 +15601,14 @@ async function handlePlayer1Click(spriteSlotIndexOrElement){
   // Hide Call for Double banner if showing (player clicked their forced double)
   hideCallDoubleBanner();
 
+  // V10_115: Clear turn recovery timer — player is playing
+  if(_turnRecoveryTimer) { clearTimeout(_turnRecoveryTimer); _turnRecoveryTimer = null; }
+
   isAnimating = true;
   waitingForPlayer1 = false;
   disablePlayer1Clicks();
   clearHint();
+  clearPlayer1ValidStates(); // V10_121: Remove faded tile highlighting immediately after play
 
   setStatus(PASS_AND_PLAY_MODE ? 'P' + (ppClickSeat + 1) + ' plays...' : 'You play...');
 
@@ -13711,14 +15629,20 @@ async function handlePlayer1Click(spriteSlotIndexOrElement){
 
   // Use the game engine to play the tile
   const isLead = session.game.current_trick.length === 0;
+  let _needCallDoubleCheck = false;
   try {
     const playSeat = MULTIPLAYER_MODE ? mpSeat : ppClickSeat;
     session.play(playSeat, gameHandIndex);
-    // Send play via multiplayer
-    if (MULTIPLAYER_MODE && !mpSuppressSend) {
-      mpSendMove({ action: 'play', seat: playSeat, tile: clickedTile, trickNumber: session.game.trick_number, nextPlayer: session.game.current_player });
-      // Track play on guest side for host reconnection
-      mpGuestTrackPlay(playSeat, clickedTile);
+    // V10_121: For host MP, defer broadcast until after Call for Double check
+    _needCallDoubleCheck = isLead && session.game.trick_number === 0 && callForDoubleEnabled;
+    // V10_121: Host broadcasts play_confirmed (not play). Deferred if Call for Double may trigger.
+    if (MULTIPLAYER_MODE && mpIsHost && !_needCallDoubleCheck) {
+      const _trickComplete = session.game._sanitized_trick().length >= session.game.active_players.length;
+      mpSendMove({ action: 'play_confirmed', seat: playSeat, tile: clickedTile, isLead: isLead,
+        trickNumber: session.game.trick_number, nextPlayer: session.game.current_player,
+        currentPlayer: session.game.current_player, trickComplete: _trickComplete,
+        trickWinner: _trickComplete ? session.game._determine_trick_winner() : null,
+        handComplete: false, handResult: null });
     }
   } catch(e) {
     console.log("Play error:", e);
@@ -13735,7 +15659,8 @@ async function handlePlayer1Click(spriteSlotIndexOrElement){
     const bidder = session.bid_winner_seat !== undefined ? session.bid_winner_seat : 0;
     if(bidder === localSeat){
       // Human bidder — show button bar, pause animation until decision
-      _pendingCallDoubleAnim = { seat: MULTIPLAYER_MODE ? mpSeat : ppClickSeat, spriteSlotIndex, isLead, aiRec, prePlayContext, ppClickSeat };
+      _pendingCallDoubleAnim = { seat: MULTIPLAYER_MODE ? mpSeat : ppClickSeat, spriteSlotIndex, isLead, aiRec, prePlayContext, ppClickSeat,
+        mpPlayData: MULTIPLAYER_MODE ? { seat: MULTIPLAYER_MODE ? mpSeat : ppClickSeat, tile: clickedTile, trickNumber: session.game.trick_number, nextPlayer: session.game.current_player } : null };
       document.getElementById('callDoubleBtnGroup').style.display = 'flex';
       return; // Pause — resumeAfterCallDouble() will continue
     } else {
@@ -13744,10 +15669,29 @@ async function handlePlayer1Click(spriteSlotIndexOrElement){
       if(shouldCall){
         callForDoubleActive = true;
         session.game.force_double_trump = true;
-        setStatus('P' + seatToPlayer(bidder) + ' calls for the double!');
+        setStatus(getPlayerDisplayName(bidder) + ' calls for the double!');
         applyForcedDoubleGlow();
       }
+      // V10_121: Host broadcasts deferred play_confirmed now
+      if(MULTIPLAYER_MODE && mpIsHost){
+        const playSeat = mpSeat;
+        const _trickComplete = session.game._sanitized_trick().length >= session.game.active_players.length;
+        mpSendMove({ action: 'play_confirmed', seat: playSeat, tile: clickedTile, isLead: isLead,
+          trickNumber: session.game.trick_number, nextPlayer: session.game.current_player,
+          currentPlayer: session.game.current_player, trickComplete: _trickComplete,
+          trickWinner: _trickComplete ? session.game._determine_trick_winner() : null,
+          handComplete: false, handResult: null });
+      }
     }
+  } else if(_needCallDoubleCheck && MULTIPLAYER_MODE && mpIsHost){
+    // V10_121: Deferred broadcast — Call for Double didn't trigger
+    const playSeat = mpSeat;
+    const _trickComplete = session.game._sanitized_trick().length >= session.game.active_players.length;
+    mpSendMove({ action: 'play_confirmed', seat: playSeat, tile: clickedTile, isLead: isLead,
+      trickNumber: session.game.trick_number, nextPlayer: session.game.current_player,
+      currentPlayer: session.game.current_player, trickComplete: _trickComplete,
+      trickWinner: _trickComplete ? session.game._determine_trick_winner() : null,
+      handComplete: false, handResult: null });
   }
 
   // Animate the domino to the center (seat 0 = player 1, pass AI rec and pre-play context)
@@ -13775,8 +15719,21 @@ async function handlePlayer1Click(spriteSlotIndexOrElement){
 
     // Check if hand is done
     if(session.maybe_finish_hand()){
+      // V10_121: Host broadcasts hand-end result to guests
+      if (MULTIPLAYER_MODE && mpIsHost) {
+        mpSendMove({ action: 'play_confirmed', seat: MULTIPLAYER_MODE ? mpSeat : ppClickSeat,
+          tile: clickedTile, isLead: isLead, trickNumber: session.game.trick_number,
+          nextPlayer: session.game.current_player, currentPlayer: session.game.current_player,
+          trickComplete: true, trickWinner: null,
+          handComplete: true, handResult: {
+            status: session.status,
+            teamPoints: [session.game.team_points[0], session.game.team_points[1]],
+            teamMarks: [session.team_marks[0], session.team_marks[1]]
+          }
+        });
+        mpSaveHostState();
+      }
       setStatus(session.status);
-      // Update scores IMMEDIATELY so they display before the button appears
       team1Score = session.game.team_points[0];
       team2Score = session.game.team_points[1];
       team1Marks = session.team_marks[0];
@@ -13784,7 +15741,6 @@ async function handlePlayer1Click(spriteSlotIndexOrElement){
       updateScoreDisplay();
       logEvent('HAND_END', { status: session.status });
       autoSave();
-      // Show end of hand popup after a brief delay (scores already visible)
       setTimeout(() => {
         if (MULTIPLAYER_MODE) { mpShowHandEnd(); } else { showHandEndPopup(); }
       }, 800);
@@ -14225,6 +16181,19 @@ function updatePlayer1ValidStates(){
   });
 }
 
+// V10_121: Clear valid/invalid highlighting on all local player's tiles
+function clearPlayer1ValidStates(){
+  const localSeat = getLocalSeat();
+  const p1Sprites = sprites[localSeat] || [];
+  p1Sprites.forEach((data) => {
+    if(data && data.sprite && data.tile){
+      const isTrump = (session && session.game.trump_suit !== null && session.game.trump_suit !== undefined)
+        ? session.game._is_trump_tile(data.tile) : false;
+      data.sprite.setState(isTrump, true); // highlighted if trump, but all valid (no fading)
+    }
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  HINT SYSTEM — highlight AI-recommended domino with white shadow
 // ═══════════════════════════════════════════════════════════════════
@@ -14327,10 +16296,24 @@ function processAIBid(seat) {
 }
 
 function advanceBidding() {
+  // FIX1: Prevent double-advance during bidding completion
+  if (_biddingCompleting) {
+    console.log('[FIX1] Bidding already completing, preventing double-advance');
+    return { done: true };
+  }
+  
   const nextIndex = biddingState.bidderOrder.indexOf(biddingState.currentBidder) + 1;
 
   if (nextIndex >= biddingState.bidderOrder.length) {
-    return finalizeBidding();
+    _biddingCompleting = true; // FIX1: Set flag before finalize
+    console.log('[FIX1] Bidding completing, flag set');
+    const result = finalizeBidding();
+    // Reset flag after a delay to allow all messages to propagate
+    setTimeout(() => { 
+      _biddingCompleting = false; 
+      console.log('[FIX1] Bidding completion flag reset');
+    }, 2000);
+    return result;
   }
 
   biddingState.currentBidder = biddingState.bidderOrder[nextIndex];
@@ -14338,11 +16321,18 @@ function advanceBidding() {
 }
 
 function finalizeBidding() {
+  _clearBiddingTimers(); // V10_115: Cancel any pending bidding timers
   if (biddingState.highBidder === null) {
     session.status = "Everyone passed. Redealing...";
     setStatus(session.status);
     setTimeout(() => {
-      startNewHand();
+      // V10_121d: In MP mode, host must broadcast new deal to guests
+      if (MULTIPLAYER_MODE && mpIsHost) {
+        mpSendMove({ action: 'next_hand' });
+        mpHostDeal();
+      } else {
+        startNewHand();
+      }
     }, 1500);
     return { done: true, redeal: true };
   }
@@ -14375,29 +16365,77 @@ function finalizeBidding() {
         showWidowSwap();
       } else if (mpIsHost && mpIsAI(bidWinnerSeat)) {
         // AI won on host - do widow swap then trump
-        setStatus('P' + seatToVisual(bidWinnerSeat) + ' (AI) swapping widow...');
+        setStatus(getPlayerDisplayName(bidWinnerSeat) + ' (AI) swapping widow...');
         const oldWidow = session.moon_widow ? [session.moon_widow[0], session.moon_widow[1]] : null;
         aiWidowSwap(bidWinnerSeat);
         // After AI swap, broadcast result
         const newWidow = session.moon_widow ? [session.moon_widow[0], session.moon_widow[1]] : null;
         mpSendMove({
-          action: 'widow_swap',
+          action: 'widow_swap_confirmed',
           seat: bidWinnerSeat,
           newWidow: newWidow,
+          hand: session.game.hands[bidWinnerSeat].map(t => [t[0], t[1]]),
           isAI: true
         });
         // afterWidowSwap() handles AI trump pick, but in MP we need to broadcast trump too
         // afterWidowSwap triggers trump selection which will go through the normal MP trump flow
       } else {
         // Remote human won - wait for their widow swap result
-        setStatus('P' + seatToVisual(bidWinnerSeat) + ' won the bid. Widow swap...');
+        setStatus(getPlayerDisplayName(bidWinnerSeat) + ' won the bid. Widow swap...');
       }
       biddingState = null;
-      return;
+      return { done: true }; // V11: Must return object so callers can read advance.done
     }
 
     if (bidWinnerSeat === mpSeat) {
-      // We won the bid - show trump selection UI
+      // V10_111: If Nello was declared during bidding AND nelloDeclareMode is ON, skip trump selection
+      if(_nelloWasDeclared && nelloDeclareMode && GAME_MODE !== 'MOON'){
+        mpHideWaiting();
+        const nelloMarks = _nelloDeclaredMarks;
+        session.bid_marks = nelloMarks;
+        if(GAME_MODE === 'T42'){
+          // T42: direct Nello setup
+          session.set_trump('NELLO');
+          syncSpritesWithGameState();
+          updateTrumpDisplay();
+          const _nelloActive = session.game.active_players ? session.game.active_players.slice() : [0,1,2,3];
+          mpSendMove({ action: 'trump_confirmed', trump: 'NELLO', seat: mpSeat, marks: nelloMarks, nello: true, activePlayers: _nelloActive, firstPlayer: session.game.current_player });
+          // Check nello doubles mode
+          if(nelloDoublesMode === 'doubles_only'){
+            nelloDoublesSuitActive = true;
+            session.game.nello_doubles_suit = true;
+          } else if(nelloDoublesMode === 'player_chooses'){
+            document.getElementById('nelloDoublesBackdrop').style.display = 'flex';
+            biddingState = null;
+            return { done: true }; // V11: Must return object for callers
+          } else {
+            nelloDoublesSuitActive = false;
+            session.game.nello_doubles_suit = false;
+          }
+          mpCheckWhoseTurn();
+        } else {
+          // TN51: still need opponent selection
+          showNelloOpponentSelection(nelloMarks);
+        }
+        biddingState = null;
+        return { done: true }; // V11: Must return object for callers
+      }
+      // V10_111: Compute Nello eligibility at trump selection for MP
+      if(nelloDeclareMode){
+        _nelloAllowedAtTrump = false;
+      } else if(nelloRestrictFirst && biddingState){
+        const winMarks = biddingState.highMarks || 1;
+        if(!biddingState.inMultiplierMode && biddingState.highBid < (GAME_MODE === 'T42' ? 42 : 51)){
+          _nelloAllowedAtTrump = (winMarks <= 1);
+        } else if(!biddingState.inMultiplierMode){
+          _nelloAllowedAtTrump = (winMarks <= 2);
+        } else {
+          _nelloAllowedAtTrump = (winMarks <= (biddingState.highMultiplier || 1) + 1);
+        }
+      } else {
+        _nelloAllowedAtTrump = true;
+      }
+      // Normal trump selection UI
       session.phase = PHASE_NEED_TRUMP;
       setStatus('You won the bid! Select trump.');
       mpHideWaiting();
@@ -14406,44 +16444,47 @@ function finalizeBidding() {
       // AI won the bid on host - pick trump and broadcast
       const aiHand = session.game.hands[bidWinnerSeat];
       const aiTrump = aiChooseTrump(aiHand, biddingState.highBid);
-      setStatus('P' + seatToVisual(bidWinnerSeat) + ' (AI) selects trump: ' + (aiTrump || 'NT'));
+      setStatus(getPlayerDisplayName(bidWinnerSeat) + ' (AI) selects trump: ' + (aiTrump || 'NT'));
       // Apply trump
       session.set_trump(aiTrump);
       syncSpritesWithGameState();
       updateTrumpDisplay();
-      // Broadcast to other players
-      mpSendMove({ action: 'trump', trump: aiTrump === null ? 'NT' : aiTrump, seat: bidWinnerSeat, marks: session.bid_marks, isAI: true });
+      // V10_121: Host broadcasts trump_confirmed to guests
+      mpSendMove({ action: 'trump_confirmed', trump: aiTrump === null ? 'NT' : aiTrump, seat: bidWinnerSeat, marks: session.bid_marks, isAI: true,
+        activePlayers: session.game.active_players ? session.game.active_players.slice() : null, firstPlayer: session.game.current_player });
       // Start play
       setTimeout(() => mpCheckWhoseTurn(), 500);
     } else {
-      // Remote human player won - wait for their trump selection (status bar only)
-      setStatus('P' + seatToVisual(bidWinnerSeat) + ' won the bid. Selecting trump...');
+      // Remote human player won - wait for their trump selection
+      session.phase = PHASE_NEED_TRUMP; // V10_121c: Set phase so state_sync sends correct phase
+      setStatus(getPlayerDisplayName(bidWinnerSeat) + ' won the bid. Selecting trump...');
     }
     biddingState = null;
-    return;
+    return { done: true }; // V11: Must return object so callers can read advance.done
   }
 
   const winnerSeat = biddingState.highBidder;
-  const winnerPlayer = seatToVisual(winnerSeat);
+  const winnerVisual = seatToVisual(winnerSeat);  // for placeholder positioning
+  const winnerLabel = seatToPlayer(winnerSeat);    // for status bar labels
   const isHumanControlled = ppIsHuman(winnerSeat);
 
   // Highlight the winning bid
   const displayBid = biddingState.highMarks > 1 ? `${biddingState.highMarks}x` : biddingState.highBid;
-  setPlaceholderText(winnerPlayer, displayBid, 'winner');
+  setPlaceholderText(winnerVisual, displayBid, 'winner');
 
   if (!isHumanControlled) {
     // AI won the bid - they pick trump
     const hand = session.game.hands[winnerSeat] || [];
     const trump = aiChooseTrump(hand, biddingState.highBid);
 
-    session.status = `P${winnerPlayer} wins bid (${biddingState.highBid}). Choosing trump...`;
+    session.status = `P${winnerLabel} wins bid (${biddingState.highBid}). Choosing trump...`;
     renderAll();  // Update UI to show status
 
     setTimeout(() => {
       if(GAME_MODE === 'MOON' && session.moon_widow){
         // Moon: widow swap first, then trump (afterWidowSwap handles trump)
         session.phase = PHASE_MOON_WIDOW;
-        session.status = `P${winnerPlayer} bid ${biddingState.highBid}. Widow swap...`;
+        session.status = `P${winnerLabel} bid ${biddingState.highBid}. Widow swap...`;
         setStatus(session.status);
         aiWidowSwap(winnerSeat);
         // afterWidowSwap() will handle AI trump pick
@@ -14452,7 +16493,7 @@ function finalizeBidding() {
 
       const trump = aiChooseTrump(session.game.hands[winnerSeat] || [], biddingState.highBid);
       const trumpDisplay = trump === "NT" ? "No Trumps" : trump === "NELLO" ? "Nel-O" : trump + "s";
-      session.status = `P${winnerPlayer} bid ${biddingState.highBid}. Trump: ${trumpDisplay}`;
+      session.status = `P${winnerLabel} bid ${biddingState.highBid}. Trump: ${trumpDisplay}`;
 
       // Handle Nello with AI opponent selection
       if(trump === "NELLO"){
@@ -14495,7 +16536,7 @@ function finalizeBidding() {
     // Moon: widow swap first, then trump
     session.phase = PHASE_MOON_WIDOW;
     if (PASS_AND_PLAY_MODE) {
-      const bidderLabel = `P${seatToVisual(winnerSeat)}`;
+      const bidderLabel = `P${seatToPlayer(winnerSeat)}`;
       session.status = `${bidderLabel} won the bid (${biddingState.highBid}). Widow swap...`;
       setStatus(session.status);
       ppRotateBoard(winnerSeat);
@@ -14507,11 +16548,86 @@ function finalizeBidding() {
     return { done: true, winner: winnerSeat, bid: biddingState.highBid };
   }
 
+  // V10_111: Declared Nello skip — when nelloDeclareMode is ON and Nello was declared during bidding,
+  // skip trump selection entirely and go straight to Nello play
+  if(_nelloWasDeclared && nelloDeclareMode && GAME_MODE !== 'MOON'){
+    session.current_bid = biddingState.highBid;
+    session.bid_marks = _nelloDeclaredMarks;
+    session.bid_winner_seat = winnerSeat;
+    initOffTracker();
+
+    // Update placeholder to show Nello declaration
+    const nelloDisplay = _nelloDeclaredMarks > 1 ? `Nel ${_nelloDeclaredMarks}x` : 'Nel 1x';
+    setPlaceholderText(seatToVisual(winnerSeat), nelloDisplay, 'winner');
+
+    if(GAME_MODE === 'T42'){
+      // T42: partner auto sits out, go straight to play
+      session.set_trump('NELLO');
+      syncSpritesWithGameState();
+      updateTrumpDisplay();
+
+      // Check nello doubles mode
+      if(nelloDoublesMode === 'doubles_only'){
+        nelloDoublesSuitActive = true;
+        session.game.nello_doubles_suit = true;
+      } else if(nelloDoublesMode === 'player_chooses' && winnerSeat === getLocalSeat()){
+        document.getElementById('nelloDoublesBackdrop').style.display = 'flex';
+        return { done: true, winner: winnerSeat, bid: biddingState.highBid };
+      } else if(nelloDoublesMode === 'player_chooses'){
+        const bidderHand = session.game.hands[winnerSeat] || [];
+        nelloDoublesSuitActive = aiChooseNelloDoublesMode(bidderHand);
+        session.game.nello_doubles_suit = nelloDoublesSuitActive;
+      } else {
+        nelloDoublesSuitActive = false;
+        session.game.nello_doubles_suit = false;
+      }
+
+      renderAll();
+      if(session.game.current_player === getLocalSeat()){
+        waitingForPlayer1 = true;
+        enablePlayer1Clicks();
+        updatePlayer1ValidStates();
+        showHint();
+      } else {
+        waitingForPlayer1 = false;
+        disablePlayer1Clicks();
+        runPlayStep();
+      }
+    } else {
+      // TN51: still need opponent selection (not a trump pick — it's Nello-specific)
+      showNelloOpponentSelection(_nelloDeclaredMarks);
+    }
+    return { done: true, winner: winnerSeat, bid: biddingState.highBid };
+  }
+
+  // V10_111: Compute whether Nello should be available at trump selection
+  // If nelloDeclareMode is ON, Nello can only be played by declaring during bidding — hide at trump
+  // If nelloRestrictFirst is ON, check if the winning bid qualifies
+  if(nelloDeclareMode){
+    _nelloAllowedAtTrump = false;
+  } else if(nelloRestrictFirst && biddingState){
+    // Nello at trump selection would be at the winning bid's marks level
+    // Check: is that marks level valid given the restriction rule (must be +1 from prior highest)?
+    const winMarks = biddingState.highMarks || 1;
+    if(!biddingState.inMultiplierMode && biddingState.highBid < (GAME_MODE === 'T42' ? 42 : 51)){
+      // Nobody bid max — only 1x Nello allowed
+      _nelloAllowedAtTrump = (winMarks <= 1);
+    } else if(!biddingState.inMultiplierMode){
+      // Bid is at max but not multiplier mode — 1x or 2x allowed
+      _nelloAllowedAtTrump = (winMarks <= 2);
+    } else {
+      // In multiplier mode — Nello must be at most highMultiplier + 1
+      _nelloAllowedAtTrump = (winMarks <= (biddingState.highMultiplier || 1) + 1);
+    }
+  } else {
+    _nelloAllowedAtTrump = true;
+  }
+
   session.phase = PHASE_NEED_TRUMP;
 
   // In PP mode, rotate board to the bid winner before showing trump overlay
   if (PASS_AND_PLAY_MODE) {
-    const bidderLabel = `P${seatToVisual(winnerSeat)}`;
+    const bidderLabel = `P${seatToPlayer(winnerSeat)}`;
     session.status = `${bidderLabel} won the bid (${biddingState.highBid}). Pick trump.`;
     setStatus(session.status);
     // Rotate board to bid winner (no privacy screen — same player just bid)
@@ -14549,32 +16665,33 @@ function runBiddingStep() {
     const playerLabel = PASS_AND_PLAY_MODE ? `P${seatToPlayer(currentBidder)}'s` : "Your";
     const currentBidDisplay = (biddingState.highMarks > 1) ? `${biddingState.highMarks}x` : biddingState.highBid;
     session.status = biddingState.highBid > 0
-      ? `Current bid: ${currentBidDisplay} by P${seatToVisual(biddingState.highBidder)}. ${playerLabel} bid?`
+      ? `Current bid: ${currentBidDisplay} by P${seatToPlayer(biddingState.highBidder)}. ${playerLabel} bid?`
       : `${playerLabel} turn to bid.`;
     setStatus(session.status);
     showBidOverlay(true);
     return;
   }
 
-  session.status = `P${seatToVisual(currentBidder)} is thinking...`;
+  session.status = `P${seatToPlayer(currentBidder)} is thinking...`;
   setStatus(session.status);
 
   setTimeout(() => {
     const result = processAIBid(currentBidder);
-    const playerNum = seatToVisual(currentBidder);
+    const playerVisual = seatToVisual(currentBidder);  // for placeholder position
+    const playerLabel = seatToPlayer(currentBidder);    // for status label
 
     if (result.action === "bid") {
       const displayBid = (result.marks && result.marks > 1) ? `${result.marks}x` : result.bid;
-      session.status = `P${playerNum} bids ${displayBid}!`;
-      setPlaceholderText(playerNum, displayBid, 'bid');
+      session.status = `P${playerLabel} bids ${displayBid}!`;
+      setPlaceholderText(playerVisual, displayBid, 'bid');
     } else {
-      session.status = `P${playerNum} passes.`;
-      setPlaceholderText(playerNum, 'Pass', 'pass');
+      session.status = `P${playerLabel} passes.`;
+      setPlaceholderText(playerVisual, 'Pass', 'pass');
     }
     setStatus(session.status);
 
     setTimeout(() => {
-      const advance = advanceBidding();
+      const advance = advanceBidding() || { done: true }; // V11: defensive null-check
       if (!advance.done) {
         runBiddingStep();
       }
@@ -14619,31 +16736,67 @@ function humanBid(bidAmount, marks = 1) {
     return false;
   }
 
+  // V10_121: Guest sends intent to host instead of modifying biddingState
+  if (MULTIPLAYER_MODE && !mpIsHost) {
+    const bidPayload = { action: 'bid_intent', seat: currentBidder, bid: actualBid, marks: marks, multiplier: biddingState.inMultiplierMode ? biddingState.highMultiplier : 0 };
+    if (isMoonShoot) bidPayload.moonShoot = true;
+    if (window._nelloDeclared) {
+      _nelloWasDeclared = true;
+      _nelloDeclaredMarks = marks;
+    }
+    window._nelloDeclared = false;
+    mpSendMove(bidPayload);
+    showBidOverlay(false);
+    setStatus('Waiting for confirmation...');
+    _startIntentTimeout('bid'); // V11: Timeout if host is unreachable
+    // Guest doesn't update biddingState or advance — wait for bid_confirmed from host
+    return true;
+  }
+
+  // V10_121: Host or single-player — update biddingState locally
   biddingState.highBid = actualBid;
   biddingState.highBidder = currentBidder;
   biddingState.highMarks = marks;
   biddingState.bids.push({ seat: currentBidder, playerNumber: seatToPlayer(currentBidder), bid: actualBid });
 
-  // Send bid via multiplayer
-  if (MULTIPLAYER_MODE && !mpSuppressSend) {
-    const bidPayload = { action: 'bid', seat: currentBidder, bid: actualBid, marks: marks, multiplier: biddingState.inMultiplierMode ? biddingState.highMultiplier : 0 };
-    if (isMoonShoot) bidPayload.moonShoot = true;
-    mpSendMove(bidPayload);
-  }
+  // V10_121: Host or single-player path — bid_confirmed broadcast is below after advanceBidding
 
   // Display bid in placeholder with animation
   const playerNum = seatToVisual(currentBidder);
-  let displayBid = marks > 1 ? `${marks}x` : actualBid;
-  // V10_109: If Nello declared and declare mode is on, show "Nello" in placeholder
-  if(window._nelloDeclared && nelloDeclareMode){
+  let displayBid = marks > 1 ? `${marks}x` : `${actualBid}`;
+  if(window._nelloDeclared){
     displayBid = 'Nel ' + (marks > 1 ? marks + 'x' : '1x');
+    _nelloWasDeclared = true;
+    _nelloDeclaredMarks = marks;
   }
-  window._nelloDeclared = false; // Reset after display
+  window._nelloDeclared = false;
   setPlaceholderText(playerNum, displayBid, 'bid');
 
   showBidOverlay(false);
 
-  const advance = advanceBidding();
+  const advance = advanceBidding() || { done: true }; // V11: defensive null-check
+
+  // V10_121: Host broadcasts confirmed bid to all guests
+  if (MULTIPLAYER_MODE && mpIsHost) {
+    const confirmed = {
+      action: 'bid_confirmed',
+      seat: currentBidder,
+      bid: actualBid,
+      marks: marks,
+      multiplier: biddingState ? (biddingState.inMultiplierMode ? biddingState.highMultiplier : 0) : 0,
+      moonShoot: isMoonShoot,
+      displayBid: displayBid,
+      biddingDone: advance.done || false,
+      nextBidder: biddingState ? biddingState.currentBidder : null,
+      bidWinner: advance.done ? (biddingState ? biddingState.highBidder : session.bid_winner_seat) : null,
+      winningBid: advance.done ? (biddingState ? biddingState.highBid : session.current_bid) : null,
+      winningMarks: advance.done ? (biddingState ? biddingState.highMarks : session.bid_marks) : null,
+      redeal: advance.redeal || false
+    };
+    mpSendMove(confirmed);
+    mpSaveHostState();
+  }
+
   if (!advance.done) {
     if (MULTIPLAYER_MODE) {
       mpRunBiddingStep();
@@ -14660,21 +16813,42 @@ function humanPass() {
   const currentBidder = biddingState.currentBidder;
   if (!ppIsHuman(currentBidder)) return false;
 
+  // V10_121: Guest sends intent to host
+  if (MULTIPLAYER_MODE && !mpIsHost) {
+    mpSendMove({ action: 'pass_intent', seat: currentBidder });
+    showBidOverlay(false);
+    setStatus('Waiting for confirmation...');
+    _startIntentTimeout('pass'); // V11: Timeout if host is unreachable
+    return true;
+  }
+
+  // V10_121: Host or single-player path — process locally
   biddingState.passCount++;
   biddingState.bids.push({ seat: currentBidder, playerNumber: seatToPlayer(currentBidder), bid: "pass" });
 
-  // Send pass via multiplayer
-  if (MULTIPLAYER_MODE && !mpSuppressSend) {
-    mpSendMove({ action: 'pass', seat: currentBidder });
-  }
-
-  // Display pass in placeholder with animation
   const playerNum = seatToVisual(currentBidder);
   setPlaceholderText(playerNum, 'Pass', 'pass');
 
   showBidOverlay(false);
 
-  const advance = advanceBidding();
+  const advance = advanceBidding() || { done: true }; // V11: defensive null-check
+
+  // V10_121: Host broadcasts confirmed pass to all guests
+  if (MULTIPLAYER_MODE && mpIsHost) {
+    const confirmed = {
+      action: 'pass_confirmed',
+      seat: currentBidder,
+      biddingDone: advance.done || false,
+      nextBidder: biddingState ? biddingState.currentBidder : null,
+      bidWinner: advance.done ? (biddingState ? biddingState.highBidder : session.bid_winner_seat) : null,
+      winningBid: advance.done ? (biddingState ? biddingState.highBid : session.current_bid) : null,
+      winningMarks: advance.done ? (biddingState ? biddingState.highMarks : session.bid_marks) : null,
+      redeal: advance.redeal || false
+    };
+    mpSendMove(confirmed);
+    mpSaveHostState();
+  }
+
   if (!advance.done) {
     if (MULTIPLAYER_MODE) {
       mpRunBiddingStep();
@@ -14918,7 +17092,7 @@ async function ppAIPlayLoop() {
         if(aiShouldCallForDouble(bidder)){
           callForDoubleActive = true;
           session.game.force_double_trump = true;
-          setStatus('P' + (bidder + 1) + ' calls for the double!');
+          setStatus(getPlayerDisplayName(bidder) + ' calls for the double!');
           applyForcedDoubleGlow();
         }
       }
@@ -15068,6 +17242,17 @@ async function resumeAfterCallDouble(){
   _pendingCallDoubleAnim = null;
 
   if(pending){
+    // V10_121: Host broadcasts the deferred play_confirmed now
+    if(MULTIPLAYER_MODE && mpIsHost && pending.mpPlayData){
+      const pd = pending.mpPlayData;
+      const _trickComplete = session.game._sanitized_trick().length >= session.game.active_players.length;
+      mpSendMove({ action: 'play_confirmed', seat: pd.seat, tile: pd.tile, isLead: true,
+        trickNumber: pd.trickNumber, nextPlayer: pd.nextPlayer,
+        currentPlayer: session.game.current_player, trickComplete: _trickComplete,
+        trickWinner: _trickComplete ? session.game._determine_trick_winner() : null,
+        handComplete: false, handResult: null, callDouble: callForDoubleActive });
+    }
+
     // Animate the lead tile that was paused
     await playDomino(pending.seat, pending.spriteSlotIndex, pending.isLead, pending.aiRec, pending.prePlayContext);
 
@@ -15086,6 +17271,19 @@ async function resumeAfterCallDouble(){
         currentTrick++;
       }
       if(session.maybe_finish_hand()){
+        // V10_121: Host broadcasts hand-end play_confirmed
+        if(MULTIPLAYER_MODE && mpIsHost && pending.mpPlayData){
+          const pd = pending.mpPlayData;
+          mpSendMove({ action: 'play_confirmed', seat: pd.seat, tile: pd.tile, isLead: true,
+            trickNumber: session.game.trick_number, nextPlayer: session.game.current_player,
+            currentPlayer: session.game.current_player, trickComplete: true,
+            trickWinner: session.game._determine_trick_winner ? session.game._determine_trick_winner() : null,
+            handComplete: true, handResult: {
+              status: session.status,
+              teamPoints: [session.game.team_points[0], session.game.team_points[1]],
+              teamMarks: [session.team_marks[0], session.team_marks[1]]
+            }});
+        }
         setStatus(session.status);
         team1Score = session.game.team_points[0];
         team2Score = session.game.team_points[1];
@@ -15098,6 +17296,7 @@ async function resumeAfterCallDouble(){
           if(MULTIPLAYER_MODE){ mpShowHandEnd(); } else { showHandEndPopup(); }
         }, 800);
         isAnimating = false;
+        if(MULTIPLAYER_MODE && mpIsHost) mpSaveHostState();
         return;
       }
       checkLayDown();
@@ -15108,6 +17307,7 @@ async function resumeAfterCallDouble(){
 
   // Resume AI/player turns
   if(MULTIPLAYER_MODE){
+    if(mpIsHost) mpSaveHostState();
     mpCheckWhoseTurn();
   } else if(PASS_AND_PLAY_MODE){
     setTimeout(() => maybeAIKick(), 100);
@@ -15223,20 +17423,38 @@ function resumeAfterNelloDoublesChoice(){
 }
 
 function confirmTrumpSelection(){
-  // In multiplayer, send trump selection to others
-  if (MULTIPLAYER_MODE && !mpSuppressSend && selectedTrump !== null) {
-    const trumpVal = selectedTrump;
-    if (trumpVal === 'NELLO' || trumpVal === 'NELLO_2') {
-      // Nello will be sent after opponent selection
-    } else {
-      mpSendMove({ action: 'trump', trump: trumpVal, seat: mpSeat, marks: session.bid_marks });
-    }
-  }
   const trump = selectedTrump;
   if(trump === null || trump === undefined){
     alert("Please select a trump first!");
     return;
   }
+
+  // V10_121: Guest sends trump intent to host instead of calling set_trump
+  if (MULTIPLAYER_MODE && !mpIsHost) {
+    disableTrumpDominoClicks();
+    clearTrumpHighlights();
+    document.getElementById('trumpBackdrop').style.display = 'none';
+    trumpSelectionActive = false;
+    selectedTrump = null;
+
+    // Build intent payload
+    const trumpVal = trump;
+    const isNello = (trumpVal === 'NELLO' || trumpVal === 'NELLO_2');
+    if (isNello) {
+      // For Nello in T42, guest sends nello trump intent directly
+      // For Nello in TN51, opponent selection happens first — but we still send intent
+      // The host will handle the nello setup
+      const nelloMarks = session.bid_marks || 1;
+      mpSendMove({ action: 'trump_intent', trump: trumpVal, seat: mpSeat, marks: nelloMarks, nello: true });
+    } else {
+      mpSendMove({ action: 'trump_intent', trump: trumpVal, seat: mpSeat, marks: session.bid_marks });
+    }
+    setStatus('Waiting for host to confirm trump...');
+    _startIntentTimeout('trump'); // V11: Timeout if host is unreachable
+    return; // Guest stops here — mpHandleTrumpConfirmed() continues on receipt
+  }
+
+  // ═══ HOST / SINGLE-PLAYER PATH ═══
 
   // Clean up trump selection state
   disableTrumpDominoClicks();
@@ -15247,6 +17465,10 @@ function confirmTrumpSelection(){
     document.getElementById('trumpBackdrop').style.display = 'none';
     selectedTrump = null;
     const nelloMarks = session.bid_marks || (biddingState ? biddingState.highMarks : 1) || 1;
+    // V10_111: Update placeholder to show Nello when selected at trump selection (undeclared path)
+    const bidWinnerVisual = seatToVisual(session.bid_winner_seat !== undefined ? session.bid_winner_seat : getLocalSeat());
+    const nelloPlaceholderText = nelloMarks > 1 ? `Nel ${nelloMarks}x` : 'Nel 1x';
+    setPlaceholderText(bidWinnerVisual, nelloPlaceholderText, 'winner');
     if (GAME_MODE === 'T42') {
       // T42: partner sits out automatically, no opponent selection needed
       const trumpVal = trump === 'NELLO_2' ? 'NELLO_2' : 'NELLO';
@@ -15255,11 +17477,11 @@ function confirmTrumpSelection(){
       syncSpritesWithGameState();
       updateTrumpDisplay();
       renderAll();
-      // Broadcast nello to other players in multiplayer
-      if (MULTIPLAYER_MODE && !mpSuppressSend) {
-        // V10_106: Fix #1 — include activePlayers so remote players have correct set
+      // V10_121: Host broadcasts trump_confirmed (nello) to guests
+      if (MULTIPLAYER_MODE && mpIsHost) {
         const _nelloActive = session.game.active_players ? session.game.active_players.slice() : [0,1,2,3];
-        mpSendMove({ action: 'trump', trump: trumpVal, seat: mpSeat, marks: nelloMarks, nello: true, activePlayers: _nelloActive });
+        mpSendMove({ action: 'trump_confirmed', trump: trumpVal, seat: mpSeat, marks: nelloMarks, nello: true, activePlayers: _nelloActive, firstPlayer: session.game.current_player });
+        mpSaveHostState();
       }
       // Check nello doubles mode
       const bidder = session.bid_winner_seat !== undefined ? session.bid_winner_seat : 0;
@@ -15308,6 +17530,7 @@ function confirmTrumpSelection(){
 
   // Set trump on session (this changes phase to PLAYING)
   session.set_trump(trumpValue);
+  _trackCpChange('confirmTrumpSelection');
 
   // Keep bid placeholders visible during play (user preference)
 
@@ -15366,7 +17589,14 @@ function confirmTrumpSelection(){
   console.log("confirmTrumpSelection - bid_winner_seat:", session.bid_winner_seat);
 
   if(MULTIPLAYER_MODE) {
-    // Multiplayer: check whose turn it is
+    // V10_121: Host broadcasts trump_confirmed to guests (normal non-nello trump)
+    if (mpIsHost) {
+      const trumpBroadcast = (trump === 'NT') ? 'NT' : trump;
+      mpSendMove({ action: 'trump_confirmed', trump: trumpBroadcast, seat: mpSeat, marks: session.bid_marks, nello: false,
+        activePlayers: session.game.active_players ? session.game.active_players.slice() : null,
+        firstPlayer: session.game.current_player });
+      mpSaveHostState();
+    }
     mpCheckWhoseTurn();
   } else if(PASS_AND_PLAY_MODE) {
     // PP mode: bid winner leads first trick
@@ -15420,7 +17650,7 @@ async function aiPlayTurn(){
       if(aiShouldCallForDouble(bidder)){
         callForDoubleActive = true;
         session.game.force_double_trump = true;
-        setStatus('P' + seatToPlayer(bidder) + ' calls for the double!');
+        setStatus(getPlayerDisplayName(bidder) + ' calls for the double!');
         applyForcedDoubleGlow();
         await new Promise(r => setTimeout(r, 800)); // Brief pause for status to show
       }
@@ -15551,6 +17781,15 @@ async function aiPlayTurn(){
 }
 
 function startNewHand(){
+  // ═══════════════════════════════════════════════════════════════
+  // V10_FIX: Reset all sync fix flags for new hand
+  // ═══════════════════════════════════════════════════════════════
+  _biddingCompleting = false;  // FIX1: Reset bidding completion flag
+  _aiActionInProgress = false; // FIX3: Reset AI action lock
+  _clearAllAITimers();         // FIX5: Clear all AI timers
+  console.log('[FIX] All sync flags reset for new hand');
+  
+  _staleRefreshCount = 0; // V10_118: Reset refresh counter for new hand
   // Hide boneyard 2 overlay when new hand starts
   if(boneyard2Visible){
     boneyard2Visible = false;
@@ -15701,6 +17940,9 @@ function startNewHand(){
       ppResetRotation();
       startBiddingRound();
     }
+  } else if (MULTIPLAYER_MODE) {
+    // V10_121d: Use MP-aware bidding stepper that handles remote humans + broadcasts
+    mpRunBiddingStep();
   } else {
     startBiddingRound();
   }
@@ -15852,6 +18094,9 @@ function mpHostDeal() {
 
 document.getElementById('settingsBtn').addEventListener('click', () => {
   document.getElementById('settingsMenu').classList.toggle('open');
+  // V10_113: Show/hide MP Log export based on whether MP was used
+  const mpLogItem = document.getElementById('menuMPLog');
+  if(mpLogItem) mpLogItem.style.display = (MULTIPLAYER_MODE || _mpDiagLog.length > 0) ? '' : 'none';
 });
 
 document.addEventListener('click', (e) => {
@@ -16278,17 +18523,27 @@ function showRoundEndSummary(){
         </div>
       </div>
       <div style="border-top:1px solid rgba(255,255,255,0.15);padding:8px 14px;">
-        <button id="roundEndNextBtn" style="padding:8px 20px;font-size:14px;font-weight:700;color:#fff;background:linear-gradient(135deg,#22c55e 0%,#16a34a 100%);border:none;border-radius:10px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.2);transition:transform 0.15s ease;">Next Round</button>
+        ${(MULTIPLAYER_MODE && !mpIsHost)
+          ? '<div id="roundEndWaitMsg" style="font-size:12px;opacity:0.7;padding:4px 0;">Waiting for host to start next round...</div>'
+          : '<button id="roundEndNextBtn" style="padding:8px 20px;font-size:14px;font-weight:700;color:#fff;background:linear-gradient(135deg,#22c55e 0%,#16a34a 100%);border:none;border-radius:10px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.2);transition:transform 0.15s ease;">Next Round</button>'
+        }
       </div>
     </div>`;
   overlay.style.display = 'flex';
-  document.getElementById('roundEndNextBtn').addEventListener('click', () => {
-    hideRoundEndSummary();
-    SFX.resumeBgmAfterResult();
-    if (MULTIPLAYER_MODE && mpIsHost) { mpHostDeal(); return; }
-    if (MULTIPLAYER_MODE && !mpIsHost) { setStatus('Waiting for host to deal...'); return; }
-    startNewHand();
-  });
+  // V10_121: Only host/single-player gets the Next Round button
+  const _reBtn = document.getElementById('roundEndNextBtn');
+  if (_reBtn) {
+    _reBtn.addEventListener('click', () => {
+      hideRoundEndSummary();
+      SFX.resumeBgmAfterResult();
+      if (MULTIPLAYER_MODE && mpIsHost) {
+        mpSendMove({ action: 'next_hand' }); // V10_121: Tell guests to dismiss popup
+        mpHostDeal();
+        return;
+      }
+      startNewHand();
+    });
+  }
 }
 
 function hideRoundEndSummary(){
@@ -16771,6 +19026,7 @@ document.getElementById('menuMultiplayer').addEventListener('click', () => {
   mpBuildModeSelector();
   document.getElementById('mpRoomSection').style.display = 'none';
   document.getElementById('mpObserverSection').style.display = 'none';
+  document.getElementById('mpRefreshToggleSection').style.display = 'none';
   document.getElementById('mpBackdrop').style.display = 'flex';
   // V10_104: Connect to relay early for room status
   mpRequestRoomStatus();
@@ -16795,6 +19051,12 @@ if (_mpBackdropOrig) {
   }).observe(_mpBackdropOrig, { attributes: true, attributeFilter: ['style'] });
 }
 
+// V10_119: Wire up auto-refresh disable toggle
+document.getElementById('mpDisableRefreshChk').addEventListener('change', function() {
+  _staleRefreshDisabled = this.checked;
+  console.log('[MP] Auto-refresh disabled:', _staleRefreshDisabled);
+});
+
 document.getElementById('mpConnect').addEventListener('click', () => {
   if (!mpRoom) {
     mpUpdateStatus('Please select a room first', '#f59e0b');
@@ -16806,6 +19068,9 @@ document.getElementById('mpConnect').addEventListener('click', () => {
     mpConnectAsObserver(mpRoom);
     return;
   }
+  // V10_119: Read auto-refresh toggle at connect time
+  const drChk = document.getElementById('mpDisableRefreshChk');
+  if (drChk) _staleRefreshDisabled = drChk.checked;
   // Load saved session for reconnection
   const saved = mpLoadSession(mpRoom);
   if (saved) {
@@ -16848,11 +19113,9 @@ document.getElementById('mpStartGame').addEventListener('click', () => {
 
   // V10_109: Read house rules from MP settings panel
   const _mpCFD = document.getElementById('mpChkCallForDouble');
-  const _mpN2x = document.getElementById('mpChkNello2x');
   const _mpNDec = document.getElementById('mpChkNelloDeclare');
   const _mpNRes = document.getElementById('mpChkNelloRestrict');
   if(_mpCFD) callForDoubleEnabled = _mpCFD.checked;
-  if(_mpN2x) nello2xEnabled = _mpN2x.checked;
   if(_mpNDec) nelloDeclareMode = _mpNDec.checked;
   if(_mpNRes) nelloRestrictFirst = _mpNRes.checked;
   // Get nello doubles mode from MP panel
@@ -16864,7 +19127,6 @@ document.getElementById('mpStartGame').addEventListener('click', () => {
     action: 'start_game', gameMode: GAME_MODE, marksToWin: mpMarksToWin, version: MP_VERSION,
     houseRules: {
       callForDouble: callForDoubleEnabled,
-      nello2x: nello2xEnabled,
       nelloDeclare: nelloDeclareMode,
       nelloRestrictFirst: nelloRestrictFirst,
       nelloDoublesMode: nelloDoublesMode
@@ -16890,11 +19152,9 @@ document.querySelectorAll('.mpMarksBtn').forEach(btn => {
   // V10_109: MP house rules — wire up checkboxes and nello buttons
   // Initialize from current settings
   var _mpCFD = document.getElementById('mpChkCallForDouble');
-  var _mpN2x = document.getElementById('mpChkNello2x');
   var _mpNDec = document.getElementById('mpChkNelloDeclare');
   var _mpNRes = document.getElementById('mpChkNelloRestrict');
   if(_mpCFD) _mpCFD.checked = callForDoubleEnabled;
-  if(_mpN2x) _mpN2x.checked = nello2xEnabled;
   if(_mpNDec) _mpNDec.checked = nelloDeclareMode;
   if(_mpNRes) _mpNRes.checked = nelloRestrictFirst;
   // Nello doubles buttons
@@ -16935,17 +19195,9 @@ document.getElementById('aboutCloseBtn').addEventListener('click', () => {
   document.getElementById('aboutBackdrop').style.display = 'none';
 });
 
-// Nello 2x start setting
-  var chkNello2x = document.getElementById('chkNello2x');
-  if(chkNello2x){
-    chkNello2x.checked = nello2xEnabled;
-    chkNello2x.addEventListener('change', function(){
-      nello2xEnabled = this.checked;
-      localStorage.setItem('tn51_nello_2x', String(nello2xEnabled));
-    });
-  }
+  // V10_111: Nello 2x setting removed
 
-  // V10_109: Nello declare checkbox
+  // Nello declare checkbox
   var chkNelloDeclare = document.getElementById('chkNelloDeclare');
   if(chkNelloDeclare){
     chkNelloDeclare.checked = nelloDeclareMode;
@@ -16967,6 +19219,12 @@ document.getElementById('aboutCloseBtn').addEventListener('click', () => {
 document.getElementById('menuChangeName').addEventListener('click', () => {
   document.getElementById('settingsMenu').classList.remove('open');
   promptForName();
+});
+
+// V10_113: Export MP diagnostic log
+document.getElementById('menuMPLog').addEventListener('click', () => {
+  document.getElementById('settingsMenu').classList.remove('open');
+  mpExportDiagLog();
 });
 
 document.getElementById('menuHome').addEventListener('click', () => {
@@ -19456,6 +21714,157 @@ window.addEventListener('orientationchange', handleOrientationChange);
 window.addEventListener('resize', handleOrientationChange);
 
 /******************************************************************************
+ * V10_112: VISIBILITY CHANGE HANDLER (Tab Switch Recovery)
+ * When user switches away from browser tab/app and comes back, the WebSocket
+ * may have been killed by the OS. This handler immediately reconnects and
+ * requests a state refresh to prevent "frozen" game state.
+ ******************************************************************************/
+let _lastVisibleTime = Date.now();
+
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden){
+    // Tab going hidden — record timestamp
+    _lastVisibleTime = Date.now();
+    return;
+  }
+
+  // Tab becoming visible again
+  const hiddenDuration = Date.now() - _lastVisibleTime;
+  console.log('[Visibility] Tab visible again after', hiddenDuration, 'ms');
+
+  if(!MULTIPLAYER_MODE || !mpGameStarted) return;
+
+  // If hidden for more than 3 seconds, WebSocket likely needs recovery
+  if(hiddenDuration > 3000){
+    console.log('[Visibility] Was hidden >', Math.round(hiddenDuration/1000), 's — checking WebSocket');
+
+    // Check if WebSocket is still alive
+    if(!mpSocket || mpSocket.readyState !== WebSocket.OPEN){
+      console.log('[Visibility] WebSocket not open (state:', mpSocket ? mpSocket.readyState : 'null', ') — reconnecting');
+      setStatus('Reconnecting...');
+      _mpReconnectAttempts = 0; // V10_113: Reset on tab return (user is actively playing)
+      if(mpRoom) mpConnect(mpRoom);
+    } else {
+      // WebSocket is open but state may be stale — request refresh
+      console.log('[Visibility] WebSocket open — requesting state refresh');
+      setStatus('Syncing...');
+      _mpLastActivityTime = Date.now(); // V11: Prevent stale detector from double-firing
+      if(mpIsHost){
+        // Host: re-broadcast state to all
+        mpRefreshAll();
+        setTimeout(() => mpCheckWhoseTurn(), 500);
+      } else {
+        // Guest: request refresh from host
+        mpRequestRefresh();
+        // V11: Fallback — if no state_sync arrives within 5s, the socket is likely
+        // a zombie (appears OPEN but TCP died silently). Force reconnect.
+        const _visFallbackActivity = _mpLastActivityTime;
+        setTimeout(() => {
+          if(_mpLastActivityTime === _visFallbackActivity && mpSocket && mpSocket.readyState === WebSocket.OPEN){
+            console.log('[Visibility] No response after 5s — socket may be zombie, forcing reconnect');
+            mpLogEntry('WARN', 'zombie-socket', 'Visibility fallback: no activity after refresh request');
+            mpSocket.close();
+            _mpReconnectAttempts = 0;
+            if(mpRoom) mpConnect(mpRoom);
+          }
+        }, 5000);
+      }
+    }
+  } else if(hiddenDuration > 500){
+    // Short hide — just check if it's our turn and UI is stuck
+    if(session && session.phase === PHASE_PLAYING && session.game.current_player === mpSeat && !waitingForPlayer1 && !isAnimating){
+      console.log('[Visibility] Brief hide — re-enabling player clicks');
+      waitingForPlayer1 = true;
+      enablePlayer1Clicks();
+      updatePlayer1ValidStates();
+      showHint();
+    }
+  }
+});
+
+// V10_118: Stale-state auto-recovery — more conservative triggering.
+// Raised threshold from 12s→20s to avoid false triggers during normal play.
+// Added per-hand refresh counter to prevent infinite refresh loops.
+// Max 2 refreshes per hand — after that, only re-enable clicks (no state_sync).
+let _staleRefreshCount = 0; // V10_118: Refreshes triggered this hand
+let _staleRefreshDisabled = false; // V10_119: Per-player toggle to disable auto-refresh
+setInterval(() => {
+  if(!MULTIPLAYER_MODE || !mpGameStarted || !session) return;
+  if(document.hidden) return; // Don't check while tab is hidden
+  if(_staleRefreshDisabled) return; // V10_119: Player disabled auto-refresh
+
+  // V10_116: NEVER trigger stale detection during bidding or trump selection.
+  if(session.phase === PHASE_NEED_BID || session.phase === PHASE_NEED_TRUMP || session.phase === PHASE_MOON_WIDOW) {
+    return;
+  }
+
+  const timeSinceActivity = Date.now() - _mpLastActivityTime;
+
+  // V11: Use different thresholds depending on who we're waiting for.
+  // AI turns: 20s is fine (AI should respond in <2s).
+  // Remote human turns: 60s — humans can take a long time to think.
+  // A premature state_sync causes a visual "snap" that disrupts the other player.
+  const cp = session.game.current_player;
+  const isRemoteHumanTurn = cp !== mpSeat && !mpIsAI(cp);
+  const staleThreshold = isRemoteHumanTurn ? 60000 : 20000;
+
+  if(timeSinceActivity > staleThreshold && !isAnimating && session.phase === PHASE_PLAYING){
+    // V10_115: If it's OUR turn, don't request refresh — just re-enable clicks
+    if(cp === mpSeat){
+      if(!waitingForPlayer1){
+        console.log('[MP] Stale but it is our turn — re-enabling clicks');
+        mpLogEntry('STATE', 'stale-self', 'Stale ' + Math.round(timeSinceActivity/1000) + 's but cp=mpSeat, re-enabling', mpGetGameSnapshot());
+        _mpLastActivityTime = Date.now();
+        waitingForPlayer1 = true;
+        mpWaitingForRemote = false;
+        enablePlayer1Clicks();
+        updatePlayer1ValidStates();
+        showHint();
+        setStatus('Trick ' + (session.game.trick_number + 1) + ' - Click a domino to play');
+        mpHideWaiting();
+      }
+      return;
+    }
+
+    // Detect if we're stuck waiting for something
+    const isWaiting = mpWaitingForRemote ||
+      (cp !== mpSeat && !mpIsHost);
+
+    // V10_113: Host also checks if it's an AI's turn and nothing happened (AI freeze)
+    const isHostAIStuck = mpIsHost && cp !== mpSeat && mpIsAI(cp);
+
+    if(isWaiting || isHostAIStuck){
+      console.log('[MP] Stale state detected —', Math.round(timeSinceActivity/1000), 's since last activity.',
+        isHostAIStuck ? 'AI appears frozen.' : (isRemoteHumanTurn ? 'Remote human slow.' : 'Requesting refresh.'),
+        'Refresh count this hand:', _staleRefreshCount);
+      mpLogEntry('STATE', 'stale', 'Stale ' + Math.round(timeSinceActivity/1000) + 's' + (isHostAIStuck ? ' AI frozen' : (isRemoteHumanTurn ? ' remote-human' : ' requesting refresh')) + ' count=' + _staleRefreshCount, mpGetGameSnapshot());
+      _mpLastActivityTime = Date.now(); // Prevent rapid re-triggers
+
+      if(mpSocket && mpSocket.readyState === WebSocket.OPEN){
+        if(isHostAIStuck){
+          // V10_113: Host kicks the AI by calling mpCheckWhoseTurn
+          console.log('[MP] Host re-kicking AI turn');
+          mpCheckWhoseTurn();
+        } else if(_staleRefreshCount < 2){
+          // V10_118: Only request full refresh twice per hand. After that, refreshes
+          // are more likely to make things worse than better.
+          _staleRefreshCount++;
+          mpRequestRefresh();
+        } else {
+          // V10_118: Max refreshes reached — just log it, don't request another.
+          // Player can manually use the Sync button if needed.
+          console.log('[MP] Max stale refreshes reached (' + _staleRefreshCount + '), skipping auto-refresh');
+          mpLogEntry('WARN', 'stale-maxed', 'Max refreshes reached, skipping. Player can use Sync button.');
+        }
+      } else if(mpRoom){
+        _mpReconnectAttempts = 0; // Allow reconnect
+        mpConnect(mpRoom);
+      }
+    }
+  }
+}, 10000); // V10_118: Check every 10s (was 8s, slowed down to reduce churn)
+
+/******************************************************************************
  * SCREEN SIZE DETECTION
  ******************************************************************************/
 
@@ -19599,8 +22008,7 @@ document.getElementById('btnGameSettingsBack').addEventListener('click', () => {
 
 // Update game settings visibility based on selected game type
 function updateGameSettingsForMode(mode){
-  var nello2xSec = document.getElementById('gsNello2xSection');
-  if(nello2xSec) nello2xSec.style.display = (mode === 'MOON') ? 'none' : '';
+  // V10_111: gsNello2xSection removed
   var nelloDecSec = document.getElementById('gsNelloDeclareSection');
   if(nelloDecSec) nelloDecSec.style.display = (mode === 'MOON') ? 'none' : '';
   var nelloResSec = document.getElementById('gsNelloRestrictSection');
@@ -19637,6 +22045,7 @@ document.getElementById('btnStartMultiplayer').addEventListener('click', () => {
   mpBuildModeSelector();
   document.getElementById('mpRoomSection').style.display = 'none';
   document.getElementById('mpObserverSection').style.display = 'none';
+  document.getElementById('mpRefreshToggleSection').style.display = 'none';
   document.getElementById('mpBackdrop').style.display = 'flex';
   // V10_104: Connect to relay early for room status
   mpRequestRoomStatus();
@@ -19767,9 +22176,18 @@ document.getElementById('btnCallDouble').addEventListener('click', () => {
   callForDoubleActive = true;
   session.game.force_double_trump = true;
   setStatus('Called for the double!');
-  // Broadcast in MP
-  if(MULTIPLAYER_MODE && !mpSuppressSend){
-    mpSendMove({ action: 'call_double', seat: mpSeat, called: true });
+  // V10_121 Host Authority: Guest sends intent and waits; host broadcasts confirmed + resumes
+  if(MULTIPLAYER_MODE && !mpIsHost){
+    // Guest: send intent to host. Host will broadcast play_confirmed + call_double_confirmed.
+    // Guest does NOT call resumeAfterCallDouble — no pending animation on guest side.
+    mpSendMove({ action: 'call_double_intent', seat: mpSeat, called: true });
+    applyForcedDoubleGlow();
+    return;
+  }
+  // Host MP path: broadcast confirmed + deferred play_confirmed via resumeAfterCallDouble
+  if(MULTIPLAYER_MODE && mpIsHost){
+    mpSendMove({ action: 'call_double_confirmed', called: true, seat: mpSeat });
+    // Deferred play_confirmed will be sent by resumeAfterCallDouble
   }
   // Apply blue glow to forced double tile in other players' hands
   applyForcedDoubleGlow();
@@ -19781,8 +22199,15 @@ document.getElementById('btnPlayRegular').addEventListener('click', () => {
   document.getElementById('callDoubleBtnGroup').style.display = 'none';
   callForDoubleActive = false;
   session.game.force_double_trump = false;
-  if(MULTIPLAYER_MODE && !mpSuppressSend){
-    mpSendMove({ action: 'call_double', seat: mpSeat, called: false });
+  // V10_121 Host Authority: Guest sends intent and waits; host broadcasts confirmed + resumes
+  if(MULTIPLAYER_MODE && !mpIsHost){
+    // Guest: send intent to host. Host will broadcast play_confirmed + call_double_confirmed.
+    mpSendMove({ action: 'call_double_intent', seat: mpSeat, called: false });
+    return;
+  }
+  // Host MP path: broadcast confirmed + deferred play_confirmed via resumeAfterCallDouble
+  if(MULTIPLAYER_MODE && mpIsHost){
+    mpSendMove({ action: 'call_double_confirmed', called: false, seat: mpSeat });
   }
   // Resume the paused lead animation + continue play
   resumeAfterCallDouble();
@@ -19813,8 +22238,14 @@ document.getElementById('btnNelloRegular').addEventListener('click', () => {
   document.getElementById('nelloDoublesBackdrop').style.display = 'none';
   nelloDoublesSuitActive = false;
   session.game.nello_doubles_suit = false;
-  if(MULTIPLAYER_MODE && !mpSuppressSend){
-    mpSendMove({ action: 'nello_doubles', mode: 'regular', seat: mpSeat });
+  if(MULTIPLAYER_MODE){
+    if(!mpIsHost){
+      // Guest: send intent to host
+      mpSendMove({ action: 'nello_doubles_intent', mode: 'regular', seat: mpSeat });
+    } else {
+      // Host: apply locally + broadcast confirmed
+      mpSendMove({ action: 'nello_doubles_confirmed', mode: 'regular' });
+    }
   }
   resumeAfterNelloDoublesChoice();
 });
@@ -19823,8 +22254,14 @@ document.getElementById('btnNelloDoublesOnly').addEventListener('click', () => {
   document.getElementById('nelloDoublesBackdrop').style.display = 'none';
   nelloDoublesSuitActive = true;
   session.game.nello_doubles_suit = true;
-  if(MULTIPLAYER_MODE && !mpSuppressSend){
-    mpSendMove({ action: 'nello_doubles', mode: 'doubles_only', seat: mpSeat });
+  if(MULTIPLAYER_MODE){
+    if(!mpIsHost){
+      // Guest: send intent to host
+      mpSendMove({ action: 'nello_doubles_intent', mode: 'doubles_only', seat: mpSeat });
+    } else {
+      // Host: apply locally + broadcast confirmed
+      mpSendMove({ action: 'nello_doubles_confirmed', mode: 'doubles_only' });
+    }
   }
   resumeAfterNelloDoublesChoice();
 });
@@ -20924,7 +23361,6 @@ if ('serviceWorker' in navigator) {
       dump.gameSettings = {
         FLIP_TRUMP_ENABLED: window.FLIP_TRUMP_ENABLED,
         HINT_MODE: window.HINT_MODE,
-        nello2xEnabled: window.nello2xEnabled,
         nelloDeclareMode: window.nelloDeclareMode,
         nelloRestrictFirst: window.nelloRestrictFirst,
         nelloDoublesMode: window.nelloDoublesMode,
@@ -21751,6 +24187,17 @@ if ('serviceWorker' in navigator) {
     </div>
   </div>
 </div>
+
+<!-- V10_FIX4: Syncing overlay to block input during state_sync -->
+<div id="syncingOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;pointer-events:auto;">
+  <div style="background:rgba(59,130,246,0.95);padding:20px 40px;border-radius:12px;color:#fff;font-size:18px;font-weight:700;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="syncSpinner"></div>
+      <span>Syncing game state...</span>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
 
