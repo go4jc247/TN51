@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>TN51 / T42 / Moon Dominoes V11</title>
+<title>TN51 / T42 / Moon Dominoes V11.3</title>
 <style>
   :root{
     --feltA:#1a8f37; --feltB:#0f6e2a; --feltC:#0a4f1d;
@@ -23,6 +23,14 @@
     height:100%; margin:0; overflow:hidden;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     color:var(--text);
+    /* V10_122c: iOS Safari touch optimizations */
+    -webkit-tap-highlight-color: transparent; /* Remove iOS tap highlight */
+    -webkit-touch-callout: none; /* Disable iOS callout menu on long press */
+    touch-action: manipulation; /* Disable double-tap zoom, enable fast clicks */
+    user-select: none; /* Prevent text selection on touch */
+    -webkit-user-select: none;
+    overscroll-behavior: none; /* Prevent iOS rubber band scrolling */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   }
 
   #tableMain{
@@ -1267,9 +1275,15 @@
   <script>
   // Apply default boneyard position only if no saved settings exist
   (function(){
-    var orient = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
-    var byKey = 'tn51_boneyard_' + orient;
-    if(!localStorage.getItem(byKey) && !localStorage.getItem('tn51_boneyard')){
+    try {
+      var orient = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+      var byKey = 'tn51_boneyard_' + orient;
+      if(!localStorage.getItem(byKey) && !localStorage.getItem('tn51_boneyard')){
+        document.documentElement.style.setProperty('--th-left', '4.5%');
+        document.documentElement.style.setProperty('--th-top', '14%');
+      }
+    } catch(e) {
+      // V10_122e: iOS Safari private mode - use defaults
       document.documentElement.style.setProperty('--th-left', '4.5%');
       document.documentElement.style.setProperty('--th-top', '14%');
     }
@@ -1554,14 +1568,14 @@
 </div>
 
 
-<!-- Multiplayer Connection Indicator (V10_105: minimize + draggable) -->
-<div id="mpIndicator" style="display:none;position:fixed;top:8px;right:8px;z-index:1300;background:rgba(0,0,0,0.7);border-radius:20px;padding:4px 12px;font-family:system-ui,-apple-system,sans-serif;font-size:12px;color:#fff;align-items:center;gap:6px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.1);cursor:default;user-select:none;">
-  <span id="mpDot" style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;cursor:pointer;flex-shrink:0;" onclick="mpToggleIndicator()"></span>
-  <span id="mpIndicatorDetails">
+<!-- V11.3: Multiplayer Connection Indicator — fixed dock left of settings gear, collapsible, expands left -->
+<div id="mpIndicator" style="display:none;position:fixed;top:calc(80px + env(safe-area-inset-top));right:52px;z-index:1199;background:rgba(0,0,0,0.7);border-radius:18px;padding:4px 10px;font-family:system-ui,-apple-system,sans-serif;font-size:11px;color:#fff;align-items:center;gap:5px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.1);cursor:default;user-select:none;white-space:nowrap;transition:all 0.2s ease;">
+  <span id="mpIndicatorDetails" style="display:inline;overflow:hidden;">
+    <button id="mpRefreshBtn" onclick="mpRequestRefresh()" style="display:none;background:none;border:1px solid rgba(255,255,255,0.3);color:#60a5fa;border-radius:12px;padding:2px 8px;font-size:10px;cursor:pointer;margin-right:4px;">&#x21bb; Sync</button>
     <span id="mpStatusText">Offline</span>
-    <span id="mpPlayerCount" style="color:#9ca3af;"></span>
-    <button id="mpRefreshBtn" onclick="mpRequestRefresh()" style="display:none;background:none;border:1px solid rgba(255,255,255,0.3);color:#60a5fa;border-radius:12px;padding:2px 8px;font-size:10px;cursor:pointer;margin-left:4px;">&#x21bb; Sync</button>
+    <span id="mpPlayerCount" style="color:#9ca3af;margin-left:3px;"></span>
   </span>
+  <span id="mpDot" style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;cursor:pointer;flex-shrink:0;" onclick="mpToggleIndicator()"></span>
 </div>
 
 <!-- Multiplayer Setup Modal -->
@@ -2109,12 +2123,22 @@ const SFX = {
   // --- SFX volume ---
   setSfxVolume(v){
     this.sfxVolume = Math.max(0, Math.min(2, v));  // Up to 200%
-    localStorage.setItem('tn51_sfx_volume', this.sfxVolume.toString());
+    // V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+    try {
+      localStorage.setItem('tn51_sfx_volume', this.sfxVolume.toString());
+    } catch(e) {
+      console.warn('[iOS] localStorage write error:', e);
+    }
     this.updateSfxIcon();
   },
   toggleSfxMute(){
     this.sfxMuted = !this.sfxMuted;
-    localStorage.setItem('tn51_sfx_muted', this.sfxMuted.toString());
+    // V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+    try {
+      localStorage.setItem('tn51_sfx_muted', this.sfxMuted.toString());
+    } catch(e) {
+      console.warn('[iOS] localStorage write error:', e);
+    }
     this.updateSfxIcon();
   },
   updateSfxIcon(){
@@ -2125,13 +2149,23 @@ const SFX = {
   // --- BGM volume ---
   setBgmVolume(v){
     this.bgmVolume = Math.max(0, Math.min(1, v));
-    localStorage.setItem('tn51_bgm_volume', this.bgmVolume.toString());
+    // V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+    try {
+      localStorage.setItem('tn51_bgm_volume', this.bgmVolume.toString());
+    } catch(e) {
+      console.warn('[iOS] localStorage write error:', e);
+    }
     this.applyBgmVolume();
     this.updateBgmIcon();
   },
   toggleBgmMute(){
     this.bgmMuted = !this.bgmMuted;
-    localStorage.setItem('tn51_bgm_muted', this.bgmMuted.toString());
+    // V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+    try {
+      localStorage.setItem('tn51_bgm_muted', this.bgmMuted.toString());
+    } catch(e) {
+      console.warn('[iOS] localStorage write error:', e);
+    }
     this.applyBgmVolume();
     this.updateBgmIcon();
   },
@@ -2198,7 +2232,12 @@ const SFX = {
       loopMode: this.bgmLoopMode,
       selected: this.bgmPlaylist,
     };
-    localStorage.setItem('tn51_bgm_selection', JSON.stringify(data));
+    // V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+    try {
+      localStorage.setItem('tn51_bgm_selection', JSON.stringify(data));
+    } catch(e) {
+      console.warn('[iOS] localStorage write error:', e);
+    }
   },
 
   loadBgmSelection(){
@@ -6182,14 +6221,16 @@ let mpConnected = false;        // WebSocket connected flag
 let mpGameStarted = false;      // Game has been started by host
 let mpWaitingForRemote = false;  // Waiting for a remote player's action
 let _mpLastActivityTime = Date.now(); // V10_112: Track last game activity for stale-state detection
+let _syncInProgress = false;     // V10_122: Sync lock to prevent race conditions
+let _queuedSync = null;          // V10_122: Queued state_sync to process after current sync completes
 let mpSuppressSend = false;      // Prevent echo loops when applying remote moves
 let mpPlayerId = null;            // Our unique player ID (assigned by host)
 let mpPlayerIds = {};             // Host tracks: {seat: playerId}
 let mpMarksToWin = 7;            // Marks to win for MP game (host sets)
 let mpPreferredSeat = -1;         // Guest's preferred seat (-1 = auto)
 let mpHelloNonce = null;           // Unique nonce sent with hello, used to match seat_assign
-const MP_WS_URL = 'wss://tn51-tx42-relay.onrender.com';
-const MP_VERSION = 'V11';
+const MP_WS_URL = 'wss://tn51-tx42-relay.onrender.com';  // V10_122: PRODUCTION
+const MP_VERSION = 'V11.3';  // V11.3: Merged V11 + V10_122e + intent timeouts + zombie detect + Nello fix + indicator dock
 
 // ═══════════════════════════════════════════════════════════════
 // V10_FIX: Multiplayer Sync Fix Variables
@@ -6205,8 +6246,8 @@ let _mpLastPongTime = Date.now(); // Track last pong received
 let _mpReconnectAttempts = 0;     // Reconnection retry counter
 const MP_HEARTBEAT_INTERVAL = 15000;  // Send ping every 15s
 const MP_PONG_TIMEOUT = 30000;       // Consider dead if no activity in 30s
-const MP_MAX_RECONNECT_ATTEMPTS = 5; // Max retries before stopping
-const MP_RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 15000]; // Exponential backoff delays
+// V10_122: UNLIMITED reconnection attempts with capped exponential backoff
+const MP_RECONNECT_DELAYS = [2000, 5000, 10000, 20000, 30000]; // Exponential backoff: 2s, 5s, 10s, 20s, 30s (max)
 
 // V10_113: Diagnostic logging system
 const _mpDiagLog = [];
@@ -6383,11 +6424,24 @@ let mpRoomCounts = {};            // { roomName: { count, max, observers } }
 let mpStatusRequested = false;    // prevent duplicate room_status requests
 
 // Player name system (V10_78)
-let playerName = localStorage.getItem('tn51_player_name') || '';
-let playerNoName = localStorage.getItem('tn51_player_noname') === 'true';
+// V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+let playerName = '';
+let playerNoName = false;
+try {
+  playerName = localStorage.getItem('tn51_player_name') || '';
+  playerNoName = localStorage.getItem('tn51_player_noname') === 'true';
+} catch(e) {
+  console.warn('[iOS] localStorage read error (private mode?):', e);
+}
 // V10_111: nello2xEnabled removed — use nelloRestrictFirst instead
-let nelloDeclareMode = localStorage.getItem('tn51_nello_declare') === 'true';  // Must declare Nello
-let nelloRestrictFirst = localStorage.getItem('tn51_nello_restrict_first') !== 'false';  // Nello restricted to 1x first (default true)
+let nelloDeclareMode = false;
+let nelloRestrictFirst = true;
+try {
+  nelloDeclareMode = localStorage.getItem('tn51_nello_declare') === 'true';  // Must declare Nello
+  nelloRestrictFirst = localStorage.getItem('tn51_nello_restrict_first') !== 'false';  // Nello restricted to 1x first (default true)
+} catch(e) {
+  console.warn('[iOS] localStorage read error (private mode?):', e);
+}
 let _nelloWasDeclared = false;  // V10_111: Track whether Nello was declared during bidding (persists until trump selection)
 let _nelloDeclaredMarks = 1;    // V10_111: The marks value when Nello was declared
 let _nelloAllowedAtTrump = true; // V10_111: Whether Nello button should appear at trump selection (computed at end of bidding)
@@ -6499,8 +6553,13 @@ function promptForName() {
       playerName = name;
       playerNoName = false;
     }
-    localStorage.setItem('tn51_player_name', playerName);
-    localStorage.setItem('tn51_player_noname', String(playerNoName));
+    // V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+    try {
+      localStorage.setItem('tn51_player_name', playerName);
+      localStorage.setItem('tn51_player_noname', String(playerNoName));
+    } catch(e) {
+      console.warn('[iOS] localStorage write error (private mode?):', e);
+    }
     overlay.style.display = 'none';
     // Refresh indicators with new name
     if(typeof positionPlayerIndicators === 'function') positionPlayerIndicators();
@@ -6544,7 +6603,7 @@ function mpStopHeartbeat() {
   }
 }
 
-// V10_113: Get reconnect delay with exponential backoff
+// V10_122: Get reconnect delay with exponential backoff (capped at 30s)
 function mpGetReconnectDelay() {
   const idx = Math.min(_mpReconnectAttempts, MP_RECONNECT_DELAYS.length - 1);
   return MP_RECONNECT_DELAYS[idx];
@@ -6558,7 +6617,12 @@ function mpConnect(roomName) {
     mpConnected = false;
     _mpReconnectAttempts = 0; // V10_113: Reset on successful reuse
     mpUpdateStatus('Joining room...', '#f59e0b');
-    mpSocket.send(JSON.stringify({ type: 'join', room: roomName }));
+    try {
+      mpSocket.send(JSON.stringify({ type: 'join', room: roomName }));
+    } catch(e) {
+      console.error('[MP] Join send error:', e);
+      mpSocket.close(); // Trigger reconnect
+    }
     return;
   }
   if (mpSocket && mpSocket.readyState <= 1) {
@@ -6574,7 +6638,13 @@ function mpConnect(roomName) {
   mpSocket.onopen = () => {
     console.log('[MP] WebSocket opened, joining room:', roomName);
     _mpReconnectAttempts = 0; // V10_113: Reset on successful connection
-    mpSocket.send(JSON.stringify({ type: 'join', room: roomName }));
+    try {
+      mpSocket.send(JSON.stringify({ type: 'join', room: roomName }));
+    } catch(e) {
+      console.error('[MP] Join send error on open:', e);
+      mpSocket.close(); // Trigger reconnect
+      return;
+    }
     mpStartHeartbeat(); // V10_113: Begin heartbeat
     mpLogEntry('INFO', 'socket', 'WebSocket opened, joining ' + roomName);
   };
@@ -6610,18 +6680,18 @@ function mpConnect(roomName) {
     mpObserver = false;
     // Save host state on disconnect for potential recovery
     if (mpIsHost && mpGameStarted) mpSaveHostState();
-    // V10_113: Auto-reconnect with exponential backoff
+    // V11.3: Auto-reconnect with exponential backoff, capped at 50 attempts to save battery
     if (MULTIPLAYER_MODE && mpGameStarted && mpRoom) {
-      if(_mpReconnectAttempts < MP_MAX_RECONNECT_ATTEMPTS) {
+      if(_mpReconnectAttempts < 50) {
         const delay = mpGetReconnectDelay();
         _mpReconnectAttempts++;
-        console.log('[MP] Auto-reconnect attempt', _mpReconnectAttempts, '/', MP_MAX_RECONNECT_ATTEMPTS, 'in', delay, 'ms');
-        mpLogEntry('INFO', 'reconnect', 'Attempt ' + _mpReconnectAttempts + '/' + MP_MAX_RECONNECT_ATTEMPTS + ' delay=' + delay + 'ms');
-        mpUpdateStatus('Reconnecting (' + _mpReconnectAttempts + '/' + MP_MAX_RECONNECT_ATTEMPTS + ')...', '#f59e0b');
+        console.log('[MP] Auto-reconnect attempt', _mpReconnectAttempts, '/50 in', delay, 'ms');
+        mpLogEntry('INFO', 'reconnect', 'Attempt ' + _mpReconnectAttempts + '/50 delay=' + delay + 'ms');
+        mpUpdateStatus('Reconnecting (' + _mpReconnectAttempts + '/50)...', '#f59e0b');
         setTimeout(() => mpConnect(mpRoom), delay);
       } else {
-        console.log('[MP] Max reconnect attempts reached');
-        mpLogEntry('ERROR', 'reconnect', 'Max reconnect attempts reached', mpGetGameSnapshot());
+        console.log('[MP] Max reconnect attempts (50) reached');
+        mpLogEntry('ERROR', 'reconnect', 'Max reconnect attempts reached');
         mpUpdateStatus('Connection lost. Tap Sync to retry.', '#ef4444');
         setStatus('Connection lost — tap the Sync button to reconnect.');
       }
@@ -6644,6 +6714,7 @@ function showSyncingOverlay() {
   const overlay = document.getElementById('syncingOverlay');
   if (overlay) {
     overlay.style.display = 'flex';
+    overlay._shownAt = Date.now(); // V10_122e: Track when shown for global failsafe
     console.log('[FIX4] Syncing overlay shown - input blocked');
   }
 }
@@ -6652,6 +6723,7 @@ function hideSyncingOverlay() {
   const overlay = document.getElementById('syncingOverlay');
   if (overlay) {
     overlay.style.display = 'none';
+    overlay._shownAt = null; // V10_122e: Clear timestamp
     console.log('[FIX4] Syncing overlay hidden - input enabled');
   }
 }
@@ -6792,8 +6864,13 @@ function mpHandleMessage(msg) {
 
   switch(move.action) {
     case 'heartbeat':
-      // V10_114: Peer heartbeat — respond so they know we're alive
-      // The receipt of this message already reset _mpLastPongTime in onmessage
+      // V10_122: Activity heartbeat — player is still thinking/active
+      // Track when we last heard from this player to prevent false stale detection
+      if(move.seat !== undefined && move.seat !== mpSeat) {
+        _mpLastHeartbeatReceived[move.seat] = Date.now();
+        console.log('[MP] Received activity heartbeat from seat', move.seat);
+      }
+      // V10_114: Also respond so they know we're alive (backward compatibility)
       if(move.seat !== mpSeat) {
         mpSendRaw({ type: 'move', move: { action: 'heartbeat_ack', seat: mpSeat, t: Date.now() } });
       }
@@ -6997,8 +7074,16 @@ function mpHandleMessage(msg) {
 // Send a raw message (bypasses move wrapping)
 function mpSendRaw(msg) {
   if (mpSocket && mpSocket.readyState === WebSocket.OPEN) {
-    mpSocket.send(JSON.stringify(msg));
-    if(msg.type !== 'ping') mpLogEntry('SEND', 'raw', msg);
+    // V10_122e: CRITICAL iOS FIX - Wrap WebSocket send in try-catch
+    try {
+      mpSocket.send(JSON.stringify(msg));
+      if(msg.type !== 'ping') mpLogEntry('SEND', 'raw', msg);
+    } catch(e) {
+      console.error('[MP] Send raw error:', e);
+      mpLogEntry('ERROR', 'send_raw', 'WebSocket send failed: ' + e.message, msg);
+      // On iOS, WebSocket can fail silently - trigger reconnect
+      if(mpSocket) mpSocket.close();
+    }
   } else {
     mpLogEntry('ERROR', 'raw', 'Socket not open, state=' + (mpSocket ? mpSocket.readyState : 'null'), msg);
   }
@@ -7027,13 +7112,21 @@ function mpSendMove(moveObj) {
   }
 
   if (mpSocket && mpSocket.readyState === WebSocket.OPEN) {
-    mpSocket.send(JSON.stringify({
-      type: 'move',
-      move: moveObj,
-      t: Date.now()
-    }));
-    console.log('[MP] Sent move:', moveObj);
-    mpLogEntry('SEND', 'move', moveObj);
+    // V10_122e: CRITICAL iOS FIX - Wrap WebSocket send in try-catch
+    try {
+      mpSocket.send(JSON.stringify({
+        type: 'move',
+        move: moveObj,
+        t: Date.now()
+      }));
+      console.log('[MP] Sent move:', moveObj);
+      mpLogEntry('SEND', 'move', moveObj);
+    } catch(e) {
+      console.error('[MP] Send error:', e);
+      mpLogEntry('ERROR', 'send', 'WebSocket send failed: ' + e.message, moveObj);
+      // On iOS, WebSocket can fail silently - trigger reconnect
+      if(mpSocket) mpSocket.close();
+    }
   } else {
     mpLogEntry('ERROR', 'move', 'Socket not open for move', moveObj);
   }
@@ -7048,10 +7141,9 @@ function mpUpdateStatus(text, color) {
   }
 }
 
-// Update the floating indicator
+// V11.3: Update the docked indicator (left of settings gear, no dragging)
 function mpUpdateIndicator() {
   const indicator = document.getElementById('mpIndicator');
-  // Show seat number on indicator for debugging
   if (indicator && mpSeat >= 0) {
     indicator.title = 'Seat ' + (mpSeat+1) + ' (' + (mpIsHost ? 'Host' : 'Guest') + ')';
   }
@@ -7076,16 +7168,9 @@ function mpUpdateIndicator() {
   } else {
     indicator.style.display = 'none';
   }
-  // V10_105: Apply saved position
-  const _mpIndPos = _mpLoadIndicatorPos();
-  if(_mpIndPos && indicator){
-    indicator.style.top = _mpIndPos.top + 'px';
-    indicator.style.left = _mpIndPos.left + 'px';
-    indicator.style.right = 'auto';
-  }
 }
 
-// V10_105: Fix #3 — Toggle MP indicator minimize/expand
+// V11.3: Toggle MP indicator collapse/expand (docked left of settings, expands left)
 let _mpIndicatorMinimized = false;
 function mpToggleIndicator(){
   const details = document.getElementById('mpIndicatorDetails');
@@ -7096,74 +7181,14 @@ function mpToggleIndicator(){
     details.style.display = 'none';
     indicator.style.padding = '6px';
     indicator.style.borderRadius = '50%';
-    indicator.style.width = '22px';
-    indicator.style.height = '22px';
   } else {
-    details.style.display = '';
-    indicator.style.padding = '4px 12px';
-    indicator.style.borderRadius = '20px';
-    indicator.style.width = '';
-    indicator.style.height = '';
+    details.style.display = 'inline';
+    indicator.style.padding = '4px 10px';
+    indicator.style.borderRadius = '18px';
   }
 }
-
-// V10_105: Make MP indicator draggable
-(function(){
-  const ind = document.getElementById('mpIndicator');
-  if(!ind) return;
-  let dragging = false, startX, startY, origLeft, origTop;
-  ind.addEventListener('mousedown', function(e){
-    if(e.target.id === 'mpDot' || e.target.tagName === 'BUTTON') return;
-    dragging = true;
-    startX = e.clientX; startY = e.clientY;
-    const rect = ind.getBoundingClientRect();
-    origLeft = rect.left; origTop = rect.top;
-    e.preventDefault();
-  });
-  document.addEventListener('mousemove', function(e){
-    if(!dragging) return;
-    const dx = e.clientX - startX, dy = e.clientY - startY;
-    ind.style.left = (origLeft + dx) + 'px';
-    ind.style.top = (origTop + dy) + 'px';
-    ind.style.right = 'auto';
-  });
-  document.addEventListener('mouseup', function(){
-    if(!dragging) return;
-    dragging = false;
-    _mpSaveIndicatorPos();
-  });
-  // Touch drag
-  ind.addEventListener('touchstart', function(e){
-    if(e.target.id === 'mpDot' || e.target.tagName === 'BUTTON') return;
-    dragging = true;
-    const t = e.touches[0];
-    startX = t.clientX; startY = t.clientY;
-    const rect = ind.getBoundingClientRect();
-    origLeft = rect.left; origTop = rect.top;
-  }, {passive: true});
-  document.addEventListener('touchmove', function(e){
-    if(!dragging) return;
-    const t = e.touches[0];
-    ind.style.left = (t.clientX - startX + origLeft) + 'px';
-    ind.style.top = (t.clientY - startY + origTop) + 'px';
-    ind.style.right = 'auto';
-  }, {passive: true});
-  document.addEventListener('touchend', function(){
-    if(!dragging) return;
-    dragging = false;
-    _mpSaveIndicatorPos();
-  });
-})();
-
-function _mpSaveIndicatorPos(){
-  const ind = document.getElementById('mpIndicator');
-  if(!ind) return;
-  const rect = ind.getBoundingClientRect();
-  try{ localStorage.setItem('tn51_mp_indicator_pos', JSON.stringify({left:rect.left, top:rect.top})); }catch(e){}
-}
-function _mpLoadIndicatorPos(){
-  try{ const d = localStorage.getItem('tn51_mp_indicator_pos'); return d ? JSON.parse(d) : null; }catch(e){ return null; }
-}
+// V11.3: Clear any stale saved position from old draggable code
+try{ localStorage.removeItem('tn51_mp_indicator_pos'); }catch(e){}
 
 // Build room grid buttons
 var mpSelectedMode = null; // Track which game mode is selected for MP rooms
@@ -7735,7 +7760,7 @@ function mpRunBiddingStep() {
               return; 
             }
             mpLogEntry('STATE', 'bid-ai-advance', 'seat=' + _aiBidSeat + ' action=' + result.action);
-            const advance = advanceBidding() || { done: true }; // V11: defensive null-check
+            const advance = advanceBidding() || { done: true }; // V10_121f: defensive null-check
             if (result.action === 'bid') {
               const displayBid = (result.marks > 1) ? (result.marks + 'x') : result.bid;
               mpSendMove({ action: 'bid_confirmed', seat: _aiBidSeat, bid: result.bid, marks: result.marks || 1,
@@ -7788,7 +7813,7 @@ function mpRunBiddingStep() {
       biddingState.passCount++;
       biddingState.bids.push({ seat: _aiBidSeat, playerNumber: seatToPlayer(_aiBidSeat), bid: 'pass' });
       setPlaceholderText(seatToVisual(_aiBidSeat), 'Pass', 'pass');
-      const advance = advanceBidding() || { done: true }; // V11: defensive null-check
+      const advance = advanceBidding() || { done: true }; // V10_121f: defensive null-check
       mpSendMove({ action: 'pass_confirmed', seat: _aiBidSeat,
         biddingDone: advance.done || false,
         nextBidder: biddingState ? biddingState.currentBidder : null,
@@ -7850,7 +7875,7 @@ function mpHandleBid(move) {
 
   // Advance bidding
   const _bidTimerA = setTimeout(() => {
-    const advance = advanceBidding() || { done: true }; // V11: defensive null-check
+    const advance = advanceBidding() || { done: true }; // V10_121f: defensive null-check
     mpSuppressSend = false;
     if (!advance.done) {
       mpRunBiddingStep();
@@ -7884,7 +7909,7 @@ function mpHandlePass(move) {
   setStatus(session.status);
 
   const _passTimer = setTimeout(() => {
-    const advance = advanceBidding() || { done: true }; // V11: defensive null-check
+    const advance = advanceBidding() || { done: true }; // V10_121f: defensive null-check
     mpSuppressSend = false;
     if (!advance.done) {
       mpRunBiddingStep();
@@ -7920,6 +7945,9 @@ function mpHandleWidowSwap(move) {
     setStatus('Widow swap done. Select trump.');
     mpHideWaiting();
     showTrumpOverlay(true);
+    // V10_121g: Ensure trump selection is active for proper domino clicks
+    trumpSelectionActive = true;
+    enableTrumpDominoClicks();
   } else if (mpIsHost && mpIsAI(bidWinnerSeat)) {
     // AI on host — shouldn't get here (host handles AI locally)
   } else {
@@ -8084,6 +8112,16 @@ async function mpHandlePlay(move) {
   }
 
   isAnimating = true;
+  
+  // V10_122c: Safety timeout for iOS - if animation doesn't complete in 10s, force unlock
+  const _animTimeout = setTimeout(() => {
+    if(isAnimating){
+      console.warn('[MP] Animation timeout — forcing unlock (iOS recovery)');
+      isAnimating = false;
+      mpCheckWhoseTurn();
+    }
+  }, 10000);
+  
   const isLead = session.game.current_trick.length === 0;
 
   // Play in game engine
@@ -8092,6 +8130,7 @@ async function mpHandlePlay(move) {
   } catch(e) {
     console.log('[MP] Play error:', e);
     isAnimating = false;
+    clearTimeout(_animTimeout);
     mpSuppressSend = false;
     return;
   }
@@ -8130,12 +8169,14 @@ async function mpHandlePlay(move) {
       logEvent('HAND_END', { status: session.status });
       setTimeout(() => mpShowHandEnd(), 800);
       isAnimating = false;
+      clearTimeout(_animTimeout);
       mpSuppressSend = false;
       return;
     }
   }
 
   isAnimating = false;
+  clearTimeout(_animTimeout);
   mpSuppressSend = false;
 
   // Sync current_player from host's broadcast if provided
@@ -8175,7 +8216,7 @@ let _pendingPlayIntent = null;  // {seat, tile, spriteIdx, spriteElement, origin
 let _pendingCallDoubleHostData = null;  // Host: deferred play data waiting for guest's call_double_intent
 let _pendingPlayTimeout = null;
 
-// V11: Generic intent timeout — covers bid/pass/trump intents that lack
+// V11.3: Generic intent timeout — covers bid/pass/trump intents that lack
 // the play_intent's specific lift/drop UX but still need timeout recovery
 // when the host is unreachable.
 let _pendingIntentTimeout = null;
@@ -8187,7 +8228,7 @@ function _startIntentTimeout(intentType) {
     mpLogEntry('WARN', intentType + '_timeout', 'No confirmation after 10s');
     setStatus('Host not responding — retrying...');
     if (mpSocket && mpSocket.readyState === WebSocket.OPEN) {
-      mpSendMove({ action: 'refresh_request', seat: mpSeat });
+      try { mpSendMove({ action: 'refresh_request', seat: mpSeat }); } catch(e) {}
     } else if (mpRoom) {
       _mpReconnectAttempts = 0;
       mpConnect(mpRoom);
@@ -8323,6 +8364,16 @@ async function mpHandlePlayIntent(move) {
   }
 
   isAnimating = true;
+  
+  // V10_122c: Safety timeout for iOS
+  const _animTimeout = setTimeout(() => {
+    if(isAnimating){
+      console.warn('[MP-HA] Animation timeout — forcing unlock (iOS recovery)');
+      isAnimating = false;
+      mpCheckWhoseTurn();
+    }
+  }, 10000);
+  
   if (spriteIdx >= 0) {
     try { await playDomino(move.seat, spriteIdx, isLead, null, null); } catch(e) { console.warn('[MP-HA] playDomino error:', e); }
   }
@@ -8371,12 +8422,14 @@ async function mpHandlePlayIntent(move) {
       logEvent('HAND_END', { status: session.status });
       setTimeout(() => mpShowHandEnd(), 800);
       isAnimating = false;
+      clearTimeout(_animTimeout);
       mpSaveHostState();
       return;
     }
   }
 
   isAnimating = false;
+  clearTimeout(_animTimeout);
   mpSaveHostState();
   mpCheckWhoseTurn();
 }
@@ -8472,7 +8525,7 @@ async function mpHandlePlayConfirmed(move) {
     if (move.handComplete && move.handResult) {
       session.game.team_points = move.handResult.teamPoints || [0, 0];
       session.team_marks = move.handResult.teamMarks || [0, 0];
-      // V11: Set session.status so showHandEndPopup() can detect "wins the game"
+      // V10_121g: Ensure status is properly set from host's handResult
       session.status = move.handResult.status || 'Hand over';
       setStatus(session.status);
       team1Score = session.game.team_points[0];
@@ -8480,7 +8533,8 @@ async function mpHandlePlayConfirmed(move) {
       team1Marks = session.team_marks[0];
       team2Marks = session.team_marks[1];
       updateScoreDisplay();
-      logEvent('HAND_END', { status: move.handResult.status });
+      logEvent('HAND_END', { status: session.status });
+      // V10_121g: Show hand end popup for guests (includes game end check)
       setTimeout(() => mpShowHandEnd(), 800);
       isAnimating = false;
       return;
@@ -8548,12 +8602,9 @@ function _liftTileForIntent(spriteSlotIndex) {
   _pendingPlayTimeout = setTimeout(() => {
     console.warn('[MP-HA] Play intent timeout — requesting state sync');
     mpLogEntry('WARN', 'play_timeout', 'No response to play intent');
-    _dropTileFromIntent(); // Restores waitingForPlayer1, enables clicks
-    showHint(); // V11: Also re-show hint after timeout recovery
+    _dropTileFromIntent();
     setStatus('Connection issue — syncing with host...');
-    if(mpSocket && mpSocket.readyState === WebSocket.OPEN){
-      mpSendMove({ action: 'refresh_request', seat: mpSeat });
-    }
+    mpSendMove({ action: 'refresh_request', seat: mpSeat });
   }, 5000);
 }
 
@@ -8646,7 +8697,7 @@ function mpHandleBidIntent(move) {
   // Advance bidding on host
   setTimeout(() => {
     if (!biddingState) return;
-    const advance = advanceBidding() || { done: true }; // V11: defensive null-check
+    const advance = advanceBidding() || { done: true }; // V10_121f: defensive null-check
 
     // Broadcast confirmed bid to all (including guests)
     const confirmed = {
@@ -8698,7 +8749,7 @@ function mpHandlePassIntent(move) {
   // Advance bidding on host
   setTimeout(() => {
     if (!biddingState) return;
-    const advance = advanceBidding() || { done: true }; // V11: defensive null-check
+    const advance = advanceBidding() || { done: true }; // V10_121f: defensive null-check
 
     // Broadcast confirmed pass to all
     const confirmed = {
@@ -8722,15 +8773,13 @@ function mpHandlePassIntent(move) {
 
 // ═══ GUEST: Confirmed bid/pass handlers ═══
 
-// V11: When the guest wins the bid, show trump selection overlay on the guest's screen.
-// In pure host authority, the guest doesn't run finalizeBidding() — so we need to
-// explicitly show the trump overlay when the guest learns they won.
-function _guestShowTrumpSelection() {
-  if (mpIsHost) return; // Only for guest
+// Helper: Show trump selection UI for guest who won bid
+function _guestShowTrumpSelection(winningBid) {
+  if (mpIsHost) return;
   console.log('[MP-HA] Guest won the bid — showing trump selection');
   mpLogEntry('STATE', 'guest-trump', 'Guest won bid, showing trump overlay');
 
-  // Compute Nello eligibility (same logic as finalizeBidding host path)
+  // V11.3: Compute Nello eligibility (same logic as finalizeBidding host path)
   if(typeof nelloDeclareMode !== 'undefined' && nelloDeclareMode){
     _nelloAllowedAtTrump = false;
   } else if(typeof nelloRestrictFirst !== 'undefined' && nelloRestrictFirst && biddingState){
@@ -8746,28 +8795,46 @@ function _guestShowTrumpSelection() {
     _nelloAllowedAtTrump = true;
   }
 
-  // Show winner placeholder
   const bidWinnerVisual = seatToVisual(mpSeat);
-  const highBid = biddingState ? biddingState.highBid : session.current_bid;
+  const highBid = winningBid || (biddingState ? biddingState.highBid : session.current_bid);
   setPlaceholderText(bidWinnerVisual, highBid, 'winner');
-
-  // Initialize off-tracker
   if (typeof initOffTracker === 'function') initOffTracker();
 
-  biddingState = null; // Clear bidding state — we're done bidding
+  // Hide bid overlay
+  const bidBackdrop = document.getElementById('bidBackdrop');
+  if (bidBackdrop) bidBackdrop.style.display = 'none';
 
-  // Show trump selection
+  biddingState = null;
   session.phase = PHASE_NEED_TRUMP;
-  setStatus('You won the bid! Select trump.');
+  setStatus('You won the bid at ' + highBid + '! Select trump.');
   mpHideWaiting();
   showTrumpOverlay(true);
+  trumpSelectionActive = true;
+  enableTrumpDominoClicks();
 }
 
 function mpHandleBidConfirmed(move) {
   if (mpIsHost) return; // Host already processed locally
   console.log('[MP-HA] Bid confirmed: seat', move.seat, 'bid:', move.bid);
   mpLogEntry('RECV', 'bid_confirmed', 'seat=' + move.seat + ' bid=' + move.bid);
-  _clearIntentTimeout(); // V11: Clear bid/pass intent timeout
+  _clearIntentTimeout(); // V11.3: Clear bid/pass intent timeout
+
+  // V10_121h: Check if bidding is done FIRST (before checking biddingState)
+  // This handles the case where guest reconnects or biddingState is null
+  if (move.biddingDone && move.bidWinner !== null && move.bidWinner !== undefined) {
+    session.bid_winner_seat = move.bidWinner;
+    session.current_bid = move.winningBid;
+    session.bid_marks = move.winningMarks;
+    
+    // If WE are the bid winner, show trump selection UI
+    if (move.bidWinner === mpSeat) {
+      _guestShowTrumpSelection(move.winningBid);
+      return;
+    }
+    // Someone else won - clear bidding state and wait for trump_confirmed
+    biddingState = null;
+    return;
+  }
 
   if (!biddingState) { mpLogEntry('WARN', 'bid_confirmed', 'biddingState=null, ignoring'); return; }
   _mpLastActivityTime = Date.now();
@@ -8783,7 +8850,7 @@ function mpHandleBidConfirmed(move) {
   if (move.moonShoot) biddingState.moonShoot = true;
   biddingState.bids.push({ seat: move.seat, playerNumber: seatToPlayer(move.seat), bid: move.bid });
 
-  // Display — V11: log placeholder update for diagnostics
+  // Display — V10_121f: log placeholder update for diagnostics
   const visualNum = seatToVisual(move.seat);
   const displayBid = move.displayBid || ((move.marks > 1) ? (move.marks + 'x') : move.bid);
   const phEl = placeholderElements['p' + visualNum];
@@ -8791,22 +8858,6 @@ function mpHandleBidConfirmed(move) {
   setPlaceholderText(visualNum, displayBid, 'bid');
   session.status = getPlayerDisplayName(move.seat) + ' bids ' + displayBid + '!';
   setStatus(session.status);
-
-  // Advance guest's bidding state
-  if (move.biddingDone) {
-    // Update local session state from confirmed info
-    if (move.bidWinner !== null && move.bidWinner !== undefined) {
-      session.bid_winner_seat = move.bidWinner;
-      session.current_bid = move.winningBid;
-      session.bid_marks = move.winningMarks;
-    }
-    // V11: If the GUEST won the bid, show trump selection overlay
-    if (move.bidWinner === mpSeat && !move.redeal) {
-      _guestShowTrumpSelection();
-    }
-    // Otherwise wait for host's trump_confirmed or deal
-    return;
-  }
 
   // Not done — advance to next bidder on guest
   if (move.nextBidder !== null && move.nextBidder !== undefined) {
@@ -8821,7 +8872,28 @@ function mpHandlePassConfirmed(move) {
   if (mpIsHost) return;
   console.log('[MP-HA] Pass confirmed: seat', move.seat);
   mpLogEntry('RECV', 'pass_confirmed', 'seat=' + move.seat);
-  _clearIntentTimeout(); // V11: Clear bid/pass intent timeout
+  _clearIntentTimeout(); // V11.3: Clear bid/pass intent timeout
+
+  // V10_121h: Check if bidding is done FIRST (before checking biddingState)
+  if (move.biddingDone) {
+    if (move.bidWinner !== null && move.bidWinner !== undefined) {
+      session.bid_winner_seat = move.bidWinner;
+      session.current_bid = move.winningBid;
+      session.bid_marks = move.winningMarks;
+      
+      // If WE are the bid winner, show trump selection UI
+      if (move.bidWinner === mpSeat) {
+        _guestShowTrumpSelection(move.winningBid);
+        return;
+      }
+    }
+    if (move.redeal) {
+      setStatus('Everyone passed. Redealing...');
+      // Host will send new deal
+    }
+    biddingState = null; // Clear bidding state
+    return;
+  }
 
   if (!biddingState) { mpLogEntry('WARN', 'pass_confirmed', 'biddingState=null, ignoring'); return; }
   _mpLastActivityTime = Date.now();
@@ -8830,32 +8902,13 @@ function mpHandlePassConfirmed(move) {
   biddingState.passCount++;
   biddingState.bids.push({ seat: move.seat, playerNumber: seatToPlayer(move.seat), bid: 'pass' });
 
-  // Display — V11: log placeholder update for diagnostics
+  // Display — V10_121f: log placeholder update for diagnostics
   const _passVisual = seatToVisual(move.seat);
   const _passPhEl = placeholderElements['p' + _passVisual];
   mpLogEntry('STATE', 'pass-placeholder', 'seat=' + move.seat + ' visual=p' + _passVisual + ' elExists=' + !!_passPhEl);
   setPlaceholderText(_passVisual, 'Pass', 'pass');
   session.status = getPlayerDisplayName(move.seat) + ' passes.';
   setStatus(session.status);
-
-  if (move.biddingDone) {
-    if (move.bidWinner !== null && move.bidWinner !== undefined) {
-      session.bid_winner_seat = move.bidWinner;
-      session.current_bid = move.winningBid;
-      session.bid_marks = move.winningMarks;
-    }
-    if (move.redeal) {
-      setStatus('Everyone passed. Redealing...');
-      // Host will send new deal
-      return;
-    }
-    // V11: If the GUEST won the bid, show trump selection overlay
-    if (move.bidWinner === mpSeat) {
-      _guestShowTrumpSelection();
-    }
-    // Otherwise wait for host's trump_confirmed or deal
-    return;
-  }
 
   if (move.nextBidder !== null && move.nextBidder !== undefined) {
     biddingState.currentBidder = move.nextBidder;
@@ -8878,7 +8931,7 @@ function mpHandleTrumpIntent(move) {
 
   // Execute trump selection on host engine
   if (move.nello) {
-    // V11: Use set_trump('NELLO') so partner-sit-out logic runs correctly.
+    // V10_121f: Use set_trump('NELLO') so partner-sit-out logic runs correctly.
     // Previously did manual setup that skipped active_players computation when guest selected Nello.
     session.bid_marks = move.marks || 1;
     session.set_trump('NELLO');
@@ -8916,7 +8969,7 @@ function mpHandleTrumpConfirmed(move) {
   if (mpIsHost) return;
   console.log('[MP-HA] Trump confirmed: trump=', move.trump, 'seat=', move.seat, 'nello=', move.nello);
   mpLogEntry('RECV', 'trump_confirmed', 'trump=' + move.trump + ' seat=' + move.seat);
-  _clearIntentTimeout(); // V11: Clear trump intent timeout
+  _clearIntentTimeout(); // V11.3: Clear trump intent timeout
 
   _mpLastActivityTime = Date.now();
 
@@ -9010,6 +9063,9 @@ function mpHandleWidowSwapIntent(move) {
   const bidWinner = session.bid_winner_seat;
   if (bidWinner === mpSeat) {
     showTrumpOverlay(true);
+    // V10_121g: Ensure trump selection is active for proper domino clicks
+    trumpSelectionActive = true;
+    enableTrumpDominoClicks();
     setStatus('Widow swapped! Select trump.');
   } else if (mpIsAI(bidWinner)) {
     const aiHand = session.game.hands[bidWinner];
@@ -9043,6 +9099,9 @@ function mpHandleWidowSwapConfirmed(move) {
   // If we are the bid winner, show trump selection
   if (session.bid_winner_seat === mpSeat) {
     showTrumpOverlay(true);
+    // V10_121g: Ensure trump selection is active for proper domino clicks
+    trumpSelectionActive = true;
+    enableTrumpDominoClicks();
     setStatus('Widow swapped! Select trump.');
   } else {
     setStatus(getPlayerDisplayName(session.bid_winner_seat) + ' selecting trump...');
@@ -9308,12 +9367,90 @@ function mpHandleNextHand(move) {
 
 // Handle full game state sync (reconnection)
 function mpHandleStateSync(move) {
+  // V10_122c: CRITICAL - Wrap entire function in try-catch to prevent permanent hangs
+  try {
+    _mpHandleStateSyncInternal(move);
+  } catch(error) {
+    console.error('[MP] CRITICAL: State sync crashed:', error);
+    mpLogEntry('ERROR', 'state_sync_crash', 'Error: ' + error.message, { stack: error.stack });
+    
+    // Release sync lock
+    _syncInProgress = false;
+    console.log('[MP] Sync lock released (crash recovery)');
+    
+    // Hide syncing overlay
+    hideSyncingOverlay();
+    
+    // Reset flags
+    mpSuppressSend = false;
+    isAnimating = false;
+    
+    // Show error to user
+    setStatus('Sync failed - please refresh manually');
+    
+    // Try to recover by requesting fresh sync after delay
+    setTimeout(() => {
+      if(mpIsHost){
+        console.log('[MP] Host recovering from sync crash');
+        mpCheckWhoseTurn();
+      } else {
+        console.log('[MP] Guest recovering from sync crash - requesting refresh');
+        mpRequestRefresh();
+      }
+    }, 2000);
+  }
+}
+
+// Internal state sync implementation (wrapped by try-catch)
+function _mpHandleStateSyncInternal(move) {
+  // ═══════════════════════════════════════════════════════════════
+  // V10_122: SYNC LOCK MECHANISM - Prevent race conditions
+  // ═══════════════════════════════════════════════════════════════
+  
+  // V10_122e: Clear refresh timeout if it exists (host responded!)
+  if(window._mpRefreshTimeout){
+    clearTimeout(window._mpRefreshTimeout);
+    window._mpRefreshTimeout = null;
+  }
+  _clearIntentTimeout(); // V11.3: Clear any bid/pass/trump intent timeout
+  
+  // If sync already in progress, queue this one
+  if(_syncInProgress){
+    console.log('[MP] Sync already in progress — queueing this state_sync');
+    _queuedSync = move;
+    return;
+  }
+  
+  _syncInProgress = true;
+  console.log('[MP] Sync lock acquired');
+  
+  // V10_122d: CRITICAL iOS FIX - Sync lock timeout failsafe
+  // If sync doesn't complete in 10 seconds, force release lock
+  // This prevents permanent hangs if state_sync gets stuck on iOS
+  const _syncLockTimeout = setTimeout(() => {
+    if(_syncInProgress){
+      console.error('[MP] CRITICAL: Sync lock timeout - forcing release');
+      mpLogEntry('ERROR', 'sync_timeout', 'Sync lock held for >10s, forcing release');
+      _syncInProgress = false;
+      hideSyncingOverlay();
+      mpSuppressSend = false;
+      isAnimating = false;
+      setStatus('Sync timeout - please refresh manually');
+    }
+  }, 10000);
+  
   // ═══════════════════════════════════════════════════════════════
   // V10_FIX: Critical sync fixes applied here
   // ═══════════════════════════════════════════════════════════════
   
   // FIX5: Clear all AI timers to prevent stale actions
   _clearAllAITimers();
+  
+  // V10_121g: Clear any pending play intent (guest was waiting for confirmation)
+  if (_pendingPlayIntent) {
+    console.log('[MP] State sync clearing pending play intent');
+    _dropTileFromIntent();
+  }
   
   // FIX4: Show syncing overlay to block all input
   showSyncingOverlay();
@@ -9338,24 +9475,36 @@ function mpHandleStateSync(move) {
   
   // Clear any waiting indicators
   mpHideWaiting();
-
-  // V11: Clear any pending intents — state_sync will rebuild all sprites
-  if (_pendingPlayIntent) {
-    console.log('[V11] Clearing pending play intent before state_sync rebuild');
-    _clearPendingPlayIntent();
-  }
-  _clearIntentTimeout(); // V11: Clear any bid/pass/trump intent timeout
-
+  
+  // V10_122: CRITICAL FIX - Clear all played dominoes from table
+  // When syncing during bidding/trump phase, old dominoes from previous hand
+  // can still be visible, making it look like PLAYING phase when it's not
+  console.log('[V10_122] Clearing table before state_sync');
+  const allSprites = document.querySelectorAll('.domino-sprite');
+  allSprites.forEach(sprite => {
+    // Only remove sprites that are in "played" position (center of table)
+    // Don't remove sprites in player hands
+    if (sprite._inPlayedPosition || sprite._inTrickHistory) {
+      if (sprite._shadow) sprite._shadow.remove();
+      sprite.remove();
+    }
+  });
+  
   // Clear any guest-tracked plays since host is sending authoritative state
   mpGuestClearPlays();
+  
   // Only process if this state is meant for us
   if (mpSeat < 0) {
     console.error('[MP] Received state_sync but mpSeat not set! Ignoring.');
     hideSyncingOverlay(); // FIX4: Hide overlay even on error
+    _syncInProgress = false; // V10_122c: CRITICAL - Release lock on error
+    console.log('[MP] Sync lock released (error: no seat)');
     return;
   }
   if (move.targetSeat !== mpSeat) {
     hideSyncingOverlay(); // FIX4: Hide overlay if not for us
+    _syncInProgress = false; // V10_122c: CRITICAL - Release lock on wrong seat
+    console.log('[MP] Sync lock released (wrong seat)');
     return;
   }
 
@@ -9558,7 +9707,7 @@ function mpHandleStateSync(move) {
         // Create a sprite for the played tile at the trick position
         const sprite = makeSprite(pt.tile);
         const visualP = mpVisualPlayer(pt.seat);
-        const pos = getTrickPosition(visualP);
+        const pos = getPlayedPosition(visualP);
         if (pos) {
           sprite.setPose(pos);
           sprite.setFaceUp(true);
@@ -9569,33 +9718,40 @@ function mpHandleStateSync(move) {
     }
   }
 
-  // V11: Rebuild trick history sprites from tricksTeam data
-  // Without this, reconnecting mid-hand loses all trick history visuals.
-  if (move.tricksTeam && session.game.tricks_team) {
-    const teamCount = session.game.tricks_team.length;
-    for (let team = 0; team < teamCount; team++) {
-      const teamTricks = session.game.tricks_team[team] || [];
+  // V10_121g: Recreate trick history sprites from tricks_team data
+  // This fixes the "lost trick history" issue after reconnection
+  if (session.game.tricks_team && session.game.tricks_team.length > 0) {
+    for (let teamIdx = 0; teamIdx < session.game.tricks_team.length; teamIdx++) {
+      const teamTricks = session.game.tricks_team[teamIdx] || [];
       for (let trickIdx = 0; trickIdx < teamTricks.length; trickIdx++) {
-        const trick = teamTricks[trickIdx];
-        if (!trick) continue;
-        for (let pIdx = 0; pIdx < trick.length; pIdx++) {
-          const tile = trick[pIdx];
+        const record = teamTricks[trickIdx];
+        if (!record || record.length === 0) continue;
+        
+        // record[seat] = tile for that seat (or null if didn't play)
+        // Create sprites for each tile in this completed trick
+        for (let seat = 0; seat < record.length; seat++) {
+          const tile = record[seat];
           if (!tile) continue;
-          const playerRowIndex = pIdx; // seat index within the trick
-          const thPos = getTrickHistoryPosition(trickIdx, team, playerRowIndex);
-          if (thPos) {
-            const thSprite = makeSprite(tile);
-            thSprite.setPose(thPos);
-            thSprite.setFaceUp(true);
-            thSprite._inTrickHistory = true;
-            thSprite._thTeamTrickIndex = trickIdx;
-            thSprite._thWinningTeam = team;
-            thSprite._thPlayerRowIndex = playerRowIndex;
-            if (thSprite._shadow) {
-              shadowLayer.appendChild(thSprite._shadow);
-              thSprite._shadow._inTrickHistory = true;
-            }
-            spriteLayer.appendChild(thSprite);
+          
+          const sprite = makeSprite(tile);
+          sprite.setFaceUp(true);
+          
+          // Calculate playerRowIndex same way as collectToHistory
+          const playerRowIndex = GAME_MODE === 'MOON' ? seat : (seatToPlayer(seat) - 1);
+          
+          // Tag as trick history
+          sprite._inTrickHistory = true;
+          sprite._thTeamTrickIndex = trickIdx;
+          sprite._thWinningTeam = teamIdx; // 0 or 1 for normal mode, seat for Moon
+          sprite._thPlayerRowIndex = playerRowIndex;
+          if (sprite._shadow) sprite._shadow._inTrickHistory = true;
+          
+          // Position in trick history area
+          const targetPose = getTrickHistoryPosition(trickIdx, teamIdx, playerRowIndex);
+          if (targetPose) {
+            sprite.setPose(targetPose);
+            if (sprite._shadow) shadowLayer.appendChild(sprite._shadow);
+            spriteLayer.appendChild(sprite);
           }
         }
       }
@@ -9642,9 +9798,20 @@ function mpHandleStateSync(move) {
     updateTrumpDisplay();
   }
 
+  // V10_121g: Recenter all hands after state sync (fixes right-alignment issue)
+  // When tiles have been played, remaining tiles need to be recentered
+  for (let p = 0; p < playerCount; p++) {
+    const hand = session.game.hands[p] || [];
+    if (hand.length > 0 && hand.length < handSize) {
+      // Hand has tiles played, needs recentering
+      recenterHand(p);
+    }
+  }
+
   // V10_118: Force-reset control flags to a clean state.
   isAnimating = false;
   _mpLastActivityTime = Date.now(); // Reset so stale detector doesn't immediately re-fire
+  _staleRefreshCount = 0; // V10_121g: Reset refresh counter on successful sync
 
   // V10_119: Hide ALL overlays that might be left over from a previous phase.
   // If state_sync restores PHASE_PLAYING but trump overlay is still visible,
@@ -9663,6 +9830,15 @@ function mpHandleStateSync(move) {
     mpSuppressSend = false;
     console.log('[FIX4] State sync complete, input re-enabled');
   }, 300);
+  
+  // V10_121h: Failsafe - force hide overlay after 1 second if still visible
+  setTimeout(() => {
+    const overlay = document.getElementById('syncingOverlay');
+    if (overlay && overlay.style.display !== 'none') {
+      console.warn('[FIX4] Failsafe: Force hiding stuck syncing overlay');
+      hideSyncingOverlay();
+    }
+  }, 1000);
 
   // Resume game flow based on phase
   if (session.phase === PHASE_PLAYING) {
@@ -9678,9 +9854,7 @@ function mpHandleStateSync(move) {
       biddingState = null; // Clear stale bidding state
       if (move.bidWinner === mpSeat) {
         // WE are the bid winner — show trump selection
-        session.phase = PHASE_NEED_TRUMP;
-        setStatus('You won the bid at ' + move.currentBid + '! Select trump.');
-        showTrumpOverlay(true);
+        _guestShowTrumpSelection(move.currentBid);
       } else {
         // Someone else won — wait for trump_confirmed
         session.phase = PHASE_NEED_TRUMP;
@@ -9694,15 +9868,20 @@ function mpHandleStateSync(move) {
       initBiddingRound();
       setTimeout(() => mpRunBiddingStep(), 300);
     } else {
-      // Bidding already active — just update activity timer and continue
+      // V10_121h: Bidding already active — refresh the UI to show current state
       _mpLastActivityTime = Date.now();
-      console.log('[MP] State sync during active bidding — preserving bidding state');
+      console.log('[MP] State sync during active bidding — refreshing UI');
+      // Force UI refresh by calling mpRunBiddingStep
+      setTimeout(() => mpRunBiddingStep(), 100);
     }
   } else if (session.phase === PHASE_NEED_TRUMP) {
     // V10_121c: If we are the bid winner, show trump selection
     if (session.bid_winner_seat === mpSeat) {
       setStatus('Select trump.');
       showTrumpOverlay(true);
+      // V10_121g: Ensure trump selection is active for proper domino clicks
+      trumpSelectionActive = true;
+      enableTrumpDominoClicks();
     } else {
       setStatus(getPlayerDisplayName(session.bid_winner_seat) + ' selecting trump...');
     }
@@ -9717,6 +9896,18 @@ function mpHandleStateSync(move) {
     }
   } else {
     setStatus('Reconnected!');
+  }
+  
+  // V10_122: Release sync lock and process queued sync if any
+  clearTimeout(_syncLockTimeout); // V10_122d: Clear timeout failsafe
+  _syncInProgress = false;
+  console.log('[MP] Sync lock released');
+  
+  if(_queuedSync){
+    console.log('[MP] Processing queued sync');
+    const queued = _queuedSync;
+    _queuedSync = null;
+    setTimeout(() => mpHandleStateSync(queued), 100);
   }
 }
 
@@ -9960,7 +10151,12 @@ function mpIsAI(seat) {
 // V10_104: Request room status from relay (connects if needed)
 function mpRequestRoomStatus() {
   if (mpSocket && mpSocket.readyState === WebSocket.OPEN) {
-    mpSocket.send(JSON.stringify({ type: 'room_status' }));
+    try {
+      mpSocket.send(JSON.stringify({ type: 'room_status' }));
+    } catch(e) {
+      console.error('[MP] Room status send error:', e);
+      return;
+    }
     mpStatusRequested = true;
     return;
   }
@@ -9971,8 +10167,12 @@ function mpRequestRoomStatus() {
   mpSocket = new WebSocket(MP_WS_URL);
   mpSocket.onopen = () => {
     console.log('[MP] Status socket opened');
-    mpSocket.send(JSON.stringify({ type: 'room_status' }));
-    mpStatusRequested = true;
+    try {
+      mpSocket.send(JSON.stringify({ type: 'room_status' }));
+      mpStatusRequested = true;
+    } catch(e) {
+      console.error('[MP] Status send error:', e);
+    }
   };
   mpSocket.onmessage = (evt) => {
     let msg;
@@ -10003,7 +10203,12 @@ function mpConnectAsObserver(roomName) {
 
   // If already connected (from status polling), send observe directly
   if (mpSocket && mpSocket.readyState === WebSocket.OPEN) {
-    mpSocket.send(JSON.stringify({ type: 'observe', room: roomName }));
+    try {
+      mpSocket.send(JSON.stringify({ type: 'observe', room: roomName }));
+    } catch(e) {
+      console.error('[MP] Observer send error:', e);
+      mpSocket.close();
+    }
     return;
   }
 
@@ -10012,7 +10217,11 @@ function mpConnectAsObserver(roomName) {
 
   mpSocket = new WebSocket(MP_WS_URL);
   mpSocket.onopen = () => {
-    mpSocket.send(JSON.stringify({ type: 'observe', room: roomName }));
+    try {
+      mpSocket.send(JSON.stringify({ type: 'observe', room: roomName }));
+    } catch(e) {
+      console.error('[MP] Observer send error on open:', e);
+    }
   };
   mpSocket.onmessage = (evt) => {
     let msg;
@@ -10707,9 +10916,13 @@ function mpGenerateId() {
 // Save multiplayer session to localStorage (room, seat, playerId)
 function mpSaveSession() {
   if (!mpRoom || !mpPlayerId) return;
-  const data = { room: mpRoom, seat: mpSeat, playerId: mpPlayerId, timestamp: Date.now() };
-  localStorage.setItem('tn51_mp_session_' + mpRoom, JSON.stringify(data));
-  console.log('[MP] Session saved:', data);
+  try {
+    const data = { room: mpRoom, seat: mpSeat, playerId: mpPlayerId, timestamp: Date.now() };
+    localStorage.setItem('tn51_mp_session_' + mpRoom, JSON.stringify(data));
+    console.log('[MP] Session saved:', data);
+  } catch(e) {
+    console.warn('[MP] Could not save session (private browsing?):', e);
+  }
 }
 
 // Load multiplayer session from localStorage for a given room
@@ -10813,8 +11026,12 @@ function mpMarkHostStateCompleted() {
 
 // Host: Clear saved state entirely
 function mpClearHostState() {
-  localStorage.removeItem(MP_HOST_STATE_KEY);
-  console.log('[MP] Host state cleared');
+  try {
+    localStorage.removeItem(MP_HOST_STATE_KEY);
+    console.log('[MP] Host state cleared');
+  } catch(e) {
+    console.warn('[MP] Could not clear host state:', e);
+  }
 }
 
 // Guest: Track plays made while host might be disconnected
@@ -10841,7 +11058,9 @@ function mpGuestGetAndClearPlays() {
 
 // Guest: Clear tracked plays (e.g. when receiving state_sync from host)
 function mpGuestClearPlays() {
-  localStorage.removeItem(MP_GUEST_PLAYS_KEY);
+  try {
+    localStorage.removeItem(MP_GUEST_PLAYS_KEY);
+  } catch(e) {}
 }
 
 // Host: Resume from saved state after reconnection
@@ -11182,7 +11401,12 @@ function mpResumeConnection(savedState) {
 
   mpSocket.onopen = () => {
     console.log('[MP] Reconnected to relay, joining room:', mpRoom);
-    mpSocket.send(JSON.stringify({ type: 'join', room: mpRoom }));
+    try {
+      mpSocket.send(JSON.stringify({ type: 'join', room: mpRoom }));
+    } catch(e) {
+      console.error('[MP] Reconnect join send error:', e);
+      mpSocket.close();
+    }
   };
 
   mpSocket.onmessage = (evt) => {
@@ -11273,10 +11497,35 @@ function mpRequestRefresh() {
     }
     return;
   }
+  // V10_121g: Reset refresh counter on manual sync (user action = fresh start)
+  _staleRefreshCount = 0;
   if (mpIsHost) { mpRefreshAll(); return; }
   console.log('[MP] Requesting refresh from host');
   mpSendMove({ action: 'refresh_request', seat: mpSeat });
   setStatus('Requesting refresh from host...');
+  
+  // V10_122e: CRITICAL iOS FIX - Timeout if host doesn't respond
+  // If no state_sync received in 10s, show error and allow retry
+  const _refreshTimeout = setTimeout(() => {
+    if(!mpGameStarted || !session) return; // Game ended, ignore
+    console.error('[MP] Refresh request timeout - host did not respond');
+    mpLogEntry('ERROR', 'refresh_timeout', 'No response from host after 10s');
+    setStatus('Refresh failed - host not responding');
+    hideSyncingOverlay();
+    // Show retry button
+    const retryBtn = document.createElement('button');
+    retryBtn.textContent = 'Retry Sync';
+    retryBtn.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10001;padding:12px 24px;background:#ef4444;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
+    retryBtn.onclick = () => {
+      retryBtn.remove();
+      mpRequestRefresh();
+    };
+    document.body.appendChild(retryBtn);
+    setTimeout(() => retryBtn.remove(), 15000); // Auto-remove after 15s
+  }, 10000);
+  
+  // Store timeout ID so we can clear it when state_sync arrives
+  window._mpRefreshTimeout = _refreshTimeout;
 }
 
 // Show host settings (marks selection) in MP modal
@@ -12915,6 +13164,9 @@ function cancelNelloOpponent(){
   document.getElementById('nelloBackdrop').style.display = 'none';
   // Go back to trump selection
   showTrumpOverlay(true);
+  // V10_121g: Ensure trump selection is active for proper domino clicks
+  trumpSelectionActive = true;
+  enableTrumpDominoClicks();
 }
 
 // AI Nello setup - AI picks an opponent to sit out
@@ -13959,7 +14211,12 @@ function showMoonSettingsPanel(){
   }
 
   var saveMoon = function(){
-    localStorage.setItem('tn51_moon_settings', JSON.stringify(MOON_SETTINGS));
+    // V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+    try {
+      localStorage.setItem('tn51_moon_settings', JSON.stringify(MOON_SETTINGS));
+    } catch(e) {
+      console.warn('[iOS] localStorage write error:', e);
+    }
     if(typeof positionPlayerIndicators === 'function') positionPlayerIndicators();
     // Reposition all trick history sprites with updated settings
     if(typeof repositionTrickHistorySprites === 'function') repositionTrickHistorySprites();
@@ -13985,7 +14242,12 @@ function showMoonSettingsPanel(){
     }
   };
   var saveWidow = function(){
-    localStorage.setItem('tn51_moon_widow_pos', JSON.stringify(MOON_WIDOW_POS));
+    // V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+    try {
+      localStorage.setItem('tn51_moon_widow_pos', JSON.stringify(MOON_WIDOW_POS));
+    } catch(e) {
+      console.warn('[iOS] localStorage write error:', e);
+    }
     if(typeof updateWidowDisplay === 'function') updateWidowDisplay();
   };
 
@@ -14137,6 +14399,9 @@ function afterWidowSwap(){
         setStatus('Widow swap done. Select trump.');
         mpHideWaiting();
         showTrumpOverlay(true);
+        // V10_121g: Ensure trump selection is active for proper domino clicks
+        trumpSelectionActive = true;
+        enableTrumpDominoClicks();
       } else if(mpIsHost && mpIsAI(bidderSeat)){
         // AI on host picks trump after swap
         const hand = session.game.hands[bidderSeat] || [];
@@ -14158,6 +14423,9 @@ function afterWidowSwap(){
     const isHumanBidder = ppIsHuman(bidderSeat);
     if(isHumanBidder){
       showTrumpOverlay(true);
+      // V10_121g: Ensure trump selection is active for proper domino clicks
+      trumpSelectionActive = true;
+      enableTrumpDominoClicks();
     } else {
       // AI picks trump after widow swap
       const hand = session.game.hands[bidderSeat] || [];
@@ -14643,6 +14911,7 @@ function makeSprite(tile){
 let zIndexCounter = 100;
 
 function bringToFront(sprite){
+  if(!sprite || !sprite.style) return; // V10_122: Safety check
   zIndexCounter++;
   sprite.style.zIndex = zIndexCounter;
 }
@@ -15366,6 +15635,12 @@ async function collectToHistory(){
     await new Promise(r => setTimeout(r, ANIM.COLLECT_STAGGER));
 
     bringToFront(sprite);
+
+    // V10_122: Safety check - sprite might be undefined if already collected
+    if(!sprite) {
+      console.warn('[collectToHistory] Sprite undefined, skipping');
+      return;
+    }
 
     // Tag this sprite as being in trick history (for boneyard 2 toggling and repositioning)
     sprite._inTrickHistory = true;
@@ -16384,7 +16659,7 @@ function finalizeBidding() {
         setStatus(getPlayerDisplayName(bidWinnerSeat) + ' won the bid. Widow swap...');
       }
       biddingState = null;
-      return { done: true }; // V11: Must return object so callers can read advance.done
+      return { done: true }; // V10_121f: Must return object so callers can read advance.done
     }
 
     if (bidWinnerSeat === mpSeat) {
@@ -16407,7 +16682,7 @@ function finalizeBidding() {
           } else if(nelloDoublesMode === 'player_chooses'){
             document.getElementById('nelloDoublesBackdrop').style.display = 'flex';
             biddingState = null;
-            return { done: true }; // V11: Must return object for callers
+            return { done: true }; // V10_121f: Must return object for callers
           } else {
             nelloDoublesSuitActive = false;
             session.game.nello_doubles_suit = false;
@@ -16418,7 +16693,7 @@ function finalizeBidding() {
           showNelloOpponentSelection(nelloMarks);
         }
         biddingState = null;
-        return { done: true }; // V11: Must return object for callers
+        return { done: true }; // V10_121f: Must return object for callers
       }
       // V10_111: Compute Nello eligibility at trump selection for MP
       if(nelloDeclareMode){
@@ -16440,6 +16715,9 @@ function finalizeBidding() {
       setStatus('You won the bid! Select trump.');
       mpHideWaiting();
       showTrumpOverlay(true);
+      // V10_121g: Ensure trump selection is active for proper domino clicks
+      trumpSelectionActive = true;
+      enableTrumpDominoClicks();
     } else if (mpIsHost && mpIsAI(bidWinnerSeat)) {
       // AI won the bid on host - pick trump and broadcast
       const aiHand = session.game.hands[bidWinnerSeat];
@@ -16460,7 +16738,7 @@ function finalizeBidding() {
       setStatus(getPlayerDisplayName(bidWinnerSeat) + ' won the bid. Selecting trump...');
     }
     biddingState = null;
-    return { done: true }; // V11: Must return object so callers can read advance.done
+    return { done: true }; // V10_121f: Must return object so callers can read advance.done
   }
 
   const winnerSeat = biddingState.highBidder;
@@ -16633,12 +16911,18 @@ function finalizeBidding() {
     // Rotate board to bid winner (no privacy screen — same player just bid)
     ppRotateBoard(winnerSeat);
     showTrumpOverlay(true);
+    // V10_121g: Ensure trump selection is active for proper domino clicks
+    trumpSelectionActive = true;
+    enableTrumpDominoClicks();
     return { done: true, winner: winnerSeat, bid: biddingState.highBid };
   }
 
   session.status = `You won the bid (${biddingState.highBid}). Pick trump.`;
   setStatus(session.status);
   showTrumpOverlay(true);
+  // V10_121g: Ensure trump selection is active for proper domino clicks
+  trumpSelectionActive = true;
+  enableTrumpDominoClicks();
   return { done: true, winner: winnerSeat, bid: biddingState.highBid };
 }
 
@@ -16691,7 +16975,7 @@ function runBiddingStep() {
     setStatus(session.status);
 
     setTimeout(() => {
-      const advance = advanceBidding() || { done: true }; // V11: defensive null-check
+      const advance = advanceBidding() || { done: true }; // V10_121f: defensive null-check
       if (!advance.done) {
         runBiddingStep();
       }
@@ -16748,7 +17032,7 @@ function humanBid(bidAmount, marks = 1) {
     mpSendMove(bidPayload);
     showBidOverlay(false);
     setStatus('Waiting for confirmation...');
-    _startIntentTimeout('bid'); // V11: Timeout if host is unreachable
+    _startIntentTimeout('bid'); // V11.3: Timeout if host is unreachable
     // Guest doesn't update biddingState or advance — wait for bid_confirmed from host
     return true;
   }
@@ -16774,7 +17058,7 @@ function humanBid(bidAmount, marks = 1) {
 
   showBidOverlay(false);
 
-  const advance = advanceBidding() || { done: true }; // V11: defensive null-check
+  const advance = advanceBidding() || { done: true }; // V10_121f: defensive null-check
 
   // V10_121: Host broadcasts confirmed bid to all guests
   if (MULTIPLAYER_MODE && mpIsHost) {
@@ -16818,7 +17102,7 @@ function humanPass() {
     mpSendMove({ action: 'pass_intent', seat: currentBidder });
     showBidOverlay(false);
     setStatus('Waiting for confirmation...');
-    _startIntentTimeout('pass'); // V11: Timeout if host is unreachable
+    _startIntentTimeout('pass'); // V11.3: Timeout if host is unreachable
     return true;
   }
 
@@ -16831,7 +17115,7 @@ function humanPass() {
 
   showBidOverlay(false);
 
-  const advance = advanceBidding() || { done: true }; // V11: defensive null-check
+  const advance = advanceBidding() || { done: true }; // V10_121f: defensive null-check
 
   // V10_121: Host broadcasts confirmed pass to all guests
   if (MULTIPLAYER_MODE && mpIsHost) {
@@ -17450,7 +17734,7 @@ function confirmTrumpSelection(){
       mpSendMove({ action: 'trump_intent', trump: trumpVal, seat: mpSeat, marks: session.bid_marks });
     }
     setStatus('Waiting for host to confirm trump...');
-    _startIntentTimeout('trump'); // V11: Timeout if host is unreachable
+    _startIntentTimeout('trump'); // V11.3: Timeout if host is unreachable
     return; // Guest stops here — mpHandleTrumpConfirmed() continues on receipt
   }
 
@@ -18126,13 +18410,25 @@ document.getElementById('menuPassPlay').addEventListener('click', () => {
 });
 
 // Boneyard style controls — persist with localStorage
-window._bonesGap = parseInt(localStorage.getItem('tn51_bonesGap')) || 7;
-window._bonesInnerSize = parseInt(localStorage.getItem('tn51_bonesInnerSize')) || 1;
-window._bonesInnerRadius = parseInt(localStorage.getItem('tn51_bonesInnerRadius') || '8');
-window._bonesOuterSize = parseInt(localStorage.getItem('tn51_bonesOuterSize')) || 3;
-window._bonesOuterRadius = parseInt(localStorage.getItem('tn51_bonesOuterRadius') || '11');
-window._bonesColor = localStorage.getItem('tn51_bonesColor') || '#beb6ab';
-window._bonesOuterColor = localStorage.getItem('tn51_bonesOuterColor') || '#00deff';
+// V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+window._bonesGap = 7;
+window._bonesInnerSize = 1;
+window._bonesInnerRadius = 8;
+window._bonesOuterSize = 3;
+window._bonesOuterRadius = 11;
+window._bonesColor = '#beb6ab';
+window._bonesOuterColor = '#00deff';
+try {
+  window._bonesGap = parseInt(localStorage.getItem('tn51_bonesGap')) || 7;
+  window._bonesInnerSize = parseInt(localStorage.getItem('tn51_bonesInnerSize')) || 1;
+  window._bonesInnerRadius = parseInt(localStorage.getItem('tn51_bonesInnerRadius') || '8');
+  window._bonesOuterSize = parseInt(localStorage.getItem('tn51_bonesOuterSize')) || 3;
+  window._bonesOuterRadius = parseInt(localStorage.getItem('tn51_bonesOuterRadius') || '11');
+  window._bonesColor = localStorage.getItem('tn51_bonesColor') || '#beb6ab';
+  window._bonesOuterColor = localStorage.getItem('tn51_bonesOuterColor') || '#00deff';
+} catch(e) {
+  console.warn('[iOS] localStorage read error (private mode?):', e);
+}
 
 function updateBonesStyle(){
   const gapEl = document.getElementById('bonesGap');
@@ -18165,13 +18461,18 @@ function updateBonesStyle(){
   if(cv) cv.textContent = window._bonesColor;
   if(ocv) ocv.textContent = window._bonesOuterColor;
   // Persist
-  localStorage.setItem('tn51_bonesGap', window._bonesGap);
-  localStorage.setItem('tn51_bonesInnerSize', window._bonesInnerSize);
-  localStorage.setItem('tn51_bonesInnerRadius', window._bonesInnerRadius);
-  localStorage.setItem('tn51_bonesOuterSize', window._bonesOuterSize);
-  localStorage.setItem('tn51_bonesOuterRadius', window._bonesOuterRadius);
-  localStorage.setItem('tn51_bonesColor', window._bonesColor);
-  localStorage.setItem('tn51_bonesOuterColor', window._bonesOuterColor);
+  // V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+  try {
+    localStorage.setItem('tn51_bonesGap', window._bonesGap);
+    localStorage.setItem('tn51_bonesInnerSize', window._bonesInnerSize);
+    localStorage.setItem('tn51_bonesInnerRadius', window._bonesInnerRadius);
+    localStorage.setItem('tn51_bonesOuterSize', window._bonesOuterSize);
+    localStorage.setItem('tn51_bonesOuterRadius', window._bonesOuterRadius);
+    localStorage.setItem('tn51_bonesColor', window._bonesColor);
+    localStorage.setItem('tn51_bonesOuterColor', window._bonesOuterColor);
+  } catch(e) {
+    console.warn('[iOS] localStorage write error:', e);
+  }
   // Re-render
   renderBoneyard();
 }
@@ -19203,7 +19504,12 @@ document.getElementById('aboutCloseBtn').addEventListener('click', () => {
     chkNelloDeclare.checked = nelloDeclareMode;
     chkNelloDeclare.addEventListener('change', function(){
       nelloDeclareMode = this.checked;
-      localStorage.setItem('tn51_nello_declare', String(nelloDeclareMode));
+      // V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+      try {
+        localStorage.setItem('tn51_nello_declare', String(nelloDeclareMode));
+      } catch(e) {
+        console.warn('[iOS] localStorage write error:', e);
+      }
     });
   }
   // V10_109: Nello restrict first checkbox
@@ -19212,7 +19518,12 @@ document.getElementById('aboutCloseBtn').addEventListener('click', () => {
     chkNelloRestrict.checked = nelloRestrictFirst;
     chkNelloRestrict.addEventListener('change', function(){
       nelloRestrictFirst = this.checked;
-      localStorage.setItem('tn51_nello_restrict_first', String(nelloRestrictFirst));
+      // V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+      try {
+        localStorage.setItem('tn51_nello_restrict_first', String(nelloRestrictFirst));
+      } catch(e) {
+        console.warn('[iOS] localStorage write error:', e);
+      }
     });
   }
 
@@ -19400,7 +19711,12 @@ function resumeGameFromSave(){
 }
 
 function hasSavedGame(){
-  return localStorage.getItem(SAVE_KEY) !== null;
+  // V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+  try {
+    return localStorage.getItem(SAVE_KEY) !== null;
+  } catch(e) {
+    return false;
+  }
 }
 
 function clearSavedGame(){
@@ -19434,11 +19750,21 @@ function autoSave(){
  * NOTES FUNCTIONALITY
  ******************************************************************************/
 function loadNotes(){
-  return localStorage.getItem(NOTES_KEY) || '';
+  // V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+  try {
+    return localStorage.getItem(NOTES_KEY) || '';
+  } catch(e) {
+    return '';
+  }
 }
 
 function saveNotes(text){
-  localStorage.setItem(NOTES_KEY, text);
+  // V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+  try {
+    localStorage.setItem(NOTES_KEY, text);
+  } catch(e) {
+    console.warn('[iOS] localStorage write error:', e);
+  }
 }
 
 document.getElementById('menuNotes').addEventListener('click', () => {
@@ -21747,23 +22073,28 @@ document.addEventListener('visibilitychange', () => {
     } else {
       // WebSocket is open but state may be stale — request refresh
       console.log('[Visibility] WebSocket open — requesting state refresh');
-      setStatus('Syncing...');
-      _mpLastActivityTime = Date.now(); // V11: Prevent stale detector from double-firing
+      // V10_122b: Host should NOT sync all players when host returns to tab
+      // Only guest needs to request refresh when guest returns
+      // V10_121g: Reset refresh counter when user returns to tab (manual action)
+      _staleRefreshCount = 0;
+      _mpLastActivityTime = Date.now(); // V11.3: Prevent stale detector double-firing
       if(mpIsHost){
-        // Host: re-broadcast state to all
-        mpRefreshAll();
-        setTimeout(() => mpCheckWhoseTurn(), 500);
+        // Host: Just check whose turn it is, don't force sync to all players
+        console.log('[Visibility] Host returned — checking turn state');
+        mpCheckWhoseTurn();
       } else {
         // Guest: request refresh from host
+        setStatus('Syncing...');
         mpRequestRefresh();
-        // V11: Fallback — if no state_sync arrives within 5s, the socket is likely
-        // a zombie (appears OPEN but TCP died silently). Force reconnect.
+        // V11.3: Zombie socket detection — if no state_sync arrives within 5s,
+        // the socket may appear OPEN but the TCP connection is actually dead.
+        // Force close and reconnect.
         const _visFallbackActivity = _mpLastActivityTime;
         setTimeout(() => {
           if(_mpLastActivityTime === _visFallbackActivity && mpSocket && mpSocket.readyState === WebSocket.OPEN){
             console.log('[Visibility] No response after 5s — socket may be zombie, forcing reconnect');
             mpLogEntry('WARN', 'zombie-socket', 'Visibility fallback: no activity after refresh request');
-            mpSocket.close();
+            try { mpSocket.close(); } catch(e) {}
             _mpReconnectAttempts = 0;
             if(mpRoom) mpConnect(mpRoom);
           }
@@ -21782,12 +22113,149 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
+/******************************************************************************
+ * V10_122c: iOS SAFARI BACKGROUND HANDLER (pagehide/pageshow)
+ * iOS Safari aggressively suspends pages when user switches apps or locks screen.
+ * visibilitychange alone is not enough - need pagehide/pageshow for iOS.
+ ******************************************************************************/
+window.addEventListener('pagehide', () => {
+  console.log('[iOS] Page hidden (app backgrounded or screen locked)');
+  _lastVisibleTime = Date.now();
+  // iOS will likely kill WebSocket - don't try to send anything
+});
+
+window.addEventListener('pageshow', (event) => {
+  console.log('[iOS] Page shown (app foregrounded), persisted:', event.persisted);
+  
+  if(!MULTIPLAYER_MODE || !mpGameStarted || !mpRoom) return;
+  
+  const hiddenDuration = Date.now() - _lastVisibleTime;
+  
+  // iOS likely killed WebSocket if page was hidden for any significant time
+  if(hiddenDuration > 1000){
+    console.log('[iOS] Page was hidden for', Math.round(hiddenDuration/1000), 's — reconnecting');
+    
+    // Always reconnect on iOS after backgrounding
+    if(!mpSocket || mpSocket.readyState !== WebSocket.OPEN){
+      console.log('[iOS] WebSocket dead — reconnecting');
+      setStatus('Reconnecting...');
+      _mpReconnectAttempts = 0;
+      mpConnect(mpRoom);
+    } else {
+      // Socket claims to be open but may be stale on iOS
+      console.log('[iOS] WebSocket claims open — verifying with heartbeat');
+      mpSendMove({ action: 'heartbeat', seat: mpSeat });
+      
+      // Request refresh after short delay to ensure connection is stable
+      setTimeout(() => {
+        if(mpIsHost){
+          mpCheckWhoseTurn();
+        } else {
+          setStatus('Syncing...');
+          mpRequestRefresh();
+        }
+      }, 500);
+    }
+  }
+  
+  // V10_122c: CRITICAL iOS FIX - Force stale check after returning from background
+  // iOS pauses setInterval timers, so stale detection might not run for a long time
+  // This causes "display stops refreshing" bug on iPhone
+  if(hiddenDuration > 3000 && session && session.phase === PHASE_PLAYING){
+    console.log('[iOS] Forcing stale check after background (iOS timer pause recovery)');
+    setTimeout(() => {
+      // Check if game is stuck
+      const timeSinceActivity = Date.now() - _mpLastActivityTime;
+      const cp = session.game.current_player;
+      
+      if(timeSinceActivity > 10000 && !isAnimating){
+        console.log('[iOS] Game appears stale after background —', Math.round(timeSinceActivity/1000), 's since activity');
+        
+        if(cp === mpSeat && !waitingForPlayer1){
+          // It's our turn but UI is frozen - re-enable
+          console.log('[iOS] Re-enabling our turn after background');
+          waitingForPlayer1 = true;
+          enablePlayer1Clicks();
+          updatePlayer1ValidStates();
+          showHint();
+        } else if(cp !== mpSeat){
+          // Waiting for remote player - request refresh
+          console.log('[iOS] Requesting refresh after background');
+          mpRequestRefresh();
+        }
+      }
+    }, 1000);
+  }
+});
+
+/******************************************************************************
+ * V10_122: NETWORK CHANGE HANDLER (Mobile Network Switching)
+ * Detects when device switches networks (WiFi ↔ Cellular) or goes offline/online.
+ * Critical for iPhone users who may switch networks frequently.
+ ******************************************************************************/
+window.addEventListener('online', () => {
+  console.log('[Network] Device came online');
+  if(!MULTIPLAYER_MODE || !mpGameStarted || !mpRoom) return;
+  
+  // Network is back — reconnect immediately
+  if(!mpSocket || mpSocket.readyState !== WebSocket.OPEN){
+    console.log('[Network] Reconnecting after coming online');
+    setStatus('Network restored - reconnecting...');
+    _mpReconnectAttempts = 0; // Reset attempts on network restore
+    mpConnect(mpRoom);
+  }
+});
+
+window.addEventListener('offline', () => {
+  console.log('[Network] Device went offline');
+  if(!MULTIPLAYER_MODE || !mpGameStarted) return;
+  
+  mpUpdateStatus('Offline - waiting for network...', '#ef4444');
+  setStatus('Network connection lost');
+});
+
+// V10_122: Detect network quality changes (connection type switching)
+// This helps detect WiFi ↔ Cellular switches on mobile devices
+// V10_122c: Safari doesn't support navigator.connection - add fallback
+if('connection' in navigator){
+  try {
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if(connection && connection.addEventListener){
+      connection.addEventListener('change', () => {
+        console.log('[Network] Connection type changed:', connection.effectiveType, 'downlink:', connection.downlink);
+        
+        if(!MULTIPLAYER_MODE || !mpGameStarted || !mpRoom) return;
+        
+        // If connection changed and WebSocket is not open, reconnect
+        if(!mpSocket || mpSocket.readyState !== WebSocket.OPEN){
+          console.log('[Network] Reconnecting after connection type change');
+          setStatus('Network changed - reconnecting...');
+          _mpReconnectAttempts = 0;
+          mpConnect(mpRoom);
+        } else {
+          // Connection changed but socket still open — verify with ping
+          console.log('[Network] Connection changed but socket open — verifying');
+          mpSendMove({ action: 'heartbeat', seat: mpSeat });
+        }
+      });
+    }
+  } catch(e) {
+    console.log('[Network] Connection API not fully supported (Safari)');
+  }
+} else {
+  console.log('[Network] Connection API not available (Safari/iOS)');
+}
+
 // V10_118: Stale-state auto-recovery — more conservative triggering.
-// Raised threshold from 12s→20s to avoid false triggers during normal play.
-// Added per-hand refresh counter to prevent infinite refresh loops.
+// V10_122: COMPREHENSIVE SYNC OPTIMIZATION
+// Increased thresholds to prevent false positives during normal gameplay.
+// Added activity heartbeat so players can signal "still thinking" without triggering sync.
 // Max 2 refreshes per hand — after that, only re-enable clicks (no state_sync).
 let _staleRefreshCount = 0; // V10_118: Refreshes triggered this hand
 let _staleRefreshDisabled = false; // V10_119: Per-player toggle to disable auto-refresh
+let _mpLastHeartbeatSent = 0; // V10_122: Last time we sent "still_here" heartbeat
+let _mpLastHeartbeatReceived = {}; // V10_122: Last heartbeat time per seat
+
 setInterval(() => {
   if(!MULTIPLAYER_MODE || !mpGameStarted || !session) return;
   if(document.hidden) return; // Don't check while tab is hidden
@@ -21800,13 +22268,22 @@ setInterval(() => {
 
   const timeSinceActivity = Date.now() - _mpLastActivityTime;
 
-  // V11: Use different thresholds depending on who we're waiting for.
-  // AI turns: 20s is fine (AI should respond in <2s).
-  // Remote human turns: 60s — humans can take a long time to think.
+  // V10_122: OPTIMIZED THRESHOLDS - Increased to reduce false positives
+  // AI turns: 30s (was 20s) — AI responds in <2s, so 30s is very safe
+  // Remote human turns: 90s (was 60s) — humans need time to think, especially in complex situations
   // A premature state_sync causes a visual "snap" that disrupts the other player.
   const cp = session.game.current_player;
   const isRemoteHumanTurn = cp !== mpSeat && !mpIsAI(cp);
-  const staleThreshold = isRemoteHumanTurn ? 60000 : 20000;
+  
+  // V10_122: Check if we received recent heartbeat from current player
+  const lastHeartbeat = _mpLastHeartbeatReceived[cp] || 0;
+  const timeSinceHeartbeat = Date.now() - lastHeartbeat;
+  const hasRecentHeartbeat = timeSinceHeartbeat < 45000; // Heartbeat within last 45s
+  
+  // V10_122: If remote human sent heartbeat recently, they're still thinking - don't sync
+  const staleThreshold = isRemoteHumanTurn ? 
+    (hasRecentHeartbeat ? 120000 : 90000) : // 2 minutes if heartbeat, 90s if no heartbeat
+    30000; // 30s for AI turns
 
   if(timeSinceActivity > staleThreshold && !isAnimating && session.phase === PHASE_PLAYING){
     // V10_115: If it's OUR turn, don't request refresh — just re-enable clicks
@@ -21836,7 +22313,8 @@ setInterval(() => {
     if(isWaiting || isHostAIStuck){
       console.log('[MP] Stale state detected —', Math.round(timeSinceActivity/1000), 's since last activity.',
         isHostAIStuck ? 'AI appears frozen.' : (isRemoteHumanTurn ? 'Remote human slow.' : 'Requesting refresh.'),
-        'Refresh count this hand:', _staleRefreshCount);
+        'Refresh count this hand:', _staleRefreshCount,
+        hasRecentHeartbeat ? '(has recent heartbeat)' : '(no heartbeat)'); // V10_122
       mpLogEntry('STATE', 'stale', 'Stale ' + Math.round(timeSinceActivity/1000) + 's' + (isHostAIStuck ? ' AI frozen' : (isRemoteHumanTurn ? ' remote-human' : ' requesting refresh')) + ' count=' + _staleRefreshCount, mpGetGameSnapshot());
       _mpLastActivityTime = Date.now(); // Prevent rapid re-triggers
 
@@ -21862,7 +22340,18 @@ setInterval(() => {
       }
     }
   }
-}, 10000); // V10_118: Check every 10s (was 8s, slowed down to reduce churn)
+  
+  // V10_122: ACTIVITY HEARTBEAT - Send "still_here" signal during our turn
+  // This prevents false stale detection when we're thinking
+  if(session.phase === PHASE_PLAYING && cp === mpSeat && waitingForPlayer1){
+    const timeSinceLastHeartbeat = Date.now() - _mpLastHeartbeatSent;
+    if(timeSinceLastHeartbeat > 30000){ // Send heartbeat every 30s during our turn
+      _mpLastHeartbeatSent = Date.now();
+      mpSendMove({ action: 'heartbeat', seat: mpSeat });
+      console.log('[MP] Sent activity heartbeat (still thinking)');
+    }
+  }
+}, 15000); // V10_122: Check every 15s (was 10s) - reduced frequency to lower overhead
 
 /******************************************************************************
  * SCREEN SIZE DETECTION
@@ -22131,7 +22620,12 @@ document.getElementById('chkCallForDouble').addEventListener('change', function(
   } else {
     knob.style.left = '2px'; bg.style.background = 'rgba(255,255,255,0.2)';
   }
-  localStorage.setItem('tn51_callForDouble', callForDoubleEnabled ? '1' : '0');
+  // V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+  try {
+    localStorage.setItem('tn51_callForDouble', callForDoubleEnabled ? '1' : '0');
+  } catch(e) {
+    console.warn('[iOS] localStorage write error:', e);
+  }
 });
 
 // Nello doubles mode buttons
@@ -22144,7 +22638,12 @@ document.querySelectorAll('.gsNelloBtn').forEach(btn => {
     });
     btn.style.border = '2px solid #fff';
     btn.classList.add('gsNelloSelected');
-    localStorage.setItem('tn51_nelloDoublesMode', nelloDoublesMode);
+    // V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+    try {
+      localStorage.setItem('tn51_nelloDoublesMode', nelloDoublesMode);
+    } catch(e) {
+      console.warn('[iOS] localStorage write error:', e);
+    }
   });
 });
 
@@ -24168,6 +24667,70 @@ if ('serviceWorker' in navigator) {
   if(GAME_MODE === 'TN51' && _savedTn51) applyTn51Settings();
   // Apply persisted T42 settings (already handled by initGameMode calling applyT42Settings)
 })();
+
+/******************************************************************************
+ * V10_122c: GLOBAL ERROR HANDLERS FOR iOS STABILITY
+ * Prevents silent crashes from unhandled promise rejections and errors
+ ******************************************************************************/
+window.addEventListener('unhandledrejection', function(event) {
+  console.error('[CRITICAL] Unhandled promise rejection:', event.reason);
+  mpLogEntry('ERROR', 'unhandled-rejection', 'Promise rejection: ' + (event.reason ? event.reason.message : 'unknown'));
+  
+  // If sync is in progress and crashes, release the lock
+  if(_syncInProgress){
+    console.warn('[CRITICAL] Releasing stuck sync lock due to unhandled rejection');
+    _syncInProgress = false;
+    hideSyncingOverlay();
+    mpSuppressSend = false;
+    isAnimating = false;
+  }
+  
+  // Prevent default to avoid console spam
+  event.preventDefault();
+});
+
+window.addEventListener('error', function(event) {
+  console.error('[CRITICAL] Unhandled error:', event.error);
+  mpLogEntry('ERROR', 'unhandled-error', 'Error: ' + (event.error ? event.error.message : event.message));
+  
+  // If sync is in progress and crashes, release the lock
+  if(_syncInProgress){
+    console.warn('[CRITICAL] Releasing stuck sync lock due to unhandled error');
+    _syncInProgress = false;
+    hideSyncingOverlay();
+    mpSuppressSend = false;
+    isAnimating = false;
+  }
+});
+
+/******************************************************************************
+ * V10_122c: GLOBAL SYNCING OVERLAY FAILSAFE
+ * Ensures overlay never stays visible for more than 15 seconds
+ ******************************************************************************/
+setInterval(() => {
+  const overlay = document.getElementById('syncingOverlay');
+  if(overlay && overlay.style.display !== 'none'){
+    // Check how long overlay has been visible
+    if(!overlay._shownAt){
+      overlay._shownAt = Date.now();
+    } else {
+      const duration = Date.now() - overlay._shownAt;
+      if(duration > 15000){
+        console.error('[CRITICAL] Syncing overlay stuck for', Math.round(duration/1000), 's — force hiding');
+        mpLogEntry('ERROR', 'overlay-stuck', 'Overlay visible for ' + Math.round(duration/1000) + 's');
+        hideSyncingOverlay();
+        _syncInProgress = false;
+        mpSuppressSend = false;
+        isAnimating = false;
+        setStatus('Sync timeout - please refresh manually');
+        overlay._shownAt = null;
+      }
+    }
+  } else {
+    if(overlay) overlay._shownAt = null;
+  }
+}, 1000);
+
 </script>
 <!-- Lay Down Hand UI -->
 <div id="layDownBtnGroup">
