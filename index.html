@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>TN51 / T42 / Moon Dominoes V11.3</title>
+<title>TN51 / T42 / Moon Dominoes V11.4</title>
 <style>
   :root{
     --feltA:#1a8f37; --feltB:#0f6e2a; --feltC:#0a4f1d;
@@ -1089,6 +1089,54 @@
   0%, 100% { box-shadow: 0 2px 8px rgba(96,165,250,0.4); }
   50% { box-shadow: 0 2px 16px rgba(96,165,250,0.8); }
 }
+/* V11.4: Your Turn banner pulse */
+@keyframes yourTurnPulse {
+  0%, 100% { box-shadow: 0 2px 12px rgba(96,165,250,0.5); transform: scale(1); }
+  50% { box-shadow: 0 4px 20px rgba(96,165,250,0.8); transform: scale(1.05); }
+}
+/* V11.4: In-game chat */
+#mpChatIcon {
+  display:none; position:fixed; bottom:12%; left:8px; z-index:900;
+  width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#60a5fa,#3b82f6);
+  color:#fff; border:none; cursor:pointer; font-size:18px; box-shadow:0 2px 8px rgba(0,0,0,0.3);
+  align-items:center; justify-content:center;
+}
+#mpChatIcon .chat-badge {
+  display:none; position:absolute; top:-4px; right:-4px; width:16px; height:16px;
+  background:#ef4444; border-radius:50%; font-size:9px; color:#fff;
+  line-height:16px; text-align:center; font-weight:bold;
+}
+#mpChatPanel {
+  display:none; position:fixed; bottom:calc(12% + 46px); left:8px; z-index:901;
+  width:260px; max-height:300px; background:rgba(15,25,35,0.95); border-radius:12px;
+  border:1px solid rgba(255,255,255,0.15); box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  font-family:system-ui,-apple-system,sans-serif; flex-direction:column;
+}
+#mpChatPanel .chat-header {
+  display:flex; justify-content:space-between; align-items:center; padding:8px 12px;
+  border-bottom:1px solid rgba(255,255,255,0.1); font-size:13px; font-weight:600; color:#60a5fa;
+}
+#mpChatPanel .chat-header button {
+  background:none; border:none; color:#aaa; font-size:16px; cursor:pointer; padding:0 2px;
+}
+#mpChatMessages {
+  flex:1; overflow-y:auto; padding:8px; min-height:100px; max-height:200px;
+  font-size:12px; color:#ddd; line-height:1.4;
+}
+#mpChatMessages .chat-msg { margin-bottom:6px; }
+#mpChatMessages .chat-msg .chat-name { font-weight:600; color:#60a5fa; margin-right:4px; }
+#mpChatMessages .chat-msg.chat-self .chat-name { color:#22c55e; }
+#mpChatInput {
+  display:flex; padding:6px; border-top:1px solid rgba(255,255,255,0.1); gap:4px;
+}
+#mpChatInput input {
+  flex:1; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
+  border-radius:6px; padding:6px 8px; color:#fff; font-size:12px; outline:none;
+}
+#mpChatInput button {
+  background:linear-gradient(135deg,#60a5fa,#3b82f6); border:none; border-radius:6px;
+  padding:6px 10px; color:#fff; font-size:12px; font-weight:600; cursor:pointer;
+}
 /* CALLED FOR DOUBLE banner (other players see this) */
 #callDoubleBanner {
   display: none;
@@ -1361,7 +1409,7 @@
     </div>
     <div style="text-align:center;">
       <div style="font-size:24px;font-weight:800;color:#fff;margin-bottom:4px;">TN51 / TX42 Dominoes</div>
-      <div style="font-size:16px;font-weight:700;color:#60a5fa;margin-bottom:12px;" id="aboutVersion">V11.3</div>
+      <div style="font-size:16px;font-weight:700;color:#60a5fa;margin-bottom:12px;" id="aboutVersion">V11.4</div>
       <div style="font-size:12px;color:#9ca3af;line-height:1.6;">
         <div>Built: February 2026</div>
         <div>Game modes: Tennessee 51, Texas 42</div>
@@ -1669,6 +1717,10 @@
           <button class="mpNelloBtn" data-nello="doubles_only" style="flex:1;padding:5px 3px;font-size:10px;font-weight:600;border-radius:6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:#fff;cursor:pointer;">Doubles Only</button>
           <button class="mpNelloBtn" data-nello="player_chooses" style="flex:1;padding:5px 3px;font-size:10px;font-weight:600;border-radius:6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:#fff;cursor:pointer;">Player Picks</button>
         </div>
+        <!-- V11.4: Chat toggle -->
+        <label class="mpRuleLabel" style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:12px;color:#fff;cursor:pointer;margin-top:8px;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;">
+          <input type="checkbox" id="mpChkChat" checked style="accent-color:#60a5fa;" onchange="mpChatEnabled=this.checked;mpShowChatIcon(mpChatEnabled);"> Enable In-Game Chat
+        </label>
       </div>
     </div>
 
@@ -1703,6 +1755,11 @@
 <!-- CALLED FOR DOUBLE Banner (other players see this) -->
 <div id="callDoubleBanner">
   <button id="callDoubleBannerBtn">CALLED FOR DOUBLE</button>
+</div>
+
+<!-- V11.4: Your Turn Banner -->
+<div id="yourTurnBanner" style="display:none;position:fixed;bottom:22%;left:50%;transform:translateX(-50%);z-index:810;pointer-events:none;">
+  <div style="background:linear-gradient(135deg,#60a5fa,#3b82f6);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:1em;font-weight:bold;white-space:nowrap;box-shadow:0 2px 12px rgba(96,165,250,0.5);animation:yourTurnPulse 1.5s ease-in-out 2;">YOUR TURN</div>
 </div>
 
 <!-- Nello Doubles Choice Popup -->
@@ -3254,10 +3311,10 @@ class SessionV6_4g{
       }else{
         if(bidderPoints >= this.current_bid){
           this.team_marks[bidderTeamIndex] += marksAtStake;
-          this.status=`Bid made! ${bidderPoints} >= ${this.current_bid}. +${marksAtStake} mark(s) to Team ${bidderTeamNum}.`;
+          this.status=`Bid made! ${bidderPoints} points scored (needed ${this.current_bid}). +${marksAtStake} mark(s) to Team ${bidderTeamNum}.`;
         }else{
           this.team_marks[defenderTeamIndex] += marksAtStake;
-          this.status=`Bid failed! ${bidderPoints} < ${this.current_bid}. +${marksAtStake} mark(s) to Team ${defenderTeamNum}.`;
+          this.status=`Bid failed! Only ${bidderPoints} points (needed ${this.current_bid}). +${marksAtStake} mark(s) to Team ${defenderTeamNum}.`;
         }
       }
 
@@ -6230,7 +6287,7 @@ let mpMarksToWin = 7;            // Marks to win for MP game (host sets)
 let mpPreferredSeat = -1;         // Guest's preferred seat (-1 = auto)
 let mpHelloNonce = null;           // Unique nonce sent with hello, used to match seat_assign
 const MP_WS_URL = 'wss://tn51-tx42-relay.onrender.com';  // V10_122: PRODUCTION
-const MP_VERSION = 'V11.3';  // V11.3: Merged V11 + V10_122e + intent timeouts + zombie detect + Nello fix + indicator dock
+const MP_VERSION = 'V11.4';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
 
 // ═══════════════════════════════════════════════════════════════
 // V10_FIX: Multiplayer Sync Fix Variables
@@ -6803,6 +6860,16 @@ function mpHandleMessage(msg) {
   // V10_104: Route all game messages through observer handler when observing
   if (mpObserver && msg.type === 'move' && msg.move) {
     mpHandleObserverMessage(msg);
+    return;
+  }
+
+  // V11.4: In-game chat
+  if (msg.type === 'chat') {
+    mpHandleChat(msg);
+    return;
+  }
+  if (msg.type === 'chat_clear') {
+    mpHandleChatClear();
     return;
   }
 
@@ -7528,6 +7595,7 @@ function mpHandleDeal(move) {
   mpSuppressSend = true;
   mpGameStarted = true;
   _staleRefreshCount = 0; // V10_118: Reset refresh counter for new hand
+  mpShowChatIcon(true); // V11.4: Show chat icon when game starts
 
   // Close multiplayer modal if open
   document.getElementById('mpBackdrop').style.display = 'none';
@@ -7714,6 +7782,7 @@ function mpRunBiddingStep() {
       : 'Your turn to bid.';
     setStatus(session.status);
     showBidOverlay(true);
+    if (MULTIPLAYER_MODE) triggerHaptic(); // V11.4: Haptic for bid turn
     mpHideWaiting();
     mpLogEntry('STATE', 'bid-overlay', 'SHOWN for seat=' + mpSeat + ' highBid=' + biddingState.highBid);
   } else if (mpIsHost && mpIsAI(currentBidder)) {
@@ -8311,7 +8380,9 @@ async function mpHandlePlayIntent(move) {
     trickComplete: trickComplete,
     trickWinner: trickWinner,
     handComplete: false,
-    handResult: null
+    handResult: null,
+    // V11.4: Send running score after every trick so guests can update display
+    teamPoints: [session.game.team_points[0], session.game.team_points[1]]
   };
 
   // ── V10_121: Check for Call for Double before broadcasting ──
@@ -8509,9 +8580,31 @@ async function mpHandlePlayConfirmed(move) {
 
   // Handle trick completion
   if (move.trickComplete) {
+    // V11.4: Update guest's tricks_team before collecting (fixes boneyard tracking)
+    if (move.trickWinner !== null && move.trickWinner !== undefined) {
+      const _winTeam = session.game.team_of(move.trickWinner);
+      if (!session.game.tricks_team[_winTeam]) session.game.tricks_team[_winTeam] = [];
+      const _trickRecord = [];
+      for (const play of session.game.current_trick) {
+        _trickRecord[play[0]] = play[1]; // seat → tile
+      }
+      session.game.tricks_team[_winTeam].push(_trickRecord);
+    }
+
+    // V11.4: Update running score from host (fixes score visibility for clients)
+    if (move.teamPoints) {
+      session.game.team_points = move.teamPoints;
+      team1Score = move.teamPoints[0];
+      team2Score = move.teamPoints[1];
+    }
+
     await new Promise(r => setTimeout(r, 800));
     await collectToHistory();
     session.game.current_trick = [];
+
+    // V11.4: Update score display after trick collection
+    updateScoreDisplay();
+
     if (session.game.force_double_trump) {
       session.game.force_double_trump = false;
       callForDoubleActive = false;
@@ -8807,6 +8900,7 @@ function _guestShowTrumpSelection(winningBid) {
   biddingState = null;
   session.phase = PHASE_NEED_TRUMP;
   setStatus('You won the bid at ' + highBid + '! Select trump.');
+  triggerHaptic([50, 50, 100]); // V11.4: Haptic for winning bid
   mpHideWaiting();
   showTrumpOverlay(true);
   trumpSelectionActive = true;
@@ -9936,6 +10030,7 @@ function mpCheckWhoseTurn() {
     updatePlayer1ValidStates();
     showHint();
     setStatus('Trick ' + (session.game.trick_number + 1) + ' - Click a domino to play');
+    if (MULTIPLAYER_MODE) showYourTurnBanner(); // V11.4: Blue banner + haptic
     mpHideWaiting();
     _startTurnRecovery(); // V10_115: Safety net — re-enable clicks if stuck
   } else if (mpIsHost && mpIsAI(currentPlayer)) {
@@ -16285,6 +16380,30 @@ function flipTilesForTrump(){
 
   const localSeat = getLocalSeat();
 
+  // V11.4: Restore ALL tiles to canonical orientation first (high pip on top)
+  // This ensures preview flips from bidding are undone before applying actual trump flip
+  for (let p = 0; p < session.game.player_count; p++){
+    const hand = session.game.hands[p] || [];
+    for (let i = 0; i < hand.length; i++){
+      const t = hand[i];
+      if (t && t[0] !== t[1] && t[0] < t[1]) {
+        hand[i] = [t[1], t[0]]; // Restore canonical: high pip first
+      }
+    }
+    const seatSprites = sprites[p] || [];
+    for (let i = 0; i < seatSprites.length; i++){
+      const data = seatSprites[i];
+      if (data && data.tile && data.tile[0] !== data.tile[1] && data.tile[0] < data.tile[1]) {
+        data.tile = [data.tile[1], data.tile[0]];
+        if (data.sprite) {
+          data.sprite._tile = data.tile;
+          data.sprite.dataset.tile = JSON.stringify(data.tile);
+          data.sprite.redrawCanvases && data.sprite.redrawCanvases();
+        }
+      }
+    }
+  }
+
   function shouldFlip(tile){
     if (!tile || tile[0] === tile[1]) return false; // Don't flip doubles
     if (tile[1] === trumpSuit && tile[0] !== trumpSuit) return true;
@@ -17657,6 +17776,33 @@ function hideCallDoubleBanner(){
   document.getElementById('callDoubleBanner').style.display = 'none';
 }
 
+// V11.4: Your Turn banner
+let _yourTurnBannerTimeout = null;
+function showYourTurnBanner(){
+  if (_yourTurnBannerTimeout) clearTimeout(_yourTurnBannerTimeout);
+  const banner = document.getElementById('yourTurnBanner');
+  if (banner) {
+    banner.style.display = 'block';
+    triggerHaptic(); // V11.4: Vibrate on your turn
+    _yourTurnBannerTimeout = setTimeout(() => {
+      banner.style.display = 'none';
+      _yourTurnBannerTimeout = null;
+    }, 3000);
+  }
+}
+function hideYourTurnBanner(){
+  if (_yourTurnBannerTimeout) { clearTimeout(_yourTurnBannerTimeout); _yourTurnBannerTimeout = null; }
+  const banner = document.getElementById('yourTurnBanner');
+  if (banner) banner.style.display = 'none';
+}
+
+// V11.4: Haptic feedback
+function triggerHaptic(pattern){
+  if (navigator.vibrate) {
+    try { navigator.vibrate(pattern || 50); } catch(e) {}
+  }
+}
+
 // ============ NELLO DOUBLES MODE LOGIC ============
 
 // AI decision for nello doubles mode
@@ -18236,6 +18382,7 @@ function startNewHand(){
 // Multiplayer: Host deals and broadcasts hands to all players
 function mpHostDeal() {
   if (!mpIsHost) return;
+  mpShowChatIcon(true); // V11.4: Show chat icon for host
 
   // Hide any leftover overlays
   document.getElementById('bidBackdrop').style.display = 'none';
@@ -18534,6 +18681,7 @@ var BY2_PLAYED_OPACITY = 0.71;
 let boneyard2Visible = false;
 
 function showGameEndSummary(){
+  triggerHaptic([100, 50, 100, 50, 200]); // V11.4: Haptic for game end
   // Mark host state as completed so it won't try to resume
   if (MULTIPLAYER_MODE && mpIsHost) mpMarkHostStateCompleted();
   // Create overlay showing final scores — positioned lower on screen, blue theme matching bid panel
@@ -18615,6 +18763,7 @@ function hideGameEndSummary(){
 
 // ===== REMATCH VOTING SYSTEM (V10_77) =====
 let _rematchVotes = {};
+let _rematchDeclined = false; // V11.4: Track if this guest declined rematch
 let _rematchExpectedVoters = 0;
 let _rematchReceivedVotes = 0;
 
@@ -18727,6 +18876,7 @@ function mpStartRematch(acceptedSeats) {
 
 // Guest: Show vote overlay when host sends rematch invite
 function mpShowRematchVote() {
+  triggerHaptic([50, 30, 50]); // V11.4: Haptic for rematch prompt
   const overlay = document.getElementById('gameEndOverlay');
   if (!overlay) return;
 
@@ -18746,19 +18896,181 @@ function mpShowRematchVote() {
 
     document.getElementById('rematchNoBtn').addEventListener('click', () => {
       mpSendMove({ action: 'rematch_vote', seat: mpSeat, accepted: false });
-      waitMsg.innerHTML = '<div style="font-size:14px;opacity:0.8;">You declined. Waiting...</div>';
+      waitMsg.innerHTML = '<div style="font-size:14px;opacity:0.8;">Leaving game...</div>';
+      // V11.4: Disconnect and return to home screen
+      _rematchDeclined = true;
+      setTimeout(() => {
+        hideGameEndSummary();
+        mpDisconnectAndGoHome();
+      }, 800);
     });
   }
 }
 
+// V11.4: Disconnect from multiplayer and return to home screen
+function mpDisconnectAndGoHome() {
+  console.log('[MP] Disconnecting and returning to home screen');
+  // Close WebSocket
+  if (mpSocket) {
+    try { mpSocket.close(); } catch(e) {}
+    mpSocket = null;
+  }
+  // Reset MP state
+  MULTIPLAYER_MODE = false;
+  mpConnected = false;
+  mpGameStarted = false;
+  mpRoom = null;
+  mpSeat = -1;
+  mpIsHost = false;
+  mpPlayers = {};
+  mpPlayerIds = {};
+  _rematchDeclined = false;
+  // Clear game display
+  const sl = document.getElementById('spriteLayer');
+  if (sl) sl.innerHTML = '';
+  // Hide MP overlays
+  const mpOverlay = document.getElementById('multiplayerOverlay');
+  if (mpOverlay) mpOverlay.style.display = 'none';
+  const mpIndicator = document.getElementById('mpIndicator');
+  if (mpIndicator) mpIndicator.style.display = 'none';
+  mpShowChatIcon(false); // V11.4: Hide chat
+  mpClearMyChat(); // V11.4: Clear chat messages
+  const chatPanel = document.getElementById('mpChatPanel');
+  if (chatPanel) chatPanel.style.display = 'none';
+  _mpChatOpen = false;
+  setStatus('');
+  // Show start screen
+  showStartScreen();
+}
+
 // Guest: Handle rematch_start from host — reset and prepare for new deal
 function mpHandleRematchStart() {
+  // V11.4: If guest declined, ignore rematch start
+  if (_rematchDeclined) {
+    console.log('[MP] Ignoring rematch_start — we declined');
+    return;
+  }
   hideGameEndSummary();
   SFX.resumeBgmAfterResult();
   session.team_marks = [0, 0];
   clearSavedGame();
   setStatus('New game starting...');
   // The deal message will follow from the host
+}
+
+// ============ V11.4: IN-GAME CHAT ============
+let mpChatEnabled = true; // Host can toggle
+let _mpChatMessages = []; // Local message store
+let _mpChatUnread = 0;
+let _mpChatOpen = false;
+const _CHAT_MAX_MESSAGES = 100;
+
+function mpToggleChat() {
+  _mpChatOpen = !_mpChatOpen;
+  const panel = document.getElementById('mpChatPanel');
+  if (panel) {
+    panel.style.display = _mpChatOpen ? 'flex' : 'none';
+    if (_mpChatOpen) {
+      _mpChatUnread = 0;
+      _updateChatBadge();
+      const msgs = document.getElementById('mpChatMessages');
+      if (msgs) msgs.scrollTop = msgs.scrollHeight;
+      const input = document.getElementById('chatInputField');
+      if (input) input.focus();
+    }
+  }
+}
+
+function mpSendChat() {
+  if (!MULTIPLAYER_MODE || !mpChatEnabled) return;
+  const input = document.getElementById('chatInputField');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  const msg = {
+    seat: mpSeat,
+    name: (typeof playerName !== 'undefined' ? playerName : 'Player') || 'Player',
+    text: text,
+    t: Date.now()
+  };
+  // Send via relay
+  if (mpSocket && mpSocket.readyState === WebSocket.OPEN) {
+    try {
+      mpSocket.send(JSON.stringify({ type: 'chat', room: mpRoom, ...msg }));
+    } catch(e) { console.warn('[CHAT] Send error:', e); }
+  }
+  // Show locally
+  _addChatMessage(msg, true);
+}
+
+function mpHandleChat(data) {
+  if (!mpChatEnabled) return;
+  _addChatMessage({ seat: data.seat, name: data.name || 'Player', text: data.text, t: data.t }, false);
+  if (!_mpChatOpen) {
+    _mpChatUnread++;
+    _updateChatBadge();
+    triggerHaptic(30); // Light vibration for new message
+  }
+}
+
+function _addChatMessage(msg, isSelf) {
+  _mpChatMessages.push({ ...msg, isSelf });
+  if (_mpChatMessages.length > _CHAT_MAX_MESSAGES) _mpChatMessages.shift();
+  const container = document.getElementById('mpChatMessages');
+  if (!container) return;
+  const div = document.createElement('div');
+  div.className = 'chat-msg' + (isSelf ? ' chat-self' : '');
+  const nameSpan = document.createElement('span');
+  nameSpan.className = 'chat-name';
+  nameSpan.textContent = (isSelf ? 'You' : (msg.name || 'P' + (msg.seat + 1))) + ':';
+  div.appendChild(nameSpan);
+  div.appendChild(document.createTextNode(' ' + msg.text));
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  // 24hr auto-expire
+  const msgTime = msg.t || Date.now();
+  setTimeout(() => {
+    if (div.parentNode) div.parentNode.removeChild(div);
+  }, 86400000 - (Date.now() - msgTime));
+}
+
+function _updateChatBadge() {
+  const badge = document.getElementById('chatBadge');
+  if (badge) {
+    badge.textContent = _mpChatUnread;
+    badge.style.display = _mpChatUnread > 0 ? 'block' : 'none';
+  }
+}
+
+function mpClearMyChat() {
+  _mpChatMessages = [];
+  const container = document.getElementById('mpChatMessages');
+  if (container) container.innerHTML = '';
+  _mpChatUnread = 0;
+  _updateChatBadge();
+}
+
+function mpClearAllChat() {
+  if (!mpIsHost) return;
+  mpClearMyChat();
+  if (mpSocket && mpSocket.readyState === WebSocket.OPEN) {
+    try {
+      mpSocket.send(JSON.stringify({ type: 'chat_clear', room: mpRoom }));
+    } catch(e) {}
+  }
+}
+
+function mpHandleChatClear() {
+  mpClearMyChat();
+}
+
+function mpShowChatIcon(show) {
+  const icon = document.getElementById('mpChatIcon');
+  if (icon) icon.style.display = (show && mpChatEnabled) ? 'flex' : 'none';
+  // Show clear-all button only for host
+  const clearAllBtn = document.getElementById('chatClearAllBtn');
+  if (clearAllBtn) clearAllBtn.style.display = mpIsHost ? '' : 'none';
 }
 
 function showRoundEndSummary(){
@@ -24758,6 +25070,24 @@ setInterval(() => {
       <div class="syncSpinner"></div>
       <span>Syncing game state...</span>
     </div>
+  </div>
+</div>
+
+<!-- V11.4: In-game Chat -->
+<button id="mpChatIcon" onclick="mpToggleChat()">&#128172;<span class="chat-badge" id="chatBadge">0</span></button>
+<div id="mpChatPanel" style="display:none;">
+  <div class="chat-header">
+    <span>Game Chat</span>
+    <div style="display:flex;gap:6px;">
+      <button onclick="mpClearMyChat()" title="Clear my view">&#128465;</button>
+      <button id="chatClearAllBtn" onclick="mpClearAllChat()" title="Clear for everyone" style="display:none;">&#128465;&#8505;</button>
+      <button onclick="mpToggleChat()">&times;</button>
+    </div>
+  </div>
+  <div id="mpChatMessages"></div>
+  <div id="mpChatInput">
+    <input type="text" id="chatInputField" placeholder="Type a message..." maxlength="200" onkeydown="if(event.key==='Enter')mpSendChat()">
+    <button onclick="mpSendChat()">Send</button>
   </div>
 </div>
 
