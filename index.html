@@ -2024,14 +2024,14 @@
         </label>
       </div>
 
-      <!-- Deal Mode Toggle -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+      <!-- Deal Mode Toggle — V12.1: Hidden, shuffle disabled -->
+      <div style="display:none;align-items:center;justify-content:space-between;margin-top:10px;">
         <div>
           <span style="font-size:12px;color:#fff;font-weight:600;">Pick Your Dominoes</span><br>
           <span style="font-size:10px;color:rgba(255,255,255,0.5);">Shuffle animation &amp; click to pick tiles</span>
         </div>
         <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;">
-          <input type="checkbox" id="chkPickDominoes" style="opacity:0;width:0;height:0;">
+          <input type="checkbox" id="chkPickDominoes" disabled style="opacity:0;width:0;height:0;">
           <span style="position:absolute;inset:0;background:rgba(255,255,255,0.2);border-radius:12px;transition:0.3s;"></span>
           <span id="pickDominoesKnob" style="position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:0.3s;"></span>
         </label>
@@ -15353,8 +15353,8 @@ async function performShuffleAnimation() {
 // Groups by player, deals in clockwise order starting left of dealer
 async function animateDealFromCenter() {
   // V12.1: Shuffle/deal animation disabled — just flip local tiles face-up
-  const localSeat = MULTIPLAYER_MODE ? mpSeat : 0;
-  for (const data of (sprites[localSeat] || [])) { if (data && data.sprite) data.sprite.setFaceUp(true); }
+  var _ls = MULTIPLAYER_MODE ? mpSeat : 0;
+  for (var _i = 0; _i < (sprites[_ls] || []).length; _i++) { var _d = sprites[_ls][_i]; if (_d && _d.sprite) _d.sprite.setFaceUp(true); }
   return;
   const SS = SHUFFLE_SETTINGS;
   const rect = getRect();
@@ -24587,7 +24587,7 @@ if ('serviceWorker' in navigator) {
 <button id="pipDetailsBtn">Pip Details</button>
 <button id="pipColorsBtn">Pip Colors</button>
 <button id="zIndexBtn">Z-Index</button>
-<button id="shuffleSettingsBtn">Shuffle</button>
+<button id="shuffleSettingsBtn" style="display:none;">Shuffle</button>
 <button id="exportAllBtn" onclick="if(typeof exportAllSettings==='function')exportAllSettings()">Export All</button>
 <button id="dominoStyleBtn">Domino Style</button>
 </div>
