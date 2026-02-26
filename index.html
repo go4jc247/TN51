@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>TN51 / T42 / Moon Dominoes V11.4</title>
+<title>TN51 / T42 / Moon Dominoes V12</title>
 <style>
   :root{
     --feltA:#1a8f37; --feltB:#0f6e2a; --feltC:#0a4f1d;
@@ -1111,6 +1111,8 @@
   width:260px; max-height:300px; background:rgba(15,25,35,0.95); border-radius:12px;
   border:1px solid rgba(255,255,255,0.15); box-shadow:0 8px 32px rgba(0,0,0,0.5);
   font-family:system-ui,-apple-system,sans-serif; flex-direction:column;
+  /* V11.4: Keep chat above keyboard without moving anything else */
+  transition: bottom 0.2s ease;
 }
 #mpChatPanel .chat-header {
   display:flex; justify-content:space-between; align-items:center; padding:8px 12px;
@@ -1409,7 +1411,7 @@
     </div>
     <div style="text-align:center;">
       <div style="font-size:24px;font-weight:800;color:#fff;margin-bottom:4px;">TN51 / TX42 Dominoes</div>
-      <div style="font-size:16px;font-weight:700;color:#60a5fa;margin-bottom:12px;" id="aboutVersion">V11.4</div>
+      <div style="font-size:16px;font-weight:700;color:#60a5fa;margin-bottom:12px;" id="aboutVersion">V12</div>
       <div style="font-size:12px;color:#9ca3af;line-height:1.6;">
         <div>Built: February 2026</div>
         <div>Game modes: Tennessee 51, Texas 42</div>
@@ -1717,6 +1719,12 @@
           <button class="mpNelloBtn" data-nello="doubles_only" style="flex:1;padding:5px 3px;font-size:10px;font-weight:600;border-radius:6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:#fff;cursor:pointer;">Doubles Only</button>
           <button class="mpNelloBtn" data-nello="player_chooses" style="flex:1;padding:5px 3px;font-size:10px;font-weight:600;border-radius:6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:#fff;cursor:pointer;">Player Picks</button>
         </div>
+        <div style="font-size:12px;color:#9ca3af;margin-bottom:4px;margin-top:8px;">Doubles Follow Me:</div>
+        <div style="display:flex;gap:4px;">
+          <button class="mpDfmBtn mpDfmBtnSelected" data-dfm="on" style="flex:1;padding:5px 3px;font-size:10px;font-weight:600;border-radius:6px;background:rgba(96,165,250,0.2);border:1px solid #60a5fa;color:#fff;cursor:pointer;">Always On</button>
+          <button class="mpDfmBtn" data-dfm="off" style="flex:1;padding:5px 3px;font-size:10px;font-weight:600;border-radius:6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:#fff;cursor:pointer;">Always Off</button>
+          <button class="mpDfmBtn" data-dfm="player_chooses" style="flex:1;padding:5px 3px;font-size:10px;font-weight:600;border-radius:6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:#fff;cursor:pointer;">Player Picks</button>
+        </div>
         <!-- V11.4: Chat toggle -->
         <label class="mpRuleLabel" style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:12px;color:#fff;cursor:pointer;margin-top:8px;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;">
           <input type="checkbox" id="mpChkChat" checked style="accent-color:#60a5fa;" onchange="mpChatEnabled=this.checked;mpShowChatIcon(mpChatEnabled);"> Enable In-Game Chat
@@ -1775,6 +1783,24 @@
       <div style="display:flex;flex-direction:column;gap:10px;">
         <button id="btnNelloRegular" class="glossBtn" style="padding:12px;font-size:13px;font-weight:700;border-radius:10px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;color:#fff;cursor:pointer;">Regular<br><span style="font-size:10px;font-weight:400;opacity:0.8;">Doubles are highest in their suit</span></button>
         <button id="btnNelloDoublesOnly" class="glossBtn" style="padding:12px;font-size:13px;font-weight:700;border-radius:10px;background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;color:#fff;cursor:pointer;">Doubles Only<br><span style="font-size:10px;font-weight:400;opacity:0.8;">Doubles form their own suit</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Doubles Follow Me Choice Popup -->
+<div id="dfmChoiceBackdrop" class="modalBackdrop" style="display:none;">
+  <div class="modalPanel" style="max-width:300px;background:linear-gradient(135deg,#1e3a5f 0%,#0f1f33 100%);border-radius:16px;border:1px solid rgba(96,165,250,0.3);box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+    <div class="modalHeader" style="border-bottom:1px solid rgba(96,165,250,0.2);padding:14px 16px;text-align:center;">
+      <span style="font-size:16px;font-weight:700;color:#60a5fa;">Doubles Follow Me</span>
+    </div>
+    <div class="modalBody" style="padding:16px;text-align:center;">
+      <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:14px;">
+        When a double leads, must others follow?
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button id="btnDfmYes" class="glossBtn" style="padding:12px;font-size:13px;font-weight:700;border-radius:10px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;color:#fff;cursor:pointer;">Yes — Follow Me<br><span style="font-size:10px;font-weight:400;opacity:0.8;">Must play a double, then the led pip</span></button>
+        <button id="btnDfmNo" class="glossBtn" style="padding:12px;font-size:13px;font-weight:700;border-radius:10px;background:linear-gradient(135deg,#ef4444,#dc2626);border:none;color:#fff;cursor:pointer;">No — Any Trump<br><span style="font-size:10px;font-weight:400;opacity:0.8;">Standard doubles trump rules</span></button>
       </div>
     </div>
   </div>
@@ -1945,6 +1971,17 @@
         <button class="glossBtn gsNelloBtn" data-nello="doubles_only" style="flex:1;padding:6px 4px;font-size:11px;font-weight:600;border-radius:8px;background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;color:#fff;cursor:pointer;">Doubles Only</button>
         <button class="glossBtn gsNelloBtn" data-nello="player_chooses" style="flex:1;padding:6px 4px;font-size:11px;font-weight:600;border-radius:8px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:#fff;cursor:pointer;">Player Picks</button>
       </div>
+
+      <!-- Doubles Follow Me -->
+      <div id="gsDfmSection" style="margin-top:10px;">
+        <span style="font-size:12px;color:#fff;font-weight:600;">Doubles Follow Me</span><br>
+        <span style="font-size:10px;color:rgba(255,255,255,0.5);">When doubles are trump &amp; a double leads</span>
+      </div>
+      <div id="gsDfmBtns" style="display:flex;gap:6px;margin-top:6px;margin-bottom:4px;">
+        <button class="glossBtn gsDfmBtn gsDfmSelected" data-dfm="on" style="flex:1;padding:6px 4px;font-size:11px;font-weight:600;border-radius:8px;background:linear-gradient(135deg,#22c55e,#16a34a);border:2px solid #fff;color:#fff;cursor:pointer;">Always On</button>
+        <button class="glossBtn gsDfmBtn" data-dfm="off" style="flex:1;padding:6px 4px;font-size:11px;font-weight:600;border-radius:8px;background:linear-gradient(135deg,#ef4444,#dc2626);border:none;color:#fff;cursor:pointer;">Always Off</button>
+        <button class="glossBtn gsDfmBtn" data-dfm="player_chooses" style="flex:1;padding:6px 4px;font-size:11px;font-weight:600;border-radius:8px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:#fff;cursor:pointer;">Player Picks</button>
+      </div>
     </div>
 
     <!-- Domino Visual Effects -->
@@ -1986,6 +2023,19 @@
           <span id="flipTrumpKnob" style="position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:0.3s;"></span>
         </label>
       </div>
+
+      <!-- Deal Mode Toggle -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+        <div>
+          <span style="font-size:12px;color:#fff;font-weight:600;">Pick Your Dominoes</span><br>
+          <span style="font-size:10px;color:rgba(255,255,255,0.5);">Shuffle animation &amp; click to pick tiles</span>
+        </div>
+        <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;">
+          <input type="checkbox" id="chkPickDominoes" style="opacity:0;width:0;height:0;">
+          <span style="position:absolute;inset:0;background:rgba(255,255,255,0.2);border-radius:12px;transition:0.3s;"></span>
+          <span id="pickDominoesKnob" style="position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:0.3s;"></span>
+        </label>
+      </div>
     </div>
 
     <div style="border-top:1px solid rgba(255,255,255,0.15);padding:12px 16px;">
@@ -2011,6 +2061,25 @@
     <div class="startScreenTitle" style="font-size:42px;letter-spacing:3px;margin-bottom:8px;">Dominoes</div>
     <div id="startSubtitle" style="font-size:14px;color:rgba(255,255,255,0.5);margin-bottom:20px;font-weight:400;"></div>
 
+    <!-- V12: Inline Screen Name / Handle -->
+    <div id="screenNameSection" style="margin-bottom:16px;width:100%;max-width:280px;">
+      <!-- Edit mode (shown when no name set, or when editing) -->
+      <div id="screenNameEdit" style="display:none;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:6px;text-align:center;">Screen Name</div>
+        <div style="display:flex;gap:8px;align-items:center;justify-content:center;">
+          <input id="screenNameInput" type="text" placeholder="Enter your handle..." maxlength="20" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:14px;text-align:center;outline:none;font-weight:600;">
+          <button id="screenNameSave" style="padding:8px 14px;font-size:13px;font-weight:700;color:#fff;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:8px;cursor:pointer;white-space:nowrap;">Save</button>
+        </div>
+      </div>
+      <!-- Display mode (shown when name is set) -->
+      <div id="screenNameDisplay" style="display:none;text-align:center;">
+        <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:20px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);cursor:pointer;" id="screenNameDisplayBtn">
+          <span id="screenNameText" style="font-size:15px;font-weight:700;color:#fff;"></span>
+          <span style="font-size:12px;opacity:0.5;">&#9998;</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Main buttons (shown first) -->
     <div id="startMainBtns" class="startScreenButtons">
       <button class="glossBtn glossGreen startScreenBtn" id="btnStartNewGame" style="min-width:240px;padding:14px 32px;font-size:18px;">New Game</button>
@@ -2029,9 +2098,10 @@
         <span style="font-size:18px;font-weight:700;">Texas 42</span><br>
         <span style="font-size:12px;opacity:0.7;">4 Players</span>
       </button>
-      <button class="glossBtn startScreenBtn" id="btnSelectMoon" style="background:linear-gradient(135deg,#eab308,#ca8a04);min-width:240px;padding:14px 32px;text-align:left;">
+      <button class="glossBtn startScreenBtn" id="btnSelectMoon" style="background:linear-gradient(135deg,#eab308,#ca8a04);min-width:240px;padding:14px 32px;text-align:left;position:relative;">
         <span style="font-size:18px;font-weight:700;">Moon</span><br>
         <span style="font-size:12px;opacity:0.7;">3 Players</span>
+        <span style="position:absolute;top:8px;right:10px;font-size:11px;background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;">&#128679;</span>
       </button>
       <button class="glossBtn startScreenBtn" id="btnBackToMain" style="background:rgba(255,255,255,0.1);min-width:240px;padding:10px 32px;font-size:14px;color:rgba(255,255,255,0.6);">&larr; Back</button>
     </div>
@@ -2833,6 +2903,26 @@ class GameStateV6_4g{
       if(this.force_double_trump){
         const forcedIdx = trumpIdx.filter(i => this._is_double(hand[i]));
         if(forcedIdx.length) return forcedIdx;
+      }
+      // Doubles Follow Me: when doubles are trump and a double was led
+      if(this.trump_mode==="DOUBLES" && typeof _dfmActiveThisHand!=='undefined' && _dfmActiveThisHand){
+        const trick=this._sanitized_trick();
+        if(trick.length>0){
+          const ledTile=trick[0][1];
+          if(this._is_double(ledTile)){
+            // Tier 1: must play any double if you have one
+            const dblIdx=[];
+            for(let i=0;i<hand.length;i++) if(this._is_double(hand[i])) dblIdx.push(i);
+            if(dblIdx.length) return dblIdx;
+            // Tier 2: must play tile containing the led double's pip
+            const ledPip=ledTile[0]; // double [n,n] → pip is n
+            const pipIdx=[];
+            for(let i=0;i<hand.length;i++) if(tileContains(hand[i],ledPip)) pipIdx.push(i);
+            if(pipIdx.length) return pipIdx;
+            // Tier 3: play anything
+            return Array.from({length:hand.length},(_,i)=>i);
+          }
+        }
       }
       return trumpIdx.length ? trumpIdx : Array.from({length:hand.length},(_,i)=>i);
     }
@@ -6287,7 +6377,7 @@ let mpMarksToWin = 7;            // Marks to win for MP game (host sets)
 let mpPreferredSeat = -1;         // Guest's preferred seat (-1 = auto)
 let mpHelloNonce = null;           // Unique nonce sent with hello, used to match seat_assign
 const MP_WS_URL = 'wss://tn51-tx42-relay.onrender.com';  // V10_122: PRODUCTION
-const MP_VERSION = 'V11.4';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
+const MP_VERSION = 'V12';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
 
 // ═══════════════════════════════════════════════════════════════
 // V10_FIX: Multiplayer Sync Fix Variables
@@ -6562,70 +6652,69 @@ function getPlayerInitials(name) {
 }
 
 function promptForName() {
-  // Create name prompt overlay
-  let overlay = document.getElementById('namePromptOverlay');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'namePromptOverlay';
-    overlay.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;z-index:2000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);';
-    document.body.appendChild(overlay);
+  // V12: Legacy wrapper — just show the inline edit on start screen
+  updateScreenNameUI();
+  const editDiv = document.getElementById('screenNameEdit');
+  const dispDiv = document.getElementById('screenNameDisplay');
+  if(editDiv) editDiv.style.display = 'block';
+  if(dispDiv) dispDiv.style.display = 'none';
+  const inp = document.getElementById('screenNameInput');
+  if(inp) inp.focus();
+}
+
+// V12: Update the inline screen name section on the start screen
+function updateScreenNameUI() {
+  const editDiv = document.getElementById('screenNameEdit');
+  const dispDiv = document.getElementById('screenNameDisplay');
+  const textEl = document.getElementById('screenNameText');
+  if(!editDiv || !dispDiv) return;
+  if(playerName && !playerNoName) {
+    editDiv.style.display = 'none';
+    dispDiv.style.display = 'block';
+    if(textEl) textEl.textContent = playerName;
+  } else {
+    editDiv.style.display = 'block';
+    dispDiv.style.display = 'none';
   }
-  overlay.innerHTML = '<div style="background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:16px;padding:24px;text-align:center;color:#fff;min-width:260px;max-width:80%;box-shadow:0 8px 32px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.1);">'
-    + '<div style="font-size:18px;font-weight:700;margin-bottom:16px;">What\u0027s your name?</div>'
-    + '<div style="margin-bottom:12px;">'
-    + '<input id="nameInput" type="text" placeholder="First name + last initial (e.g. Bobby P.)" maxlength="20" style="width:90%;padding:10px;border-radius:8px;border:1px solid #444;background:#1a1a2e;color:#fff;font-size:14px;text-align:center;outline:none;">'
-    + '</div>'
-    + '<div style="margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px;">'
-    + '<input type="checkbox" id="noNameCheck" style="accent-color:#7c3aed;"><label for="noNameCheck" style="font-size:13px;opacity:0.8;cursor:pointer;">No Name</label>'
-    + '</div>'
-    + '<button id="nameSubmitBtn" style="padding:10px 28px;font-size:15px;font-weight:700;color:#fff;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:10px;cursor:pointer;">OK</button>'
-    + '</div>';
-  overlay.style.display = 'flex';
+}
 
-  const input = document.getElementById('nameInput');
-  const noNameCheck = document.getElementById('noNameCheck');
-  const submitBtn = document.getElementById('nameSubmitBtn');
+// V12: Wire up screen name section
+(function(){
+  const saveBtn = document.getElementById('screenNameSave');
+  const input = document.getElementById('screenNameInput');
+  const displayBtn = document.getElementById('screenNameDisplayBtn');
 
-  // Pre-populate with current name
-  if(playerName && !playerNoName){
-    input.value = playerName;
-  }
-  if(playerNoName){
-    noNameCheck.checked = true;
-    input.disabled = true;
-  }
-
-  noNameCheck.addEventListener('change', () => {
-    input.disabled = noNameCheck.checked;
-    if (noNameCheck.checked) input.value = '';
-  });
-
-  submitBtn.addEventListener('click', () => {
-    if (noNameCheck.checked) {
-      playerName = '';
-      playerNoName = true;
-    } else {
-      const name = input.value.trim();
-      if (!name) { input.style.border = '2px solid #ef4444'; return; }
-      playerName = name;
-      playerNoName = false;
-    }
-    // V10_122e: Wrap localStorage in try-catch for iOS Safari private mode
+  function saveName() {
+    const name = input.value.trim();
+    if(!name) { input.style.border = '2px solid #ef4444'; return; }
+    playerName = name;
+    playerNoName = false;
     try {
       localStorage.setItem('tn51_player_name', playerName);
-      localStorage.setItem('tn51_player_noname', String(playerNoName));
-    } catch(e) {
-      console.warn('[iOS] localStorage write error (private mode?):', e);
-    }
-    overlay.style.display = 'none';
-    // Refresh indicators with new name
+      localStorage.setItem('tn51_player_noname', 'false');
+    } catch(e) {}
+    updateScreenNameUI();
     if(typeof positionPlayerIndicators === 'function') positionPlayerIndicators();
+  }
+
+  if(saveBtn) saveBtn.addEventListener('click', saveName);
+  if(input) input.addEventListener('keydown', (e) => { if(e.key === 'Enter') saveName(); });
+
+  // Click display name to edit
+  if(displayBtn) displayBtn.addEventListener('click', () => {
+    const editDiv = document.getElementById('screenNameEdit');
+    const dispDiv = document.getElementById('screenNameDisplay');
+    if(editDiv) editDiv.style.display = 'block';
+    if(dispDiv) dispDiv.style.display = 'none';
+    if(input) { input.value = playerName; input.focus(); }
   });
 
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') submitBtn.click();
-  });
-}
+  // Initialize on load
+  if(playerName && !playerNoName) {
+    if(input) input.value = playerName;
+  }
+  updateScreenNameUI();
+})();
 
 // V10_113: Start heartbeat ping interval
 function mpStartHeartbeat() {
@@ -6872,6 +6961,10 @@ function mpHandleMessage(msg) {
     mpHandleChatClear();
     return;
   }
+  if (msg.type === 'no_table_talk') {
+    mpHandleNoTableTalk(msg);
+    return;
+  }
 
   if (msg.type === 'joined') {
     mpConnected = true;
@@ -6960,6 +7053,26 @@ function mpHandleMessage(msg) {
     case 'deal':
       // Host dealt - receive hands
       mpHandleDeal(move);
+      break;
+    case 'pick_phase':
+      // Host initiates pick-from-pile phase
+      if (!mpIsHost) mpHandlePickPhase(move);
+      break;
+    case 'pick_request':
+      // Guest requests a tile from pile
+      if (mpIsHost) mpHostHandlePickRequest(move);
+      break;
+    case 'pick_confirmed':
+      // Host confirms a pick (broadcast to all)
+      mpHandlePickConfirmed(move);
+      break;
+    case 'pick_denied':
+      // Host denies a pick (tile already taken)
+      mpHandlePickDenied(move);
+      break;
+    case 'pick_auto_deal':
+      // Host auto-deals remaining tiles to dealer
+      mpHandlePickAutoDeal(move);
       break;
     // ═══ V10_121: PURE HOST AUTHORITY — Intent messages (guest→host) ═══
     case 'play_intent':
@@ -7584,7 +7697,7 @@ function mpRenderPlayerList(players) {
 }
 
 // Handle deal from host
-function mpHandleDeal(move) {
+async function mpHandleDeal(move) {
   if (mpIsHost) return;  // Host already dealt locally
   if (mpSeat < 0) {
     console.error('[MP] Received deal but mpSeat not set! Ignoring.');
@@ -7644,6 +7757,12 @@ function mpHandleDeal(move) {
   // Carry over marks if provided
   if (move.teamMarks) {
     session.team_marks = move.teamMarks;
+  }
+
+  // V11.4b: Sync No Table Talk from host
+  if (typeof move.noTableTalk !== 'undefined') {
+    _noTableTalk = !!move.noTableTalk;
+    _updateNoTableTalkUI();
   }
 
   // Re-create visual elements
@@ -7725,6 +7844,16 @@ function mpHandleDeal(move) {
           sprite.setFaceUp(false);
         }
       }
+    }
+  }
+
+  // V11.4k: Animate deal or auto-deal based on setting
+  if (dealMode === 'pick') {
+    await animateDealFromCenter();
+  } else {
+    // Auto deal: flip local player's tiles face-up
+    for (const data of (sprites[mpSeat] || [])) {
+      if (data && data.sprite) data.sprite.setFaceUp(true);
     }
   }
 
@@ -9023,6 +9152,15 @@ function mpHandleTrumpIntent(move) {
   let trumpValue = move.trump;
   if (trumpValue === 'NT') trumpValue = null;
 
+  // V11.4j: Set DFM runtime flag from intent
+  if (move.trump === 'DOUBLES') {
+    if (doublesFollowMe === 'on') _dfmActiveThisHand = true;
+    else if (doublesFollowMe === 'off') _dfmActiveThisHand = false;
+    else _dfmActiveThisHand = !!move.dfmActive; // player_chooses: use guest's choice
+  } else {
+    _dfmActiveThisHand = false;
+  }
+
   // Execute trump selection on host engine
   if (move.nello) {
     // V10_121f: Use set_trump('NELLO') so partner-sit-out logic runs correctly.
@@ -9048,7 +9186,8 @@ function mpHandleTrumpIntent(move) {
     marks: move.marks || session.bid_marks,
     nello: move.nello || false,
     activePlayers: session.game.active_players ? session.game.active_players.slice() : null,
-    firstPlayer: session.game.current_player
+    firstPlayer: session.game.current_player,
+    dfmActive: _dfmActiveThisHand
   };
   mpSendMove(confirmed);
   mpSaveHostState();
@@ -9066,6 +9205,9 @@ function mpHandleTrumpConfirmed(move) {
   _clearIntentTimeout(); // V11.3: Clear trump intent timeout
 
   _mpLastActivityTime = Date.now();
+
+  // V11.4j: Set DFM runtime flag from confirmed message
+  _dfmActiveThisHand = !!move.dfmActive;
 
   // Set bid winner if needed
   session.bid_winner_seat = move.seat;
@@ -9165,9 +9307,11 @@ function mpHandleWidowSwapIntent(move) {
     const aiHand = session.game.hands[bidWinner];
     const aiTrump = aiChooseTrump(aiHand, session.current_bid);
     session.set_trump(aiTrump);
+    // V11.4j: Set DFM flag for AI trump selection
+    _dfmActiveThisHand = (aiTrump === 'DOUBLES' && doublesFollowMe !== 'off');
     syncSpritesWithGameState();
     updateTrumpDisplay();
-    mpSendMove({ action: 'trump_confirmed', trump: aiTrump === null ? 'NT' : aiTrump, seat: bidWinner, marks: session.bid_marks, firstPlayer: session.game.current_player });
+    mpSendMove({ action: 'trump_confirmed', trump: aiTrump === null ? 'NT' : aiTrump, seat: bidWinner, marks: session.bid_marks, firstPlayer: session.game.current_player, dfmActive: _dfmActiveThisHand });
     setTimeout(() => mpCheckWhoseTurn(), 500);
   } else {
     setStatus(getPlayerDisplayName(bidWinner) + ' selecting trump...');
@@ -9397,6 +9541,7 @@ function mpHandleStartGame(move) {
     if(typeof hr.nelloDeclare === 'boolean') nelloDeclareMode = hr.nelloDeclare;
     if(typeof hr.nelloRestrictFirst === 'boolean') nelloRestrictFirst = hr.nelloRestrictFirst;
     if(hr.nelloDoublesMode) nelloDoublesMode = hr.nelloDoublesMode;
+    if(hr.doublesFollowMe) doublesFollowMe = hr.doublesFollowMe;
   }
 
   // Ensure game mode matches host
@@ -9428,8 +9573,30 @@ function mpHandleStartGame(move) {
   if(_gNRes) { _gNRes.checked = nelloRestrictFirst; _gNRes.disabled = true; }
   var _gRole = document.getElementById('mpSettingsRole');
   if(_gRole) _gRole.textContent = '(View Only)';
-  // Disable nello doubles buttons for guests
-  document.querySelectorAll('.mpNelloBtn').forEach(function(b){ b.style.pointerEvents = 'none'; });
+  // Disable nello doubles buttons for guests and sync visual state
+  document.querySelectorAll('.mpNelloBtn').forEach(function(b){
+    b.style.pointerEvents = 'none';
+    b.classList.remove('mpNelloBtnSelected');
+    b.style.background = 'rgba(255,255,255,0.05)';
+    b.style.border = '1px solid rgba(255,255,255,0.15)';
+    if(b.dataset.nello === nelloDoublesMode){
+      b.classList.add('mpNelloBtnSelected');
+      b.style.background = 'rgba(96,165,250,0.2)';
+      b.style.border = '1px solid #60a5fa';
+    }
+  });
+  // Disable doubles follow me buttons for guests and sync visual state
+  document.querySelectorAll('.mpDfmBtn').forEach(function(b){
+    b.style.pointerEvents = 'none';
+    b.classList.remove('mpDfmBtnSelected');
+    b.style.background = 'rgba(255,255,255,0.05)';
+    b.style.border = '1px solid rgba(255,255,255,0.15)';
+    if(b.dataset.dfm === doublesFollowMe){
+      b.classList.add('mpDfmBtnSelected');
+      b.style.background = 'rgba(96,165,250,0.2)';
+      b.style.border = '1px solid #60a5fa';
+    }
+  });
   // Also disable marks buttons for guests
   document.querySelectorAll('.mpMarksBtn').forEach(function(b){ b.style.pointerEvents = 'none'; });
 
@@ -9450,12 +9617,18 @@ function mpHandleStartGame(move) {
 }
 
 // Handle next hand from host
-function mpHandleNextHand(move) {
+async function mpHandleNextHand(move) {
   console.log('[MP] Next hand from host');
   // V10_121: Auto-dismiss round/game end popups for guests
   hideRoundEndSummary();
   hideGameEndSummary();
   SFX.resumeBgmAfterResult();
+  // V11.4k: Run shuffle animation on guest (only in pick mode)
+  if (dealMode === 'pick') {
+    _shuffleInProgress = true;
+    await performShuffleAnimation();
+    _shuffleInProgress = false;
+  }
   // The deal message will follow from the host
 }
 
@@ -9564,6 +9737,8 @@ function _mpHandleStateSyncInternal(move) {
   if (handEndBackdrop) handEndBackdrop.style.display = 'none';
   if (nelloBackdrop) nelloBackdrop.style.display = 'none';
   if (nelloDoublesBackdrop) nelloDoublesBackdrop.style.display = 'none';
+  const dfmChoiceBackdrop = document.getElementById('dfmChoiceBackdrop');
+  if (dfmChoiceBackdrop) dfmChoiceBackdrop.style.display = 'none';
   if (widowBackdrop) widowBackdrop.style.display = 'none';
   if (layDownBackdrop) layDownBackdrop.style.display = 'none';
   
@@ -9689,6 +9864,9 @@ function _mpHandleStateSyncInternal(move) {
   if (move.forceDoubleTrump !== undefined) {
     session.game.force_double_trump = move.forceDoubleTrump;
     callForDoubleActive = move.forceDoubleTrump;
+  }
+  if (move.dfmActive !== undefined) {
+    _dfmActiveThisHand = move.dfmActive;
   }
 
   // Restore Moon-specific state
@@ -11073,6 +11251,7 @@ function mpSaveHostState() {
       callForDoubleActive: callForDoubleActive,
       nelloDoublesMode: nelloDoublesMode,
       nelloDoublesSuitActive: nelloDoublesSuitActive,
+      doublesFollowMe: doublesFollowMe,
       // Status flag - null means game still in progress
       completedFlag: null
     };
@@ -11230,6 +11409,7 @@ function mpResumeFromSavedState(savedState) {
   callForDoubleActive = savedState.callForDoubleActive || false;
   nelloDoublesMode = savedState.nelloDoublesMode || 'regular';
   nelloDoublesSuitActive = savedState.nelloDoublesSuitActive || false;
+  doublesFollowMe = savedState.doublesFollowMe || 'on';
 
   // Rebuild sprites
   shadowLayer.innerHTML = '';
@@ -11355,7 +11535,8 @@ function mpSendGameState(targetSeat) {
     team2TricksWon: team2TricksWon,
     leader: session.game.leader,
     nelloDoublesSuit: session.game.nello_doubles_suit,
-    forceDoubleTrump: session.game.force_double_trump
+    forceDoubleTrump: session.game.force_double_trump,
+    dfmActive: _dfmActiveThisHand
   };
   // Include Moon-specific state
   if (GAME_MODE === 'MOON') {
@@ -14503,10 +14684,11 @@ function afterWidowSwap(){
         const trump = aiChooseTrump(hand, session.current_bid);
         setStatus(getPlayerDisplayName(bidderSeat) + ' (AI) selects trump: ' + (trump || 'NT'));
         session.set_trump(trump);
+        _dfmActiveThisHand = (trump === 'DOUBLES' && doublesFollowMe !== 'off');
         syncSpritesWithGameState();
         updateTrumpDisplay();
         mpSendMove({ action: 'trump_confirmed', trump: trump === null ? 'NT' : trump, seat: bidderSeat, marks: session.bid_marks, isAI: true,
-          activePlayers: session.game.active_players ? session.game.active_players.slice() : null, firstPlayer: session.game.current_player });
+          activePlayers: session.game.active_players ? session.game.active_players.slice() : null, firstPlayer: session.game.current_player, dfmActive: _dfmActiveThisHand });
         setTimeout(() => mpCheckWhoseTurn(), 500);
       } else {
         setStatus(getPlayerDisplayName(bidderSeat) + ' selecting trump...');
@@ -14529,6 +14711,7 @@ function afterWidowSwap(){
       session.status = `P${seatToPlayer(bidderSeat)} bid ${session.current_bid}. Trump: ${trumpDisplay}`;
       setStatus(session.status);
       session.set_trump(trump);
+      _dfmActiveThisHand = (trump === 'DOUBLES' && doublesFollowMe !== 'off');
       syncSpritesWithGameState();
       sortAllHandsByTrump();
       flipTilesForTrump();
@@ -15055,6 +15238,847 @@ function animateSprite(sprite, targetPose, duration, easing = ANIM.EASING){
     requestAnimationFrame(tick);
   });
 }
+
+// ============ V11.4k: Deal Mode ============
+var dealMode = 'auto'; // 'auto' (instant deal) or 'pick' (shuffle + click-to-pick)
+
+// ============ V11.4: SHUFFLE SETTINGS ============
+var SHUFFLE_SETTINGS = {
+  flipDuration: 3000,    // ms spread for random flip timing
+  flipAnimSpeed: 300,    // ms per individual flip animation
+  slideSpeed: 400,       // ms slide-to-center animation
+  reshuffleSpeed: 200,   // ms per reshuffle animation
+  reshuffleCount: 3,     // number of reshuffles
+  reshufflePause: 50,    // ms pause between reshuffles
+  centerXPct: 0,         // center X offset as % of viewport width (-25 to +25)
+  centerYPct: 0,         // center Y offset as % of viewport height (-25 to +25)
+  spreadXPct: 15,        // spread X as % of viewport width (capped at spreadXMax px)
+  spreadYPct: 10,        // spread Y as % of viewport height (capped at spreadYMax px)
+  spreadXMax: 120,       // max spread X in px
+  spreadYMax: 80,        // max spread Y in px
+  tileScale: 0.38,       // scale of tiles in center pile
+  dealStagger: 40,       // ms stagger within a group (0-200)
+  dealSpeed: 300,        // ms per deal animation
+  groupPause: 400,       // ms pause between player groups
+  clickToPick: false     // allow local player to click tiles from pile
+};
+
+// ============ V11.4: SHUFFLE ANIMATION ============
+// Collects ALL sprites on screen, flips face-down, slides to center, re-shuffles, then clears
+async function performShuffleAnimation() {
+  const SS = SHUFFLE_SETTINGS;
+  const allSprites = [];
+  for (let seat = 0; seat < sprites.length; seat++) {
+    const seatSprites = sprites[seat] || [];
+    for (let i = 0; i < seatSprites.length; i++) {
+      const data = seatSprites[i];
+      if (data && data.sprite && data.sprite.parentNode) {
+        allSprites.push(data.sprite);
+      }
+    }
+  }
+  // Also grab any trick history sprites still on screen
+  const thSprites = spriteLayer.querySelectorAll('.dominoSprite');
+  thSprites.forEach(sp => {
+    if (!allSprites.includes(sp)) allSprites.push(sp);
+  });
+  if (allSprites.length === 0) return;
+
+  // Clear ALL trump highlights/glow on every sprite so trumps can't be tracked
+  for (let seat = 0; seat < sprites.length; seat++) {
+    const seatSprites = sprites[seat] || [];
+    for (let i = 0; i < seatSprites.length; i++) {
+      const data = seatSprites[i];
+      if (data && data.sprite) {
+        data.sprite.setState(false, true); // remove highlight
+      }
+    }
+  }
+  // Also clear any highlighted trick history / played sprites
+  for (const sp of allSprites) {
+    if (typeof sp.setState === 'function') sp.setState(false, true);
+  }
+
+  const rect = getRect();
+  const cx = rect.width * 0.5 - 28 + (rect.width * (SS.centerXPct || 0) / 100);
+  const cy = rect.height * 0.45 - 56 + (rect.height * (SS.centerYPct || 0) / 100);
+  const spreadX = Math.min(SS.spreadXMax, rect.width * SS.spreadXPct / 100);
+  const spreadY = Math.min(SS.spreadYMax, rect.height * SS.spreadYPct / 100);
+
+  // Phase 1: Flip all face-down with random timing
+  const flipPromises = [];
+  for (const sp of allSprites) {
+    const delay = Math.random() * SS.flipDuration;
+    flipPromises.push(new Promise(resolve => {
+      setTimeout(() => {
+        const pick = Math.random() < 0.5 ? 'play1' : 'play3';
+        SFX.play(pick, 0.25);
+        const pose = sp.getPose();
+        animateSprite(sp, { x: pose.x, y: pose.y, s: pose.s, rz: pose.rz, ry: 0 }, SS.flipAnimSpeed).then(resolve);
+      }, delay);
+    }));
+  }
+  await Promise.all(flipPromises);
+  await new Promise(r => setTimeout(r, 200));
+
+  // Phase 2: Slide all to center with random positions + rotations
+  const slidePromises = [];
+  for (const sp of allSprites) {
+    const tx = cx + (Math.random() * 2 - 1) * spreadX;
+    const ty = cy + (Math.random() * 2 - 1) * spreadY;
+    const tr = Math.random() * 360;
+    bringToFront(sp);
+    slidePromises.push(animateSprite(sp, { x: tx, y: ty, s: SS.tileScale, rz: tr, ry: 0 }, SS.slideSpeed));
+  }
+  await Promise.all(slidePromises);
+  await new Promise(r => setTimeout(r, 100));
+
+  // Phase 3: Re-shuffle N times
+  for (let shuffle = 0; shuffle < SS.reshuffleCount; shuffle++) {
+    SFX.play('shuffle', 0.5);
+    const reshufflePromises = [];
+    for (const sp of allSprites) {
+      const tx = cx + (Math.random() * 2 - 1) * spreadX;
+      const ty = cy + (Math.random() * 2 - 1) * spreadY;
+      const tr = Math.random() * 360;
+      reshufflePromises.push(animateSprite(sp, { x: tx, y: ty, s: SS.tileScale, rz: tr, ry: 0 }, SS.reshuffleSpeed));
+    }
+    await Promise.all(reshufflePromises);
+    await new Promise(r => setTimeout(r, SS.reshufflePause));
+  }
+}
+
+// Deal animation: create sprites at center, animate to hand positions
+// Groups by player, deals in clockwise order starting left of dealer
+async function animateDealFromCenter() {
+  const SS = SHUFFLE_SETTINGS;
+  const rect = getRect();
+  const cx = rect.width * 0.5 - 28 + (rect.width * (SS.centerXPct || 0) / 100);
+  const cy = rect.height * 0.45 - 56 + (rect.height * (SS.centerYPct || 0) / 100);
+  const spreadX = Math.min(SS.spreadXMax, rect.width * SS.spreadXPct / 100);
+  const spreadY = Math.min(SS.spreadYMax, rect.height * SS.spreadYPct / 100);
+  const localSeat = getLocalSeat();
+  const playerCount = sprites.length;
+  const dealer = (session && typeof session.dealer === 'number') ? session.dealer : 0;
+
+  // Build deal order: left of dealer first, dealer last
+  const dealOrder = [];
+  for (let i = 1; i <= playerCount; i++) {
+    dealOrder.push((dealer + i) % playerCount);
+  }
+
+  // Move all sprites to random center positions first (face-down pile)
+  const allPileSprites = [];
+  for (let seat = 0; seat < playerCount; seat++) {
+    const seatSprites = sprites[seat] || [];
+    for (let i = 0; i < seatSprites.length; i++) {
+      const data = seatSprites[i];
+      if (data && data.sprite) {
+        const startX = cx + (Math.random() * 2 - 1) * spreadX;
+        const startY = cy + (Math.random() * 2 - 1) * spreadY;
+        const startRz = Math.random() * 360;
+        data.sprite.setPose({ x: startX, y: startY, s: SS.tileScale, rz: startRz, ry: 0 });
+        allPileSprites.push(data.sprite);
+      }
+    }
+  }
+
+  // Deal groups: one player at a time in deal order
+  for (const seat of dealOrder) {
+    const seatSprites = sprites[seat] || [];
+    const playerNum = MULTIPLAYER_MODE ? mpVisualPlayer(seat) : seatToPlayer(seat);
+
+    // Click-to-pick: if enabled and this is the local player's seat, let them click
+    if (SS.clickToPick && seat === localSeat) {
+      await _clickToPickDeal(seatSprites, playerNum, allPileSprites, cx, cy, spreadX, spreadY, SS);
+    } else {
+      // Auto-deal this group with slight stagger
+      const groupPromises = [];
+      for (let i = 0; i < seatSprites.length; i++) {
+        const data = seatSprites[i];
+        if (data && data.sprite) {
+          data.sprite._dealPicked = true; // Mark as dealt so click-to-pick won't target it
+          const targetPos = getHandPosition(playerNum, i);
+          if (targetPos) {
+            const stagger = Math.random() * SS.dealStagger;
+            groupPromises.push(new Promise(resolve => {
+              setTimeout(() => {
+                const pick = Math.random() < 0.5 ? 'play1' : 'play3';
+                SFX.play(pick, 0.2);
+                bringToFront(data.sprite);
+                animateSprite(data.sprite, targetPos, SS.dealSpeed).then(resolve);
+              }, stagger);
+            }));
+          }
+        }
+      }
+      await Promise.all(groupPromises);
+    }
+
+    // Pause between groups (skip after last player)
+    if (seat !== dealOrder[dealOrder.length - 1]) {
+      await new Promise(r => setTimeout(r, SS.groupPause));
+    }
+  }
+}
+
+// Click-to-pick: local player clicks face-down tiles from the pile to build their hand
+async function _clickToPickDeal(seatSprites, playerNum, allPileSprites, cx, cy, spreadX, spreadY, SS) {
+  // Show a hint toast
+  let hint = document.getElementById('pickHintToast');
+  if (!hint) {
+    hint = document.createElement('div');
+    hint.id = 'pickHintToast';
+    hint.style.cssText = 'position:fixed;top:15%;left:50%;transform:translateX(-50%);z-index:2500;background:rgba(59,130,246,0.9);color:#fff;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;text-align:center;pointer-events:none;font-family:system-ui,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.4);transition:opacity 0.5s;';
+    document.body.appendChild(hint);
+  }
+  const remaining = seatSprites.length;
+  hint.textContent = 'Tap ' + remaining + ' tiles to pick your hand';
+  hint.style.opacity = '1';
+
+  let pickedCount = 0;
+  const totalToPick = seatSprites.length;
+
+  return new Promise(resolve => {
+    // Make all pile sprites clickable
+    const clickHandlers = new Map();
+
+    function updateHint() {
+      const left = totalToPick - pickedCount;
+      if (left > 0) {
+        hint.textContent = 'Tap ' + left + ' more tile' + (left > 1 ? 's' : '');
+      } else {
+        hint.style.opacity = '0';
+      }
+    }
+
+    for (const sp of allPileSprites) {
+      // Only make clickable if still in pile (not already dealt to another player)
+      if (sp._dealPicked) continue;
+      sp.style.cursor = 'pointer';
+      sp.style.pointerEvents = 'auto';
+
+      const handler = () => {
+        if (pickedCount >= totalToPick) return;
+        // Assign this click to the next tile in the local player's hand
+        const data = seatSprites[pickedCount];
+        if (!data || !data.sprite) return;
+
+        sp._dealPicked = true;
+        sp.style.cursor = '';
+        sp.style.pointerEvents = '';
+
+        // Animate the ACTUAL tile (data.sprite) from this clicked sprite's position to hand
+        const clickedPose = sp.getPose();
+        data.sprite.setPose(clickedPose);
+        bringToFront(data.sprite);
+
+        const targetPos = getHandPosition(playerNum, pickedCount);
+        if (targetPos) {
+          const pick = Math.random() < 0.5 ? 'play1' : 'play3';
+          SFX.play(pick, 0.2);
+          animateSprite(data.sprite, targetPos, SS.dealSpeed);
+        }
+
+        // Hide the clicked pile sprite (it was a "dummy" from another seat or the same)
+        // If the clicked sprite IS data.sprite, it's already moving. Otherwise fade the pile one.
+        if (sp !== data.sprite) {
+          // Move the clicked pile sprite off-screen (it belongs to another seat, will be repositioned later)
+          sp.setPose({ x: -200, y: -200, s: 0.01, rz: 0, ry: 0 });
+        }
+
+        pickedCount++;
+        updateHint();
+        triggerHaptic(20);
+
+        if (pickedCount >= totalToPick) {
+          // Clean up click handlers
+          for (const [s, h] of clickHandlers) {
+            s.removeEventListener('click', h);
+            s.style.cursor = '';
+            s.style.pointerEvents = '';
+          }
+          // Small delay then resolve
+          setTimeout(resolve, SS.dealSpeed + 50);
+        }
+      };
+
+      clickHandlers.set(sp, handler);
+      sp.addEventListener('click', handler);
+    }
+
+    // Fallback: auto-complete after 30 seconds if player doesn't pick
+    setTimeout(() => {
+      if (pickedCount < totalToPick) {
+        // Auto-deal remaining
+        for (let i = pickedCount; i < totalToPick; i++) {
+          const data = seatSprites[i];
+          if (data && data.sprite) {
+            const targetPos = getHandPosition(playerNum, i);
+            if (targetPos) {
+              bringToFront(data.sprite);
+              animateSprite(data.sprite, targetPos, SS.dealSpeed);
+            }
+          }
+        }
+        pickedCount = totalToPick;
+        hint.style.opacity = '0';
+        for (const [s, h] of clickHandlers) {
+          s.removeEventListener('click', h);
+          s.style.cursor = '';
+          s.style.pointerEvents = '';
+        }
+        setTimeout(resolve, SS.dealSpeed + 50);
+      }
+    }, 30000);
+  });
+}
+
+// ============ V11.4i: MULTIPLAYER PICK-FROM-PILE PROTOCOL ============
+// Global state for the pick phase
+let _pickPhaseActive = false;
+let _pickPool = [];          // Host: array of tiles mapped to pile positions
+let _pickPoolTaken = [];     // Host: boolean[] tracking which positions are taken
+let _pickHands = {};         // Host: seat -> [tile, tile, ...] as they pick
+let _pickPileSprites = [];   // All clients: sprites in the pile, indexed by position
+let _pickMyCount = 0;        // Local: how many tiles I've picked so far
+let _pickMyTotal = 0;        // Local: total tiles I need to pick
+let _pickMySlots = [];       // Local: tile data for my picked tiles (for engine)
+let _pickPhaseResolve = null; // Promise resolve for when pick phase ends
+let _pickCanPick = false;    // Local: am I allowed to pick right now?
+let _pickClickHandlers = new Map(); // For cleanup
+
+// Build pick order based on game mode and dealer seat
+function _getPickOrder(dealer, playerCount) {
+  const dealerTeam = dealer % 2;
+  if (GAME_MODE === 'MOON') {
+    // Moon (3 players): non-dealer pick simultaneously, dealer gets rest
+    const opponents = [];
+    for (let i = 1; i < playerCount; i++) {
+      opponents.push((dealer + i) % playerCount);
+    }
+    return [opponents]; // Single phase, dealer auto-gets rest
+  }
+  // TN51 (6 players) / T42 (4 players):
+  // Phase 1: Opponents (different team from dealer) pick simultaneously
+  // Phase 2: Partner(s) (same team, not dealer) pick
+  // Dealer auto-gets remainder
+  const opponents = [];
+  const partners = [];
+  for (let i = 1; i < playerCount; i++) {
+    const seat = (dealer + i) % playerCount;
+    if (seat % 2 !== dealerTeam) {
+      opponents.push(seat);
+    } else if (seat !== dealer) {
+      partners.push(seat);
+    }
+  }
+  const phases = [opponents];
+  if (partners.length > 0) phases.push(partners);
+  return phases; // Each phase is an array of seats that pick simultaneously
+}
+
+// ── HOST SIDE ──
+
+// Host: Start pick phase instead of normal deal
+function mpHostStartPickPhase() {
+  const playerCount = mpPlayerCount();
+  const maxPip = mpMaxPip();
+  const handSize = mpHandSize();
+
+  // Generate shuffled pool
+  const pool = GAME_MODE === 'MOON' ? moonDominoesForSet() : allDominoesForSet(maxPip);
+  shuffleInPlace(pool);
+
+  _pickPool = pool.map(t => [t[0], t[1]]);
+  _pickPoolTaken = new Array(pool.length).fill(false);
+  _pickHands = {};
+  for (let s = 0; s < playerCount; s++) _pickHands[s] = [];
+  _pickPhaseActive = true;
+
+  // Broadcast pick_phase to all (pool tiles so sprites carry real identity)
+  const phases = _getPickOrder(session.dealer, playerCount);
+  mpSendMove({
+    action: 'pick_phase',
+    pool: _pickPool,
+    dealer: session.dealer,
+    handSize: handSize,
+    phases: phases,
+    gameMode: GAME_MODE,
+    marksToWin: session.game.marks_to_win,
+    teamMarks: session.team_marks.slice(),
+    moonWidow: GAME_MODE === 'MOON' && _pickPool.length > playerCount * handSize ?
+      _pickPool[playerCount * handSize] : null,
+    noTableTalk: _noTableTalk
+  });
+
+  // Host also enters pick phase locally
+  mpHandlePickPhase({
+    pool: _pickPool,
+    dealer: session.dealer,
+    handSize: handSize,
+    phases: phases,
+    gameMode: GAME_MODE,
+    marksToWin: session.game.marks_to_win,
+    teamMarks: session.team_marks.slice(),
+    moonWidow: GAME_MODE === 'MOON' && _pickPool.length > playerCount * handSize ?
+      _pickPool[playerCount * handSize] : null,
+    noTableTalk: _noTableTalk
+  });
+}
+
+// Host: Handle pick request from a guest
+function mpHostHandlePickRequest(move) {
+  if (!_pickPhaseActive) return;
+  const pos = move.position;
+  const seat = move.seat;
+
+  if (pos < 0 || pos >= _pickPool.length || _pickPoolTaken[pos]) {
+    // Denied — already taken or invalid
+    mpSendMove({ action: 'pick_denied', seat: seat, position: pos });
+    return;
+  }
+
+  // Accept the pick
+  _pickPoolTaken[pos] = true;
+  const tile = _pickPool[pos];
+  _pickHands[seat].push(tile);
+
+  // Broadcast confirmed (everyone sees this)
+  mpSendMove({
+    action: 'pick_confirmed',
+    seat: seat,
+    position: pos,
+    tile: tile,
+    count: _pickHands[seat].length
+  });
+
+  // Also process locally on host
+  mpHandlePickConfirmed({
+    seat: seat,
+    position: pos,
+    tile: tile,
+    count: _pickHands[seat].length
+  });
+
+  // Check if all non-dealer players have their full hands
+  _hostCheckPickPhaseComplete();
+}
+
+// Host: Check if pick phase should end (auto-deal to dealer)
+function _hostCheckPickPhaseComplete() {
+  const playerCount = mpPlayerCount();
+  const handSize = mpHandSize();
+  const dealer = session.dealer;
+
+  // Check all non-dealer seats
+  let allDone = true;
+  for (let s = 0; s < playerCount; s++) {
+    if (s === dealer) continue;
+    if (_pickHands[s].length < handSize) { allDone = false; break; }
+  }
+
+  if (allDone) {
+    // Auto-deal remaining tiles to dealer
+    const dealerTiles = [];
+    for (let i = 0; i < _pickPool.length; i++) {
+      if (!_pickPoolTaken[i]) {
+        _pickPoolTaken[i] = true;
+        dealerTiles.push({ position: i, tile: _pickPool[i] });
+        _pickHands[dealer].push(_pickPool[i]);
+      }
+      if (_pickHands[dealer].length >= handSize) break;
+    }
+
+    // Broadcast auto-deal for dealer
+    mpSendMove({
+      action: 'pick_auto_deal',
+      seat: dealer,
+      tiles: dealerTiles
+    });
+    mpHandlePickAutoDeal({ seat: dealer, tiles: dealerTiles });
+
+    // Now set up the engine with the picked hands
+    const hands = [];
+    for (let s = 0; s < playerCount; s++) {
+      hands.push(_pickHands[s]);
+    }
+    session.game.set_hands(hands, 0);
+    session.phase = 'NEED_BID';
+
+    // Small delay then start bidding
+    setTimeout(() => {
+      _pickPhaseActive = false;
+      initBiddingRound();
+      mpRunBiddingStep();
+    }, 800);
+  }
+}
+
+// ── ALL CLIENTS ──
+
+// Handle pick_phase message: set up pile sprites with real tile identity
+async function mpHandlePickPhase(move) {
+  if (mpIsHost && _pickPhaseActive && _pickPileSprites.length > 0) return; // Already set up
+
+  const playerCount = mpPlayerCount();
+  const handSize = mpHandSize();
+  const pool = move.pool;
+  const phases = move.phases;
+  const dealer = move.dealer;
+
+  // Set up session/engine state (same as mpHandleDeal init)
+  if (!mpIsHost) {
+    mpSuppressSend = true;
+    mpGameStarted = true;
+    _staleRefreshCount = 0;
+    mpShowChatIcon(true);
+    document.getElementById('mpBackdrop').style.display = 'none';
+    hideRoundEndSummary();
+    hideGameEndSummary();
+    document.getElementById('bidBackdrop').style.display = 'none';
+
+    if (move.gameMode && GAME_MODE !== move.gameMode) initGameMode(move.gameMode);
+    if (GAME_MODE === 'MOON') applyMoonSettings();
+    else if (GAME_MODE === 'T42') applyT42Settings();
+    else applyTn51Settings();
+
+    if (!session || session.game.player_count !== playerCount) {
+      session = new SessionV6_4g(playerCount, mpMaxPip(), handSize, move.marksToWin || 7);
+    }
+    session.dealer = dealer;
+    if (move.teamMarks) session.team_marks = move.teamMarks;
+    if (typeof move.noTableTalk !== 'undefined') {
+      _noTableTalk = !!move.noTableTalk;
+      _updateNoTableTalkUI();
+    }
+  }
+
+  // Reset visual state
+  shadowLayer.innerHTML = '';
+  spriteLayer.innerHTML = '';
+  sprites.length = 0;
+  for (let s = 0; s < playerCount; s++) sprites[s] = [];
+  currentTrick = 0;
+  playedThisTrick = [];
+  team1TricksWon = 0;
+  team2TricksWon = 0;
+  moonPlayerTricksWon = [0, 0, 0];
+  zIndexCounter = 100;
+  isAnimating = false;
+  waitingForPlayer1 = false;
+  document.getElementById('trumpDisplay').classList.remove('visible');
+  createPlaceholders();
+  positionPlayerIndicators();
+
+  // Create pile sprites with REAL tile identity
+  _pickPileSprites = [];
+  _pickMyCount = 0;
+  _pickMyTotal = handSize;
+  _pickMySlots = [];
+  _pickCanPick = false;
+
+  const SS = SHUFFLE_SETTINGS;
+  const rect = getRect();
+  const cx = rect.width * 0.5 - 28 + (rect.width * (SS.centerXPct || 0) / 100);
+  const cy = rect.height * 0.45 - 56 + (rect.height * (SS.centerYPct || 0) / 100);
+  const spreadX = Math.min(SS.spreadXMax, rect.width * SS.spreadXPct / 100);
+  const spreadY = Math.min(SS.spreadYMax, rect.height * SS.spreadYPct / 100);
+
+  const totalTiles = Math.min(pool.length, playerCount * handSize);
+
+  for (let i = 0; i < totalTiles; i++) {
+    const tile = pool[i];
+    const sprite = makeSprite(tile);
+    sprite._poolPosition = i; // Track which pool position this sprite is
+    sprite._poolTile = tile;
+
+    // Start in hand positions (will be animated during shuffle)
+    const seat = Math.floor(i / handSize);
+    const slot = i % handSize;
+    const visualP = MULTIPLAYER_MODE ? mpVisualPlayer(seat) : seatToPlayer(seat);
+    const pos = getHandPosition(visualP, slot);
+    if (pos) sprite.setPose(pos);
+
+    // Face up for local player's tiles, face down for all others
+    if (seat === (MULTIPLAYER_MODE ? mpSeat : 0)) {
+      sprite.setFaceUp(true);
+    } else {
+      sprite.setFaceUp(false);
+    }
+
+    if (sprite._shadow) shadowLayer.appendChild(sprite._shadow);
+    spriteLayer.appendChild(sprite);
+    _pickPileSprites.push(sprite);
+  }
+
+  // Run shuffle animation (this moves the real sprites around)
+  _shuffleInProgress = true;
+  await performShuffleAnimation();
+  _shuffleInProgress = false;
+
+  // Update score display
+  if (GAME_MODE !== 'MOON') {
+    team1Score = session.game.team_points ? session.game.team_points[0] : 0;
+    team2Score = session.game.team_points ? session.game.team_points[1] : 0;
+    team1Marks = session.team_marks[0];
+    team2Marks = session.team_marks[1];
+  }
+  updateScoreDisplay();
+
+  // Now run pick phases sequentially
+  for (let phaseIdx = 0; phaseIdx < phases.length; phaseIdx++) {
+    const pickSeats = phases[phaseIdx];
+    const myTurn = pickSeats.includes(MULTIPLAYER_MODE ? mpSeat : 0);
+
+    if (myTurn) {
+      _pickCanPick = true;
+      _enablePickClickHandlers();
+      _showPickHint();
+    }
+
+    // Wait for this phase to complete (all seats in phase have their tiles)
+    await _waitForPickPhaseComplete(pickSeats, handSize);
+
+    if (myTurn) {
+      _pickCanPick = false;
+      _disablePickClickHandlers();
+    }
+  }
+
+  // Dealer auto-deal happens via host message (pick_auto_deal)
+  // Wait for that too
+  await _waitForPickPhaseComplete([dealer], handSize);
+
+  // Pick phase done — set up engine hands from picked tiles
+  if (!mpIsHost) {
+    const hands = [];
+    for (let s = 0; s < playerCount; s++) {
+      hands.push((sprites[s] || []).filter(d => d && d.tile).map(d => d.tile));
+    }
+    session.game.set_hands(hands, 0);
+    session.phase = 'NEED_BID';
+    mpSuppressSend = false;
+  }
+
+  _pickPhaseActive = false;
+}
+
+// Wait until all seats in the given array have handSize tiles
+function _waitForPickPhaseComplete(seats, handSize) {
+  return new Promise(resolve => {
+    const check = () => {
+      let allDone = true;
+      for (const seat of seats) {
+        const seatSprites = sprites[seat] || [];
+        const count = seatSprites.filter(d => d && d.tile).length;
+        if (count < handSize) { allDone = false; break; }
+      }
+      if (allDone) resolve();
+      else setTimeout(check, 100);
+    };
+    check();
+  });
+}
+
+// Show pick hint toast
+function _showPickHint() {
+  let hint = document.getElementById('pickHintToast');
+  if (!hint) {
+    hint = document.createElement('div');
+    hint.id = 'pickHintToast';
+    hint.style.cssText = 'position:fixed;top:15%;left:50%;transform:translateX(-50%);z-index:2500;background:rgba(59,130,246,0.9);color:#fff;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;text-align:center;pointer-events:none;font-family:system-ui,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.4);transition:opacity 0.5s;';
+    document.body.appendChild(hint);
+  }
+  const left = _pickMyTotal - _pickMyCount;
+  hint.textContent = 'Tap ' + left + ' tile' + (left > 1 ? 's' : '') + ' to pick your hand';
+  hint.style.opacity = '1';
+}
+
+function _updatePickHint() {
+  const hint = document.getElementById('pickHintToast');
+  if (!hint) return;
+  const left = _pickMyTotal - _pickMyCount;
+  if (left > 0) {
+    hint.textContent = 'Tap ' + left + ' more tile' + (left > 1 ? 's' : '');
+  } else {
+    hint.style.opacity = '0';
+  }
+}
+
+// Enable click handlers on pile sprites for local player
+function _enablePickClickHandlers() {
+  _disablePickClickHandlers(); // Clean first
+  for (const sp of _pickPileSprites) {
+    if (sp._pickTaken) continue; // Already picked by someone
+    sp.style.cursor = 'pointer';
+    sp.style.pointerEvents = 'auto';
+
+    const handler = () => {
+      if (!_pickCanPick || sp._pickTaken) return;
+      if (_pickMyCount >= _pickMyTotal) return;
+
+      // Send pick request to host
+      if (MULTIPLAYER_MODE && !mpIsHost) {
+        mpSendMove({ action: 'pick_request', seat: mpSeat, position: sp._poolPosition });
+      } else if (mpIsHost) {
+        // Host picks locally — validate and process
+        mpHostHandlePickRequest({ seat: mpSeat, position: sp._poolPosition });
+      }
+    };
+
+    _pickClickHandlers.set(sp, handler);
+    sp.addEventListener('click', handler);
+  }
+}
+
+function _disablePickClickHandlers() {
+  for (const [sp, handler] of _pickClickHandlers) {
+    sp.removeEventListener('click', handler);
+    sp.style.cursor = '';
+    sp.style.pointerEvents = '';
+  }
+  _pickClickHandlers.clear();
+}
+
+// Handle confirmed pick (all clients)
+function mpHandlePickConfirmed(move) {
+  const seat = move.seat;
+  const pos = move.position;
+  const tile = move.tile;
+  const localSeat = MULTIPLAYER_MODE ? mpSeat : 0;
+  const SS = SHUFFLE_SETTINGS;
+
+  // Find the sprite at this pool position
+  const sp = _pickPileSprites.find(s => s._poolPosition === pos && !s._pickTaken);
+  if (!sp) return;
+
+  sp._pickTaken = true;
+  sp.style.cursor = '';
+  sp.style.pointerEvents = '';
+
+  // Add to the seat's sprite array
+  const slotIdx = (sprites[seat] || []).filter(d => d && d.tile).length;
+  if (!sprites[seat]) sprites[seat] = [];
+
+  // If this is the local player's pick, flip face-up
+  if (seat === localSeat) {
+    _pickMyCount++;
+    _pickMySlots.push(tile);
+    _updatePickHint();
+
+    // Re-assign sprite tile data to the actual tile (in case it moved during shuffle)
+    sp._tile = tile;
+    sp.dataset.tile = JSON.stringify(tile);
+    sp.redrawCanvases();
+    sp.setFaceUp(true);
+
+    // Animate to hand position
+    const visualP = MULTIPLAYER_MODE ? mpVisualPlayer(seat) : seatToPlayer(seat);
+    const targetPos = getHandPosition(visualP, slotIdx);
+    if (targetPos) {
+      bringToFront(sp);
+      SFX.play(Math.random() < 0.5 ? 'play1' : 'play3', 0.2);
+      animateSprite(sp, targetPos, SS.dealSpeed);
+    }
+
+    // Store in sprites array and add click handler for gameplay
+    sprites[seat][slotIdx] = { sprite: sp, tile: tile, originalSlot: slotIdx };
+    sp.addEventListener('click', () => handlePlayer1Click(sp));
+    sp.addEventListener('touchstart', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      handlePlayer1Click(sp);
+    }, { passive: false });
+
+    triggerHaptic(20);
+  } else {
+    // Other player picked — animate face-down to their hand
+    sp.setFaceUp(false);
+    const visualP = MULTIPLAYER_MODE ? mpVisualPlayer(seat) : seatToPlayer(seat);
+    const targetPos = getHandPosition(visualP, slotIdx);
+    if (targetPos) {
+      bringToFront(sp);
+      SFX.play(Math.random() < 0.5 ? 'play1' : 'play3', 0.15);
+      animateSprite(sp, targetPos, SS.dealSpeed);
+    }
+    sprites[seat][slotIdx] = { sprite: sp, tile: tile, originalSlot: slotIdx };
+  }
+}
+
+// Handle denied pick
+function mpHandlePickDenied(move) {
+  if (move.seat !== (MULTIPLAYER_MODE ? mpSeat : 0)) return;
+
+  // Flash the sprite red briefly
+  const sp = _pickPileSprites.find(s => s._poolPosition === move.position);
+  if (sp) {
+    sp.style.outline = '3px solid #ef4444';
+    sp.style.outlineOffset = '-2px';
+    setTimeout(() => {
+      sp.style.outline = '';
+      sp.style.outlineOffset = '';
+    }, 400);
+  }
+  triggerHaptic(50);
+}
+
+// Handle auto-deal to dealer
+function mpHandlePickAutoDeal(move) {
+  const seat = move.seat;
+  const tiles = move.tiles;
+  const localSeat = MULTIPLAYER_MODE ? mpSeat : 0;
+  const SS = SHUFFLE_SETTINGS;
+
+  for (let i = 0; i < tiles.length; i++) {
+    const { position, tile } = tiles[i];
+    const sp = _pickPileSprites.find(s => s._poolPosition === position && !s._pickTaken);
+    if (!sp) continue;
+
+    sp._pickTaken = true;
+    sp.style.cursor = '';
+    sp.style.pointerEvents = '';
+
+    const slotIdx = (sprites[seat] || []).filter(d => d && d.tile).length;
+    if (!sprites[seat]) sprites[seat] = [];
+
+    if (seat === localSeat) {
+      _pickMyCount++;
+      _pickMySlots.push(tile);
+      sp._tile = tile;
+      sp.dataset.tile = JSON.stringify(tile);
+      sp.redrawCanvases();
+      sp.setFaceUp(true);
+      sprites[seat][slotIdx] = { sprite: sp, tile: tile, originalSlot: slotIdx };
+      sp.addEventListener('click', () => handlePlayer1Click(sp));
+      sp.addEventListener('touchstart', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        handlePlayer1Click(sp);
+      }, { passive: false });
+    } else {
+      sp.setFaceUp(false);
+      sprites[seat][slotIdx] = { sprite: sp, tile: tile, originalSlot: slotIdx };
+    }
+
+    const visualP = MULTIPLAYER_MODE ? mpVisualPlayer(seat) : seatToPlayer(seat);
+    const targetPos = getHandPosition(visualP, slotIdx);
+    if (targetPos) {
+      const stagger = i * 60;
+      setTimeout(() => {
+        bringToFront(sp);
+        SFX.play(Math.random() < 0.5 ? 'play1' : 'play3', 0.15);
+        animateSprite(sp, targetPos, SS.dealSpeed);
+      }, stagger);
+    }
+  }
+
+  // Hide pick hint
+  const hint = document.getElementById('pickHintToast');
+  if (hint) hint.style.opacity = '0';
+
+  _disablePickClickHandlers();
+}
+
+let _shuffleInProgress = false;
 
 function getSection(name){
   return getActiveLayout().sections.find(s => s.name === name);
@@ -16148,6 +17172,8 @@ function dealDominoes(){
   callForDoubleActive = false;
   callForDoubleTrumpPip = null;
   nelloDoublesSuitActive = false;
+  _dfmActiveThisHand = (doublesFollowMe === 'on'); // Reset: will be set again when trump is chosen
+  _dfmChoiceMade = false;
   if(session && session.game){
     session.game.force_double_trump = false;
     session.game.nello_doubles_suit = false;
@@ -16844,11 +17870,12 @@ function finalizeBidding() {
       setStatus(getPlayerDisplayName(bidWinnerSeat) + ' (AI) selects trump: ' + (aiTrump || 'NT'));
       // Apply trump
       session.set_trump(aiTrump);
+      _dfmActiveThisHand = (aiTrump === 'DOUBLES' && doublesFollowMe !== 'off');
       syncSpritesWithGameState();
       updateTrumpDisplay();
       // V10_121: Host broadcasts trump_confirmed to guests
       mpSendMove({ action: 'trump_confirmed', trump: aiTrump === null ? 'NT' : aiTrump, seat: bidWinnerSeat, marks: session.bid_marks, isAI: true,
-        activePlayers: session.game.active_players ? session.game.active_players.slice() : null, firstPlayer: session.game.current_player });
+        activePlayers: session.game.active_players ? session.game.active_players.slice() : null, firstPlayer: session.game.current_player, dfmActive: _dfmActiveThisHand });
       // Start play
       setTimeout(() => mpCheckWhoseTurn(), 500);
     } else {
@@ -16898,6 +17925,8 @@ function finalizeBidding() {
       } else {
         // Set trump (this changes phase to PLAYING)
         session.set_trump(trump);
+        // V11.4j: Set DFM flag for AI
+        _dfmActiveThisHand = (trump === 'DOUBLES' && doublesFollowMe !== 'off');
 
         // Log hand start with detailed v2.0 format for AI trump selection
         const trumpMode = trump === 'DOUBLES' ? 'DOUBLES' : (trump === "NT" || trump === null ? 'NONE' : 'PIP');
@@ -17859,6 +18888,20 @@ function confirmTrumpSelection(){
     return;
   }
 
+  // V11.4j: Set Doubles Follow Me runtime flag when doubles are picked as trump
+  if(trump === 'DOUBLES' && !_dfmChoiceMade){
+    if(doublesFollowMe === 'on') _dfmActiveThisHand = true;
+    else if(doublesFollowMe === 'off') _dfmActiveThisHand = false;
+    else if(doublesFollowMe === 'player_chooses'){
+      // Show choice popup — the buttons will call _dfmContinueTrump()
+      document.getElementById('dfmChoiceBackdrop').style.display = 'flex';
+      return;
+    }
+  } else if(trump !== 'DOUBLES'){
+    _dfmActiveThisHand = false; // Not doubles trump, DFM doesn't apply
+  }
+  _dfmChoiceMade = false; // Reset for next hand
+
   // V10_121: Guest sends trump intent to host instead of calling set_trump
   if (MULTIPLAYER_MODE && !mpIsHost) {
     disableTrumpDominoClicks();
@@ -17877,7 +18920,7 @@ function confirmTrumpSelection(){
       const nelloMarks = session.bid_marks || 1;
       mpSendMove({ action: 'trump_intent', trump: trumpVal, seat: mpSeat, marks: nelloMarks, nello: true });
     } else {
-      mpSendMove({ action: 'trump_intent', trump: trumpVal, seat: mpSeat, marks: session.bid_marks });
+      mpSendMove({ action: 'trump_intent', trump: trumpVal, seat: mpSeat, marks: session.bid_marks, dfmActive: _dfmActiveThisHand });
     }
     setStatus('Waiting for host to confirm trump...');
     _startIntentTimeout('trump'); // V11.3: Timeout if host is unreachable
@@ -18024,7 +19067,7 @@ function confirmTrumpSelection(){
       const trumpBroadcast = (trump === 'NT') ? 'NT' : trump;
       mpSendMove({ action: 'trump_confirmed', trump: trumpBroadcast, seat: mpSeat, marks: session.bid_marks, nello: false,
         activePlayers: session.game.active_players ? session.game.active_players.slice() : null,
-        firstPlayer: session.game.current_player });
+        firstPlayer: session.game.current_player, dfmActive: _dfmActiveThisHand });
       mpSaveHostState();
     }
     mpCheckWhoseTurn();
@@ -18210,7 +19253,7 @@ async function aiPlayTurn(){
   }
 }
 
-function startNewHand(){
+async function startNewHand(){
   // ═══════════════════════════════════════════════════════════════
   // V10_FIX: Reset all sync fix flags for new hand
   // ═══════════════════════════════════════════════════════════════
@@ -18339,6 +19382,17 @@ function startNewHand(){
     }
   }
 
+  // V11.4k: Animate deal or auto-deal based on setting
+  if (dealMode === 'pick') {
+    await animateDealFromCenter();
+  } else {
+    // Auto deal: just flip local player's tiles face-up
+    const localSeat = getLocalSeat();
+    for (const data of (sprites[localSeat] || [])) {
+      if (data && data.sprite) data.sprite.setFaceUp(true);
+    }
+  }
+
   team1Score = session.game.team_points[0];
   team2Score = session.game.team_points[1];
   team1Marks = session.team_marks[0];
@@ -18380,7 +19434,7 @@ function startNewHand(){
 
 
 // Multiplayer: Host deals and broadcasts hands to all players
-function mpHostDeal() {
+async function mpHostDeal() {
   if (!mpIsHost) return;
   mpShowChatIcon(true); // V11.4: Show chat icon for host
 
@@ -18440,6 +19494,12 @@ function mpHostDeal() {
   session.new_hand_random();
   createPlaceholders();
 
+  // V11.4i: If pick-your-dominoes enabled in MP, use pick phase instead of normal deal
+  if (dealMode === 'pick' && MULTIPLAYER_MODE) {
+    mpHostStartPickPhase();
+    return; // Pick phase handles everything asynchronously
+  }
+
   const hands = session.game.hands;
 
   // Create sprites - rotate so local player (host) is at bottom
@@ -18478,6 +19538,12 @@ function mpHostDeal() {
     }
   }
 
+  // V11.4k: Animate deal or auto-deal based on setting
+  if (dealMode === 'pick') {
+    await animateDealFromCenter();
+  }
+  // (mpHostDeal already sets face-up for host's tiles above)
+
   if (GAME_MODE !== 'MOON') {
     team1Score = session.game.team_points[0];
     team2Score = session.game.team_points[1];
@@ -18512,6 +19578,8 @@ function mpHostDeal() {
     dealPayload.moonWidow = session.moon_widow ? [session.moon_widow[0], session.moon_widow[1]] : null;
     dealPayload.moonShoot = session.moon_shoot || false;
   }
+  // V11.4b: Include No Table Talk setting
+  dealPayload.noTableTalk = _noTableTalk;
   mpSendMove(dealPayload);
 
   // Start bidding
@@ -18965,6 +20033,31 @@ let _mpChatUnread = 0;
 let _mpChatOpen = false;
 const _CHAT_MAX_MESSAGES = 100;
 
+// V11.4b: No Table Talk — blocks chat during active rounds
+let _noTableTalk = true; // On by default
+
+function _isRoundActive() {
+  try {
+    if (!session || !session.phase) return false;
+    return session.phase === PHASE_NEED_BID || session.phase === PHASE_NEED_TRUMP ||
+           session.phase === PHASE_PLAYING || session.phase === 'MOON_WIDOW';
+  } catch(e) { return false; }
+}
+
+function _showNoTableTalkToast() {
+  let toast = document.getElementById('noTableTalkToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'noTableTalkToast';
+    toast.style.cssText = 'position:fixed;bottom:50%;left:50%;transform:translate(-50%,50%);z-index:2500;background:rgba(220,38,38,0.95);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;text-align:center;pointer-events:none;opacity:0;transition:opacity 0.3s;font-family:system-ui,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.4);max-width:260px;';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = 'No table talk! You can chat after the round is over.';
+  toast.style.opacity = '1';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+}
+
 function mpToggleChat() {
   _mpChatOpen = !_mpChatOpen;
   const panel = document.getElementById('mpChatPanel');
@@ -18983,6 +20076,11 @@ function mpToggleChat() {
 
 function mpSendChat() {
   if (!MULTIPLAYER_MODE || !mpChatEnabled) return;
+  // No Table Talk: block during active rounds
+  if (_noTableTalk && _isRoundActive()) {
+    _showNoTableTalkToast();
+    return;
+  }
   const input = document.getElementById('chatInputField');
   if (!input) return;
   const text = input.value.trim();
@@ -19006,11 +20104,38 @@ function mpSendChat() {
 
 function mpHandleChat(data) {
   if (!mpChatEnabled) return;
+  // No Table Talk: silently block incoming during active rounds
+  if (_noTableTalk && _isRoundActive()) return;
   _addChatMessage({ seat: data.seat, name: data.name || 'Player', text: data.text, t: data.t }, false);
   if (!_mpChatOpen) {
     _mpChatUnread++;
     _updateChatBadge();
     triggerHaptic(30); // Light vibration for new message
+  }
+}
+
+function mpHandleNoTableTalk(data) {
+  _noTableTalk = !!data.enabled;
+  _updateNoTableTalkUI();
+}
+
+function _updateNoTableTalkUI() {
+  const chk = document.getElementById('chkNoTableTalk');
+  if (chk) chk.checked = _noTableTalk;
+  // Show/hide the label for guests
+  const label = document.getElementById('noTableTalkLabel');
+  if (label) label.style.display = _noTableTalk ? '' : 'none';
+}
+
+function _toggleNoTableTalk() {
+  if (!mpIsHost) return;
+  _noTableTalk = !_noTableTalk;
+  _updateNoTableTalkUI();
+  // Broadcast to all guests
+  if (mpSocket && mpSocket.readyState === WebSocket.OPEN) {
+    try {
+      mpSocket.send(JSON.stringify({ type: 'no_table_talk', room: mpRoom, enabled: _noTableTalk }));
+    } catch(e) {}
   }
 }
 
@@ -19071,7 +20196,80 @@ function mpShowChatIcon(show) {
   // Show clear-all button only for host
   const clearAllBtn = document.getElementById('chatClearAllBtn');
   if (clearAllBtn) clearAllBtn.style.display = mpIsHost ? '' : 'none';
+  // Show No Table Talk checkbox for host, label for guests
+  const nttRow = document.getElementById('noTableTalkRow');
+  if (nttRow) nttRow.style.display = show ? 'flex' : 'none';
+  const nttChk = document.getElementById('chkNoTableTalk');
+  if (nttChk) nttChk.style.display = mpIsHost ? '' : 'none';
+  _updateNoTableTalkUI();
 }
+
+// V11.4b: Keep chat above keyboard WITHOUT moving the game window
+// Strategy: lock body position, adjust chat panel bottom, and use visualViewport
+// to counteract any scroll the browser tries to do
+let _chatKeyboardOpen = false;
+let _chatSavedScrollY = 0;
+
+if (window.visualViewport) {
+  const _handleViewportResize = () => {
+    const panel = document.getElementById('mpChatPanel');
+    const icon = document.getElementById('mpChatIcon');
+    const vv = window.visualViewport;
+    const keyboardHeight = window.innerHeight - vv.height;
+
+    if (keyboardHeight > 100 && document.activeElement && document.activeElement.id === 'chatInputField') {
+      _chatKeyboardOpen = true;
+      // Move chat panel above keyboard
+      if (panel) panel.style.bottom = (keyboardHeight + 8) + 'px';
+      if (icon) icon.style.bottom = (keyboardHeight + 8) + 'px';
+      // Counteract any viewport offset (scroll that iOS/Android forced)
+      if (vv.offsetTop > 0) {
+        window.scrollTo(0, 0);
+      }
+    } else {
+      if (_chatKeyboardOpen) {
+        _chatKeyboardOpen = false;
+        if (panel) panel.style.bottom = '';
+        if (icon) icon.style.bottom = '';
+        window.scrollTo(0, 0);
+      }
+    }
+  };
+  window.visualViewport.addEventListener('resize', _handleViewportResize);
+  window.visualViewport.addEventListener('scroll', () => {
+    // If keyboard is open and viewport scrolled, force back to 0
+    if (_chatKeyboardOpen && window.visualViewport.offsetTop > 0) {
+      window.scrollTo(0, 0);
+    }
+  });
+}
+
+// Prevent body scroll on focus (iOS Safari keyboard push)
+document.addEventListener('focusin', (e) => {
+  if (e.target && e.target.id === 'chatInputField') {
+    _chatSavedScrollY = window.scrollY;
+    // Lock the page so keyboard doesn't push content
+    document.body.style.position = 'fixed';
+    document.body.style.top = '0';
+    document.body.style.left = '0';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+  }
+});
+document.addEventListener('focusout', (e) => {
+  if (e.target && e.target.id === 'chatInputField') {
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.width = '';
+    document.body.style.height = '';
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+    window.scrollTo(0, 0); // Reset scroll to top
+  }
+});
 
 function showRoundEndSummary(){
   // Show round-end summary popup (same style as game-end but with round info + Next Round button)
@@ -19146,9 +20344,15 @@ function showRoundEndSummary(){
   // V10_121: Only host/single-player gets the Next Round button
   const _reBtn = document.getElementById('roundEndNextBtn');
   if (_reBtn) {
-    _reBtn.addEventListener('click', () => {
+    _reBtn.addEventListener('click', async () => {
       hideRoundEndSummary();
       SFX.resumeBgmAfterResult();
+      // V11.4k: Shuffle animation before next hand (only in pick mode)
+      if (dealMode === 'pick') {
+        _shuffleInProgress = true;
+        await performShuffleAnimation();
+        _shuffleInProgress = false;
+      }
       if (MULTIPLAYER_MODE && mpIsHost) {
         mpSendMove({ action: 'next_hand' }); // V10_121: Tell guests to dismiss popup
         mpHostDeal();
@@ -19734,6 +20938,9 @@ document.getElementById('mpStartGame').addEventListener('click', () => {
   // Get nello doubles mode from MP panel
   const _mpNDB = document.querySelector('.mpNelloBtn.mpNelloBtnSelected');
   if(_mpNDB) nelloDoublesMode = _mpNDB.dataset.nello;
+  // Get doubles follow me mode from MP panel
+  const _mpDFB = document.querySelector('.mpDfmBtn.mpDfmBtnSelected');
+  if(_mpDFB) doublesFollowMe = _mpDFB.dataset.dfm;
 
   // Send start game signal with marks and house rules
   mpSendMove({
@@ -19742,7 +20949,8 @@ document.getElementById('mpStartGame').addEventListener('click', () => {
       callForDouble: callForDoubleEnabled,
       nelloDeclare: nelloDeclareMode,
       nelloRestrictFirst: nelloRestrictFirst,
-      nelloDoublesMode: nelloDoublesMode
+      nelloDoublesMode: nelloDoublesMode,
+      doublesFollowMe: doublesFollowMe
     }
   });
 
@@ -19787,6 +20995,25 @@ document.querySelectorAll('.mpMarksBtn').forEach(btn => {
       nb.classList.add('mpNelloBtnSelected');
       nb.style.background = 'rgba(96,165,250,0.2)';
       nb.style.border = '1px solid #60a5fa';
+    });
+  });
+  // Doubles Follow Me buttons (MP)
+  document.querySelectorAll('.mpDfmBtn').forEach(function(db){
+    if(db.dataset.dfm === doublesFollowMe){
+      db.classList.add('mpDfmBtnSelected');
+      db.style.background = 'rgba(96,165,250,0.2)';
+      db.style.border = '1px solid #60a5fa';
+    }
+    db.addEventListener('click', function(){
+      if(!mpIsHost) return;
+      document.querySelectorAll('.mpDfmBtn').forEach(function(b){
+        b.classList.remove('mpDfmBtnSelected');
+        b.style.background = 'rgba(255,255,255,0.05)';
+        b.style.border = '1px solid rgba(255,255,255,0.15)';
+      });
+      db.classList.add('mpDfmBtnSelected');
+      db.style.background = 'rgba(96,165,250,0.2)';
+      db.style.border = '1px solid #60a5fa';
     });
   });
     document.querySelectorAll('.mpMarksBtn').forEach(b => {
@@ -22761,6 +23988,9 @@ let selectedMarksToWin = 7;
 // House Rules
 let callForDoubleEnabled = true; // Call for the Double rule
 let nelloDoublesMode = 'regular'; // 'regular', 'doubles_only', 'player_chooses'
+let doublesFollowMe = 'on'; // 'on', 'off', 'player_chooses' — Doubles Follow Me when Doubles are trump
+let _dfmActiveThisHand = true; // Runtime flag: is DFM active this hand? Set by setting or player choice
+let _dfmChoiceMade = false; // Guard to prevent popup re-showing after choice
 let callForDoubleActive = false; // Is the double being called this trick?
 let callForDoubleTrumpPip = null; // Which trump pip's double is being called
 let nelloDoublesSuitActive = false; // Is doubles-as-separate-suit active this hand?
@@ -22817,15 +24047,21 @@ function updateGameSettingsForMode(mode){
   const marksSection = document.getElementById('gsMarksSection');
   const nelloSection = document.getElementById('gsNelloSection');
   const nelloBtns = document.getElementById('gsNelloBtns');
+  const dfmSection = document.getElementById('gsDfmSection');
+  const dfmBtns = document.getElementById('gsDfmBtns');
   if(mode === 'MOON'){
-    // Moon: no marks selection (always 21), no Nello
+    // Moon: no marks selection (always 21), no Nello, no DFM
     if(marksSection) marksSection.style.display = 'none';
     if(nelloSection) nelloSection.style.display = 'none';
     if(nelloBtns) nelloBtns.style.display = 'none';
+    if(dfmSection) dfmSection.style.display = 'none';
+    if(dfmBtns) dfmBtns.style.display = 'none';
   } else {
     if(marksSection) marksSection.style.display = '';
     if(nelloSection) nelloSection.style.display = '';
     if(nelloBtns) nelloBtns.style.display = '';
+    if(dfmSection) dfmSection.style.display = '';
+    if(dfmBtns) dfmBtns.style.display = '';
   }
 }
 
@@ -22892,13 +24128,29 @@ document.getElementById('btnSelectT42').addEventListener('click', () => {
   showGameSettings();
 });
 document.getElementById('btnSelectMoon').addEventListener('click', () => {
-  selectedGameType = 'MOON';
-  hideStartScreen();
-  document.querySelectorAll('.gsGameTypeBtn').forEach(b => { b.style.border='2px solid transparent'; b.style.opacity='0.7'; b.classList.remove('gsGameTypeSelected'); });
-  const moonBtn = document.querySelector('.gsGameTypeBtn[data-game-type="MOON"]');
-  if(moonBtn){ moonBtn.style.border='2px solid #fff'; moonBtn.style.opacity='1'; moonBtn.classList.add('gsGameTypeSelected'); }
-  updateGameSettingsForMode('MOON');
-  showGameSettings();
+  // V12: Show under construction warning before opening Moon
+  const moonWarning = document.createElement('div');
+  moonWarning.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);';
+  moonWarning.innerHTML = '<div style="background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:16px;padding:28px;text-align:center;color:#fff;min-width:280px;max-width:85%;box-shadow:0 8px 32px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.1);">'
+    + '<div style="font-size:48px;margin-bottom:12px;">\ud83d\udea7 \ud83d\udc77\ud83c\udffb\u200d\u2642\ufe0f</div>'
+    + '<div style="font-size:20px;font-weight:700;margin-bottom:8px;color:#eab308;">Under Construction</div>'
+    + '<div style="font-size:14px;color:rgba(255,255,255,0.7);margin-bottom:20px;line-height:1.5;">Texas Moon is still being developed.<br>Some features may not work as expected.</div>'
+    + '<div style="display:flex;gap:12px;justify-content:center;">'
+    + '<button id="moonWarningContinue" style="padding:10px 24px;font-size:14px;font-weight:700;color:#fff;background:linear-gradient(135deg,#eab308,#ca8a04);border:none;border-radius:10px;cursor:pointer;">Continue Anyway</button>'
+    + '<button id="moonWarningBack" style="padding:10px 24px;font-size:14px;font-weight:600;color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:10px;cursor:pointer;">Go Back</button>'
+    + '</div></div>';
+  document.body.appendChild(moonWarning);
+  document.getElementById('moonWarningBack').addEventListener('click', () => { moonWarning.remove(); });
+  document.getElementById('moonWarningContinue').addEventListener('click', () => {
+    moonWarning.remove();
+    selectedGameType = 'MOON';
+    hideStartScreen();
+    document.querySelectorAll('.gsGameTypeBtn').forEach(b => { b.style.border='2px solid transparent'; b.style.opacity='0.7'; b.classList.remove('gsGameTypeSelected'); });
+    const moonBtn = document.querySelector('.gsGameTypeBtn[data-game-type="MOON"]');
+    if(moonBtn){ moonBtn.style.border='2px solid #fff'; moonBtn.style.opacity='1'; moonBtn.classList.add('gsGameTypeSelected'); }
+    updateGameSettingsForMode('MOON');
+    showGameSettings();
+  });
 });
 document.getElementById('btnStartNewGame').addEventListener('click', () => {
   // Show game type selection (TN51/T42/Moon)
@@ -22959,6 +24211,41 @@ document.querySelectorAll('.gsNelloBtn').forEach(btn => {
   });
 });
 
+// Doubles Follow Me choice popup handlers
+document.getElementById('btnDfmYes').addEventListener('click', function(){
+  _dfmActiveThisHand = true;
+  document.getElementById('dfmChoiceBackdrop').style.display = 'none';
+  _dfmContinueTrump();
+});
+document.getElementById('btnDfmNo').addEventListener('click', function(){
+  _dfmActiveThisHand = false;
+  document.getElementById('dfmChoiceBackdrop').style.display = 'none';
+  _dfmContinueTrump();
+});
+function _dfmContinueTrump(){
+  // Resume confirmTrumpSelection after player made their DFM choice
+  _dfmChoiceMade = true;
+  confirmTrumpSelection();
+}
+
+// Doubles Follow Me mode buttons (Game Settings)
+document.querySelectorAll('.gsDfmBtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    doublesFollowMe = btn.dataset.dfm;
+    document.querySelectorAll('.gsDfmBtn').forEach(b => {
+      b.style.border = 'none';
+      b.classList.remove('gsDfmSelected');
+    });
+    btn.style.border = '2px solid #fff';
+    btn.classList.add('gsDfmSelected');
+    try {
+      localStorage.setItem('tn51_doublesFollowMe', doublesFollowMe);
+    } catch(e) {
+      console.warn('[iOS] localStorage write error:', e);
+    }
+  });
+});
+
 // Restore house rules from localStorage
 (function(){
   const cfd = localStorage.getItem('tn51_callForDouble');
@@ -22977,6 +24264,15 @@ document.querySelectorAll('.gsNelloBtn').forEach(btn => {
     document.querySelectorAll('.gsNelloBtn').forEach(b => {
       b.style.border = 'none'; b.classList.remove('gsNelloSelected');
       if(b.dataset.nello === ndm){ b.style.border = '2px solid #fff'; b.classList.add('gsNelloSelected'); }
+    });
+  }
+  // Restore Doubles Follow Me
+  const dfm = localStorage.getItem('tn51_doublesFollowMe');
+  if(dfm && ['on','off','player_chooses'].includes(dfm)){
+    doublesFollowMe = dfm;
+    document.querySelectorAll('.gsDfmBtn').forEach(b => {
+      b.style.border = 'none'; b.classList.remove('gsDfmSelected');
+      if(b.dataset.dfm === dfm){ b.style.border = '2px solid #fff'; b.classList.add('gsDfmSelected'); }
     });
   }
 })();
@@ -23077,10 +24373,8 @@ document.getElementById('btnNelloDoublesOnly').addEventListener('click', () => {
   resumeAfterNelloDoublesChoice();
 });
 
-// Show name prompt on first load if no name set
-if (!playerName && !playerNoName) {
-  promptForName();
-}
+// V12: Screen name is now inline on start screen — no popup needed
+// updateScreenNameUI() is called in the IIFE above
 
 // Show start screen on load
 showStartScreen();
@@ -23265,34 +24559,34 @@ if ('serviceWorker' in navigator) {
 .t42s-group span { font-size:11px;color:#fff;margin-left:6px; }
 .t42s-section { font-size:12px;font-weight:700;color:#4ecdc4;margin:12px 0 6px 0;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.15); }
 .t42s-section:first-child { margin-top:0; }
-#tn51SettingsBtn { position:fixed; bottom:10px; left:10px; z-index:900; background:rgba(0,0,0,0.6); color:#fff; border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer; display:none; }
-#tn51SettingsBtn:hover { background:rgba(0,0,0,0.8); }
-#t42SettingsBtn { position:fixed; bottom:10px; left:10px; z-index:900; background:rgba(0,0,0,0.6); color:#fff; border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer; display:none; }
-#t42SettingsBtn:hover { background:rgba(0,0,0,0.8); }
-#moonSettingsBtn { position:fixed; bottom:10px; left:10px; z-index:900; background:rgba(0,0,0,0.6); color:#fff; border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer; display:none; }
-#moonSettingsBtn:hover { background:rgba(0,0,0,0.8); }
-#by2SettingsBtn { position:fixed; bottom:10px; left:100px; z-index:900; background:rgba(0,0,0,0.6); color:#fff; border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer; display:none; }
-#by2SettingsBtn:hover { background:rgba(0,0,0,0.8); }
-#pipDetailsBtn { position:fixed; bottom:10px; left:190px; z-index:900; background:rgba(0,0,0,0.6); color:#fff; border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer; display:none; }
-#pipDetailsBtn:hover { background:rgba(0,0,0,0.8); }
-#pipColorsBtn { position:fixed; bottom:10px; left:280px; z-index:900; background:rgba(0,0,0,0.6); color:#fff; border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer; display:none; }
-#pipColorsBtn:hover { background:rgba(0,0,0,0.8); }
-#zIndexBtn { position:fixed; bottom:10px; left:370px; z-index:900; background:rgba(0,0,0,0.6); color:#fff; border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer; display:none; }
-#zIndexBtn:hover { background:rgba(0,0,0,0.8); }
-#exportAllBtn { position:fixed; bottom:10px; left:440px; z-index:900; background:rgba(0,0,0,0.6); color:#0f0; border:1px solid rgba(0,255,0,0.3); border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer; display:none; }
-#exportAllBtn:hover { background:rgba(0,0,0,0.8); }
-#dominoStyleBtn { position:fixed; bottom:10px; left:520px; z-index:900; background:rgba(0,0,0,0.6); color:#fff; border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer; display:none; }
-#dominoStyleBtn:hover { background:rgba(0,0,0,0.8); }
+#devTabsWrap { position:fixed; bottom:10px; left:0; right:0; z-index:900; display:none; height:30px; }
+#devTabsArrowL, #devTabsArrowR { position:absolute; top:0; width:24px; height:30px; z-index:901; background:rgba(0,0,0,0.8); color:#fff; border:none; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
+#devTabsArrowL { left:0; border-radius:0 6px 6px 0; }
+#devTabsArrowR { right:0; border-radius:6px 0 0 6px; }
+#devTabsArrowL:active, #devTabsArrowR:active { background:rgba(255,255,255,0.3); }
+#devTabsBar { overflow-x:auto; overflow-y:hidden; white-space:nowrap; -webkit-overflow-scrolling:touch; padding:0 28px; scrollbar-width:none; height:30px; }
+#devTabsBar::-webkit-scrollbar { display:none; }
+#devTabsBar button { display:inline-block; background:rgba(0,0,0,0.6); color:#fff; border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer; margin-right:6px; vertical-align:middle; }
+#devTabsBar button:hover { background:rgba(0,0,0,0.8); }
+#exportAllBtn { color:#0f0 !important; border-color:rgba(0,255,0,0.3) !important; }
+#shuffleSettingsBtn { color:#ff0 !important; border-color:rgba(255,255,0,0.3) !important; }
 </style>
-<button id="tn51SettingsBtn" style="display:none;">TN51 Layout</button>
+<div id="devTabsWrap">
+<button id="devTabsArrowL" onclick="document.getElementById('devTabsBar').scrollBy({left:-120,behavior:'smooth'})">&lsaquo;</button>
+<button id="devTabsArrowR" onclick="document.getElementById('devTabsBar').scrollBy({left:120,behavior:'smooth'})">&rsaquo;</button>
+<div id="devTabsBar">
+<button id="tn51SettingsBtn">TN51 Layout</button>
 <button id="t42SettingsBtn">T42 Layout</button>
-<button id="moonSettingsBtn" style="display:none;">Moon Layout</button>
+<button id="moonSettingsBtn">Moon Layout</button>
 <button id="by2SettingsBtn">Boneyard</button>
-<button id="pipDetailsBtn" style="display:none;">Pip Details</button>
-<button id="pipColorsBtn" style="display:none;">Pip Colors</button>
-<button id="zIndexBtn" style="display:none;">Z-Index</button>
-<button id="exportAllBtn" style="display:none;" onclick="if(typeof exportAllSettings==='function')exportAllSettings()">Export All</button>
-<button id="dominoStyleBtn" style="display:none;">Domino Style</button>
+<button id="pipDetailsBtn">Pip Details</button>
+<button id="pipColorsBtn">Pip Colors</button>
+<button id="zIndexBtn">Z-Index</button>
+<button id="shuffleSettingsBtn">Shuffle</button>
+<button id="exportAllBtn" onclick="if(typeof exportAllSettings==='function')exportAllSettings()">Export All</button>
+<button id="dominoStyleBtn">Domino Style</button>
+</div>
+</div>
 <script>
 (function(){
   // ==================== ORIENTATION-AWARE PERSISTENCE ====================
@@ -23399,48 +24693,29 @@ if ('serviceWorker' in navigator) {
       knob.style.left = devModeEnabled ? '22px' : '2px';
       knob.previousElementSibling.style.background = devModeEnabled ? '#22c55e' : 'rgba(255,255,255,0.2)';
     }
-    // Show/hide layout buttons
+    // Show/hide dev tabs bar container
+    const wrap = document.getElementById('devTabsWrap');
     const tn51Btn = document.getElementById('tn51SettingsBtn');
     const t42Btn = document.getElementById('t42SettingsBtn');
     const moonBtn = document.getElementById('moonSettingsBtn');
-    const by2Btn = document.getElementById('by2SettingsBtn');
-    const pipDBtn = document.getElementById('pipDetailsBtn');
-    const pipCBtn = document.getElementById('pipColorsBtn');
-    const zIdxBtn = document.getElementById('zIndexBtn');
     if(devModeEnabled){
-      if(by2Btn) by2Btn.style.display = 'block';
-      if(pipDBtn) pipDBtn.style.display = 'block';
-      if(pipCBtn) pipCBtn.style.display = 'block';
-      if(zIdxBtn) zIdxBtn.style.display = 'block';
-      var expBtn = document.getElementById('exportAllBtn');
-      if(expBtn) expBtn.style.display = 'block';
-      var dsBtn = document.getElementById('dominoStyleBtn');
-      if(dsBtn) dsBtn.style.display = 'block';
+      if(wrap) wrap.style.display = 'block';
+      // Show game-specific layout button, hide others
       if(GAME_MODE === 'T42'){
-        if(t42Btn) t42Btn.style.display = 'block';
+        if(t42Btn) t42Btn.style.display = 'inline-block';
         if(tn51Btn) tn51Btn.style.display = 'none';
         if(moonBtn) moonBtn.style.display = 'none';
       } else if(GAME_MODE === 'MOON'){
-        if(moonBtn) moonBtn.style.display = 'block';
+        if(moonBtn) moonBtn.style.display = 'inline-block';
         if(tn51Btn) tn51Btn.style.display = 'none';
         if(t42Btn) t42Btn.style.display = 'none';
       } else {
-        if(tn51Btn) tn51Btn.style.display = 'block';
+        if(tn51Btn) tn51Btn.style.display = 'inline-block';
         if(t42Btn) t42Btn.style.display = 'none';
         if(moonBtn) moonBtn.style.display = 'none';
       }
     } else {
-      if(tn51Btn) tn51Btn.style.display = 'none';
-      if(t42Btn) t42Btn.style.display = 'none';
-      if(moonBtn) moonBtn.style.display = 'none';
-      if(by2Btn) by2Btn.style.display = 'none';
-      if(pipDBtn) pipDBtn.style.display = 'none';
-      if(pipCBtn) pipCBtn.style.display = 'none';
-      if(zIdxBtn) zIdxBtn.style.display = 'none';
-      var expBtn2 = document.getElementById('exportAllBtn');
-      if(expBtn2) expBtn2.style.display = 'none';
-      var dsBtn2 = document.getElementById('dominoStyleBtn');
-      if(dsBtn2) dsBtn2.style.display = 'none';
+      if(wrap) wrap.style.display = 'none';
     }
   }
 
@@ -23490,6 +24765,32 @@ if ('serviceWorker' in navigator) {
     knob.style.left = this.checked ? '22px' : '2px';
     knob.parentElement.querySelector('span').style.background = this.checked ? '#22c55e' : 'rgba(255,255,255,0.2)';
   });
+
+  // V11.4k: Pick Your Dominoes toggle (deal mode)
+  document.getElementById('chkPickDominoes').addEventListener('change', function(){
+    dealMode = this.checked ? 'pick' : 'auto';
+    SHUFFLE_SETTINGS.clickToPick = this.checked;
+    try { localStorage.setItem('tn51_dealMode', dealMode); } catch(e){}
+    const knob = document.getElementById('pickDominoesKnob');
+    knob.style.left = this.checked ? '22px' : '2px';
+    knob.parentElement.querySelector('span').style.background = this.checked ? '#22c55e' : 'rgba(255,255,255,0.2)';
+  });
+
+  // Restore deal mode from localStorage
+  (function(){
+    var dm = localStorage.getItem('tn51_dealMode');
+    if(dm === 'pick' || dm === 'auto') dealMode = dm;
+    var chk = document.getElementById('chkPickDominoes');
+    if(chk){
+      chk.checked = (dealMode === 'pick');
+      var knob = document.getElementById('pickDominoesKnob');
+      if(knob){
+        knob.style.left = (dealMode === 'pick') ? '22px' : '2px';
+        knob.parentElement.querySelector('span').style.background = (dealMode === 'pick') ? '#22c55e' : 'rgba(255,255,255,0.2)';
+      }
+    }
+    SHUFFLE_SETTINGS.clickToPick = (dealMode === 'pick');
+  })();
 
   document.getElementById('chkDevMode').addEventListener('change', function(){
     devModeEnabled = this.checked;
@@ -23543,7 +24844,7 @@ if ('serviceWorker' in navigator) {
       { id:'zi_by2Settings', label:'Boneyard Popup', selector:'#by2SettingsBackdrop', defaultZ:2100 },
       { id:'zi_pipDetails', label:'Pip Details Popup', selector:'#pipDetailsPopup,#pdBackdrop', defaultZ:2000 },
       { id:'zi_pipColors', label:'Pip Colors Popup', selector:'#pipColorsPopup,#pcBackdrop', defaultZ:2000 },
-      { id:'zi_devBtns', label:'Dev Mode Buttons', selector:'#tn51SettingsBtn,#t42SettingsBtn,#moonSettingsBtn,#by2SettingsBtn,#pipDetailsBtn,#pipColorsBtn,#zIndexBtn', defaultZ:900 },
+      { id:'zi_devBtns', label:'Dev Mode Buttons', selector:'#devTabsWrap', defaultZ:900 },
       { id:'zi_bidIndicators', label:'Bid Indicators', selector:'[id^="bidIndicator"]', defaultZ:5 },
     ];
 
@@ -23948,6 +25249,301 @@ if ('serviceWorker' in navigator) {
     }catch(e){}
 
     document.getElementById('dominoStyleBtn').addEventListener('click', showDominoStylePanel);
+  })();
+
+  // ==================== SHUFFLE SETTINGS PANEL ====================
+  (function(){
+    const SHUFFLE_STORAGE_KEY = 'tn51_shuffle_settings';
+
+    // Load saved settings
+    try {
+      const saved = localStorage.getItem(SHUFFLE_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        Object.assign(SHUFFLE_SETTINGS, parsed);
+      }
+    } catch(e){}
+
+    function saveShuffle() {
+      try { localStorage.setItem(SHUFFLE_STORAGE_KEY, JSON.stringify(SHUFFLE_SETTINGS)); } catch(e){}
+    }
+
+    const shufflePanel = document.createElement('div');
+    shufflePanel.id = 'shuffleSettingsPanel';
+    shufflePanel.style.cssText = 'display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2000;background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid rgba(255,255,0,0.3);border-radius:12px;padding:16px;max-width:340px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.6);color:#fff;font-size:12px;';
+
+    function buildShuffleHTML() {
+      const SS = SHUFFLE_SETTINGS;
+      function row(id, label, min, max, step, val, unit) {
+        unit = unit || '';
+        return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">' +
+          '<span style="width:90px;flex-shrink:0;color:rgba(255,255,255,0.7);">' + label + '</span>' +
+          '<input type="range" id="' + id + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '" style="flex:1;accent-color:#eab308;">' +
+          '<span id="' + id + 'Val" style="width:48px;text-align:right;font-family:monospace;color:#eab308;">' + val + unit + '</span></div>';
+      }
+      let h = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;border-bottom:1px solid rgba(255,255,0,0.2);padding-bottom:8px;">' +
+        '<span style="font-size:15px;font-weight:700;color:#eab308;">Shuffle Settings</span>' +
+        '<button id="shufflePanelClose" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;padding:0 4px;">&times;</button></div>';
+
+      h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08);">' +
+        '<span style="width:90px;flex-shrink:0;color:rgba(255,255,255,0.7);">Panel BG</span>' +
+        '<input type="range" id="ssPanelOpacity" min="0" max="100" step="5" value="95" style="flex:1;accent-color:#eab308;">' +
+        '<span id="ssPanelOpacityVal" style="width:48px;text-align:right;font-family:monospace;color:#eab308;">95%</span></div>';
+
+      h += '<div style="font-weight:600;margin-bottom:6px;color:rgba(255,255,255,0.5);">Flip Phase</div>';
+      h += row('ssFlipDuration', 'Flip Spread', 500, 6000, 100, SS.flipDuration, 'ms');
+      h += row('ssFlipAnimSpeed', 'Flip Speed', 100, 1000, 50, SS.flipAnimSpeed, 'ms');
+
+      h += '<div style="font-weight:600;margin:8px 0 6px;color:rgba(255,255,255,0.5);">Slide to Center</div>';
+      h += row('ssSlideSpeed', 'Slide Speed', 100, 1500, 50, SS.slideSpeed, 'ms');
+
+      h += '<div style="font-weight:600;margin:8px 0 6px;color:rgba(255,255,255,0.5);">Reshuffle</div>';
+      h += row('ssReshuffleSpeed', 'Speed', 50, 800, 25, SS.reshuffleSpeed, 'ms');
+      h += row('ssReshuffleCount', 'Count', 1, 10, 1, SS.reshuffleCount, 'x');
+      h += row('ssReshufflePause', 'Pause', 0, 300, 10, SS.reshufflePause, 'ms');
+
+      h += '<div style="font-weight:600;margin:8px 0 6px;color:rgba(255,255,255,0.5);">Pile Position &amp; Spread</div>';
+      h += row('ssCenterXPct', 'Center X', -25, 25, 1, SS.centerXPct || 0, '%');
+      h += row('ssCenterYPct', 'Center Y', -25, 25, 1, SS.centerYPct || 0, '%');
+      h += row('ssSpreadXPct', 'Spread X %', 5, 40, 1, SS.spreadXPct, '%');
+      h += row('ssSpreadYPct', 'Spread Y %', 3, 30, 1, SS.spreadYPct, '%');
+      h += row('ssSpreadXMax', 'Max X px', 50, 400, 10, SS.spreadXMax, 'px');
+      h += row('ssSpreadYMax', 'Max Y px', 30, 300, 10, SS.spreadYMax, 'px');
+      h += row('ssTileScale', 'Tile Scale', 0.15, 0.8, 0.01, SS.tileScale, '');
+      h += '<div style="text-align:center;margin:6px 0;"><button id="ssPreviewArea" style="background:rgba(234,179,8,0.3);border:1px solid rgba(234,179,8,0.5);color:#eab308;padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer;">Show Shuffle Area</button></div>';
+
+      h += '<div style="font-weight:600;margin:8px 0 6px;color:rgba(255,255,255,0.5);">Deal Phase</div>';
+      h += row('ssDealStagger', 'Group Stagger', 0, 200, 5, SS.dealStagger, 'ms');
+      h += row('ssDealSpeed', 'Deal Speed', 100, 800, 25, SS.dealSpeed, 'ms');
+      h += row('ssGroupPause', 'Group Pause', 100, 1500, 50, SS.groupPause, 'ms');
+      h += '<div style="display:flex;align-items:center;gap:8px;margin:8px 0;">' +
+        '<input type="checkbox" id="ssClickToPick"' + (SS.clickToPick ? ' checked' : '') + ' style="accent-color:#eab308;cursor:pointer;">' +
+        '<label for="ssClickToPick" style="color:rgba(255,255,255,0.7);cursor:pointer;font-size:12px;">Click to Pick (tap tiles from pile)</label></div>';
+
+      h += '<div style="text-align:center;margin-top:10px;"><button id="ssResetBtn" style="background:rgba(255,0,0,0.3);border:1px solid rgba(255,0,0,0.5);color:#fff;padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer;">Reset Defaults</button></div>';
+      return h;
+    }
+
+    shufflePanel.innerHTML = buildShuffleHTML();
+    document.body.appendChild(shufflePanel);
+
+    // Backdrop
+    const shuffleBD = document.createElement('div');
+    shuffleBD.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1999;';
+    document.body.appendChild(shuffleBD);
+
+    function showShufflePanel() {
+      shufflePanel.innerHTML = buildShuffleHTML();
+      shufflePanel.style.display = 'block';
+      shuffleBD.style.display = 'block';
+      wireShuffleSliders();
+    }
+    function hideShufflePanel() {
+      shufflePanel.style.display = 'none';
+      shuffleBD.style.display = 'none';
+    }
+
+    shuffleBD.addEventListener('click', hideShufflePanel);
+
+    const SLIDER_MAP = [
+      { id: 'ssFlipDuration', key: 'flipDuration', unit: 'ms' },
+      { id: 'ssFlipAnimSpeed', key: 'flipAnimSpeed', unit: 'ms' },
+      { id: 'ssSlideSpeed', key: 'slideSpeed', unit: 'ms' },
+      { id: 'ssReshuffleSpeed', key: 'reshuffleSpeed', unit: 'ms' },
+      { id: 'ssReshuffleCount', key: 'reshuffleCount', unit: 'x' },
+      { id: 'ssReshufflePause', key: 'reshufflePause', unit: 'ms' },
+      { id: 'ssCenterXPct', key: 'centerXPct', unit: '%' },
+      { id: 'ssCenterYPct', key: 'centerYPct', unit: '%' },
+      { id: 'ssSpreadXPct', key: 'spreadXPct', unit: '%' },
+      { id: 'ssSpreadYPct', key: 'spreadYPct', unit: '%' },
+      { id: 'ssSpreadXMax', key: 'spreadXMax', unit: 'px' },
+      { id: 'ssSpreadYMax', key: 'spreadYMax', unit: 'px' },
+      { id: 'ssTileScale', key: 'tileScale', unit: '' },
+      { id: 'ssDealStagger', key: 'dealStagger', unit: 'ms' },
+      { id: 'ssDealSpeed', key: 'dealSpeed', unit: 'ms' },
+      { id: 'ssGroupPause', key: 'groupPause', unit: 'ms' }
+    ];
+
+    // Corner preview: show 4 face-down dominoes at the shuffle area boundaries
+    let _previewVisible = false;
+    let _previewEls = [];
+
+    function _showShuffleAreaPreview() {
+      _removeShuffleAreaPreview();
+      _previewVisible = true;
+      const SS = SHUFFLE_SETTINGS;
+      const rect = typeof getRect === 'function' ? getRect() : { width: window.innerWidth, height: window.innerHeight };
+      const cx = rect.width * 0.5 - 28 + (rect.width * (SS.centerXPct || 0) / 100);
+      const cy = rect.height * 0.45 - 56 + (rect.height * (SS.centerYPct || 0) / 100);
+      const spreadX = Math.min(SS.spreadXMax, rect.width * SS.spreadXPct / 100);
+      const spreadY = Math.min(SS.spreadYMax, rect.height * SS.spreadYPct / 100);
+
+      // 4 corners + center marker
+      const positions = [
+        { x: cx - spreadX, y: cy - spreadY, label: 'TL' },
+        { x: cx + spreadX, y: cy - spreadY, label: 'TR' },
+        { x: cx - spreadX, y: cy + spreadY, label: 'BL' },
+        { x: cx + spreadX, y: cy + spreadY, label: 'BR' },
+        { x: cx, y: cy, label: '+' }
+      ];
+
+      const container = document.getElementById('tableMain') || document.body;
+      for (const pos of positions) {
+        const el = document.createElement('div');
+        el.className = '_shufflePreview';
+        el.style.cssText = 'position:absolute;z-index:1500;pointer-events:none;' +
+          'width:40px;height:70px;border-radius:5px;' +
+          'background:rgba(234,179,8,0.4);border:2px solid #eab308;' +
+          'display:flex;align-items:center;justify-content:center;' +
+          'font-size:10px;font-weight:700;color:#eab308;font-family:monospace;';
+        if (pos.label === '+') {
+          el.style.width = '16px';
+          el.style.height = '16px';
+          el.style.borderRadius = '50%';
+          el.style.background = 'rgba(234,179,8,0.6)';
+          el.style.left = (pos.x + 12) + 'px';
+          el.style.top = (pos.y + 27) + 'px';
+        } else {
+          el.style.left = pos.x + 'px';
+          el.style.top = pos.y + 'px';
+        }
+        el.textContent = pos.label;
+        container.appendChild(el);
+        _previewEls.push(el);
+      }
+
+      // Also draw a dashed rectangle outline
+      const outline = document.createElement('div');
+      outline.className = '_shufflePreview';
+      outline.style.cssText = 'position:absolute;z-index:1499;pointer-events:none;' +
+        'border:2px dashed rgba(234,179,8,0.5);border-radius:8px;';
+      outline.style.left = (cx - spreadX) + 'px';
+      outline.style.top = (cy - spreadY) + 'px';
+      outline.style.width = (spreadX * 2 + 40) + 'px';
+      outline.style.height = (spreadY * 2 + 70) + 'px';
+      container.appendChild(outline);
+      _previewEls.push(outline);
+
+      // Auto-hide button text
+      const btn = document.getElementById('ssPreviewArea');
+      if (btn) btn.textContent = 'Hide Shuffle Area';
+    }
+
+    function _removeShuffleAreaPreview() {
+      _previewVisible = false;
+      for (const el of _previewEls) {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }
+      _previewEls = [];
+      const btn = document.getElementById('ssPreviewArea');
+      if (btn) btn.textContent = 'Show Shuffle Area';
+    }
+
+    function _updatePreviewIfVisible() {
+      if (_previewVisible) _showShuffleAreaPreview();
+    }
+
+    function wireShuffleSliders() {
+      for (const s of SLIDER_MAP) {
+        const el = document.getElementById(s.id);
+        if (!el) continue;
+        el.addEventListener('input', function() {
+          const v = s.key === 'tileScale' ? parseFloat(this.value) : parseInt(this.value);
+          SHUFFLE_SETTINGS[s.key] = v;
+          const valEl = document.getElementById(s.id + 'Val');
+          if (valEl) valEl.textContent = this.value + s.unit;
+          saveShuffle();
+          // Live update preview when adjusting position/spread sliders
+          if (['centerXPct','centerYPct','spreadXPct','spreadYPct','spreadXMax','spreadYMax'].includes(s.key)) {
+            _updatePreviewIfVisible();
+          }
+        });
+      }
+
+      // Panel opacity slider
+      const opSlider = document.getElementById('ssPanelOpacity');
+      if (opSlider) {
+        opSlider.addEventListener('input', function() {
+          const v = parseInt(this.value);
+          const valEl = document.getElementById('ssPanelOpacityVal');
+          if (valEl) valEl.textContent = v + '%';
+          shufflePanel.style.background = v === 0 ? 'transparent' :
+            'linear-gradient(135deg, rgba(30,41,59,' + (v/100) + '), rgba(15,23,42,' + (v/100) + '))';
+          shufflePanel.style.boxShadow = v < 20 ? 'none' : '0 8px 32px rgba(0,0,0,' + (v/100 * 0.6) + ')';
+        });
+      }
+
+      // Click-to-pick checkbox
+      const ctpChk = document.getElementById('ssClickToPick');
+      if (ctpChk) {
+        ctpChk.addEventListener('change', function() {
+          SHUFFLE_SETTINGS.clickToPick = this.checked;
+          dealMode = this.checked ? 'pick' : 'auto';
+          try { localStorage.setItem('tn51_dealMode', dealMode); } catch(e){}
+          // Sync game settings toggle
+          var gsChk = document.getElementById('chkPickDominoes');
+          if(gsChk){
+            gsChk.checked = this.checked;
+            var knob = document.getElementById('pickDominoesKnob');
+            if(knob){
+              knob.style.left = this.checked ? '22px' : '2px';
+              knob.parentElement.querySelector('span').style.background = this.checked ? '#22c55e' : 'rgba(255,255,255,0.2)';
+            }
+          }
+          saveShuffle();
+        });
+      }
+
+      // Preview area toggle
+      const previewBtn = document.getElementById('ssPreviewArea');
+      if (previewBtn) {
+        previewBtn.addEventListener('click', function() {
+          if (_previewVisible) { _removeShuffleAreaPreview(); }
+          else { _showShuffleAreaPreview(); }
+        });
+      }
+
+      const closeBtn = document.getElementById('shufflePanelClose');
+      if (closeBtn) closeBtn.addEventListener('click', function() {
+        _removeShuffleAreaPreview();
+        hideShufflePanel();
+      });
+
+      const resetBtn = document.getElementById('ssResetBtn');
+      if (resetBtn) resetBtn.addEventListener('click', function() {
+        SHUFFLE_SETTINGS.flipDuration = 3000;
+        SHUFFLE_SETTINGS.flipAnimSpeed = 300;
+        SHUFFLE_SETTINGS.slideSpeed = 400;
+        SHUFFLE_SETTINGS.reshuffleSpeed = 200;
+        SHUFFLE_SETTINGS.reshuffleCount = 3;
+        SHUFFLE_SETTINGS.reshufflePause = 50;
+        SHUFFLE_SETTINGS.centerXPct = 0;
+        SHUFFLE_SETTINGS.centerYPct = 0;
+        SHUFFLE_SETTINGS.spreadXPct = 15;
+        SHUFFLE_SETTINGS.spreadYPct = 10;
+        SHUFFLE_SETTINGS.spreadXMax = 120;
+        SHUFFLE_SETTINGS.spreadYMax = 80;
+        SHUFFLE_SETTINGS.tileScale = 0.38;
+        SHUFFLE_SETTINGS.dealStagger = 40;
+        SHUFFLE_SETTINGS.dealSpeed = 300;
+        SHUFFLE_SETTINGS.groupPause = 400;
+        SHUFFLE_SETTINGS.clickToPick = false;
+        dealMode = 'auto';
+        try { localStorage.setItem('tn51_dealMode', dealMode); } catch(e){}
+        saveShuffle();
+        _removeShuffleAreaPreview();
+        shufflePanel.innerHTML = buildShuffleHTML();
+        wireShuffleSliders();
+      });
+    }
+
+    // Clean up preview when panel backdrop is clicked
+    shuffleBD.addEventListener('click', function() {
+      _removeShuffleAreaPreview();
+      hideShufflePanel();
+    });
+
+    document.getElementById('shuffleSettingsBtn').addEventListener('click', showShufflePanel);
   })();
 
   // ==================== PIP DETAILS PANEL ====================
@@ -25083,6 +26679,11 @@ setInterval(() => {
       <button id="chatClearAllBtn" onclick="mpClearAllChat()" title="Clear for everyone" style="display:none;">&#128465;&#8505;</button>
       <button onclick="mpToggleChat()">&times;</button>
     </div>
+  </div>
+  <div id="noTableTalkRow" style="display:none;padding:4px 12px;border-bottom:1px solid rgba(255,255,255,0.08);font-size:11px;align-items:center;gap:6px;">
+    <input type="checkbox" id="chkNoTableTalk" checked onchange="_toggleNoTableTalk()" style="margin:0;accent-color:#ef4444;cursor:pointer;">
+    <label for="chkNoTableTalk" style="color:#f87171;cursor:pointer;user-select:none;">No Table Talk</label>
+    <span id="noTableTalkLabel" style="color:rgba(248,113,113,0.6);font-size:10px;margin-left:auto;">(during rounds)</span>
   </div>
   <div id="mpChatMessages"></div>
   <div id="mpChatInput">
