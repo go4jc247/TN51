@@ -1,6 +1,6 @@
 /* sw.js - cache the single HTML for offline use */
 
-const CACHE_NAME = 'tn51-single-html-v11-3b';
+const CACHE_NAME = 'tn51-single-html-v11-4';
 const OFFLINE_URL = './index.html';
 
 self.addEventListener('install', (event) => {
