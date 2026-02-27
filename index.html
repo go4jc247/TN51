@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>TN51 / T42 / Moon Dominoes V12.1</title>
+<title>TN51 / T42 / Moon Dominoes V12.2</title>
 <style>
   :root{
     --feltA:#1a8f37; --feltB:#0f6e2a; --feltC:#0a4f1d;
@@ -1411,7 +1411,7 @@
     </div>
     <div style="text-align:center;">
       <div style="font-size:24px;font-weight:800;color:#fff;margin-bottom:4px;">TN51 / TX42 Dominoes</div>
-      <div style="font-size:16px;font-weight:700;color:#60a5fa;margin-bottom:12px;" id="aboutVersion">V12.1</div>
+      <div style="font-size:16px;font-weight:700;color:#60a5fa;margin-bottom:12px;" id="aboutVersion">V12.2</div>
       <div style="font-size:12px;color:#9ca3af;line-height:1.6;">
         <div>Built: February 2026</div>
         <div>Game modes: Tennessee 51, Texas 42</div>
@@ -6114,6 +6114,7 @@ let TN51_SETTINGS = {
   p5Scale: 0.393, p5x: 0.86, p5y: 0.572, p5Spacing: 0.027,
   p6Scale: 0.393, p6x: 0.86, p6y: 0.627, p6Spacing: 0.027,
   trickScale: 0.393,
+  p2xOff: 0, p3xOff: 0, p5xOff: 0, p6xOff: 0,
 };
 
 function applyTn51Settings(){
@@ -6277,7 +6278,7 @@ function applyT42Settings(){
   const p3h = L.find(x => x.name === 'Player_3_Hand');
   if(p3h){
     for(let i = 0; i < 7; i++){
-      p3h.dominoes[i].xN = s.p3x + i * s.p3Spacing;
+      p3h.dominoes[i].xN = s.p3x + i * s.p3Spacing + i * (s.p3xOff || 0);
       p3h.dominoes[i].yN = s.p3y;
       p3h.dominoes[i].scale = s.p3Scale;
     }
@@ -6377,7 +6378,7 @@ let mpMarksToWin = 7;            // Marks to win for MP game (host sets)
 let mpPreferredSeat = -1;         // Guest's preferred seat (-1 = auto)
 let mpHelloNonce = null;           // Unique nonce sent with hello, used to match seat_assign
 const MP_WS_URL = 'wss://tn51-tx42-relay.onrender.com';  // V10_122: PRODUCTION
-const MP_VERSION = 'V12.1';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
+const MP_VERSION = 'V12.2';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
 
 // ═══════════════════════════════════════════════════════════════
 // V10_FIX: Multiplayer Sync Fix Variables
@@ -24378,6 +24379,1204 @@ document.getElementById('btnNelloDoublesOnly').addEventListener('click', () => {
   resumeAfterNelloDoublesChoice();
 });
 
+// V12.2: Built-in device presets
+var BUILTIN_DEVICE_PRESETS = {
+  "iPhone SE/8": {
+    "portrait": {
+      "tn51": {
+        "p1Scale": 1.071,
+        "p1x": 0.9,
+        "p1y": 0.9,
+        "p1Spacing": 0.1537,
+        "p2Scale": 0.393,
+        "p2x": 0.134,
+        "p2y": 0.627,
+        "p2Spacing": 0.0256,
+        "p3Scale": 0.393,
+        "p3x": 0.134,
+        "p3y": 0.572,
+        "p3Spacing": 0.0256,
+        "p4Scale": 0.393,
+        "p4x": 0.356,
+        "p4y": 0.411,
+        "p4Spacing": 0.0528,
+        "p5Scale": 0.393,
+        "p5x": 0.86,
+        "p5y": 0.572,
+        "p5Spacing": 0.0256,
+        "p6Scale": 0.393,
+        "p6x": 0.86,
+        "p6y": 0.627,
+        "p6Spacing": 0.0256,
+        "trickScale": 0.393,
+        "p2xOff": 0,
+        "p3xOff": 0,
+        "p5xOff": 0,
+        "p6xOff": 0
+      },
+      "t42": {
+        "p1Scale": 0.92,
+        "p1Spacing": 0.1302,
+        "p1x": 0.905,
+        "p1y": 0.925,
+        "p2Scale": 0.59,
+        "p2x": 0.09,
+        "p2y": 0.65,
+        "p2Spacing": 0.0466,
+        "p3Scale": 0.59,
+        "p3x": 0.235,
+        "p3y": 0.43,
+        "p3Spacing": 0.0826,
+        "p4Scale": 0.59,
+        "p4x": 0.905,
+        "p4y": 0.65,
+        "p4Spacing": 0.0466,
+        "trickScale": 0.59,
+        "p1TrickX": 0.495,
+        "p1TrickY": 0.725,
+        "p2TrickX": 0.35,
+        "p2TrickY": 0.65,
+        "p3TrickX": 0.495,
+        "p3TrickY": 0.585,
+        "p4TrickX": 0.63,
+        "p4TrickY": 0.65,
+        "leadScale": 0.51,
+        "leadX": 0.485,
+        "leadY": 0.65,
+        "ind1x": 0.495,
+        "ind1y": 0.8,
+        "ind2x": 0.215,
+        "ind2y": 0.65,
+        "ind3x": 0.495,
+        "ind3y": 0.505,
+        "ind4x": 0.775,
+        "ind4y": 0.65
+      }
+    },
+    "screenWidth": 375,
+    "screenHeight": 667
+  },
+  "iPhone 11/XR": {
+    "portrait": {
+      "tn51": {
+        "p1Scale": 1.071,
+        "p1x": 0.9,
+        "p1y": 0.9,
+        "p1Spacing": 0.1537,
+        "p2Scale": 0.393,
+        "p2x": 0.134,
+        "p2y": 0.627,
+        "p2Spacing": 0.0256,
+        "p3Scale": 0.393,
+        "p3x": 0.134,
+        "p3y": 0.572,
+        "p3Spacing": 0.0256,
+        "p4Scale": 0.393,
+        "p4x": 0.356,
+        "p4y": 0.411,
+        "p4Spacing": 0.0528,
+        "p5Scale": 0.393,
+        "p5x": 0.86,
+        "p5y": 0.572,
+        "p5Spacing": 0.0256,
+        "p6Scale": 0.393,
+        "p6x": 0.86,
+        "p6y": 0.627,
+        "p6Spacing": 0.0256,
+        "trickScale": 0.393,
+        "p2xOff": 0,
+        "p3xOff": 0,
+        "p5xOff": 0,
+        "p6xOff": 0
+      },
+      "t42": {
+        "p1Scale": 0.92,
+        "p1Spacing": 0.1302,
+        "p1x": 0.905,
+        "p1y": 0.925,
+        "p2Scale": 0.59,
+        "p2x": 0.09,
+        "p2y": 0.65,
+        "p2Spacing": 0.0466,
+        "p3Scale": 0.59,
+        "p3x": 0.235,
+        "p3y": 0.43,
+        "p3Spacing": 0.0826,
+        "p4Scale": 0.59,
+        "p4x": 0.905,
+        "p4y": 0.65,
+        "p4Spacing": 0.0466,
+        "trickScale": 0.59,
+        "p1TrickX": 0.495,
+        "p1TrickY": 0.725,
+        "p2TrickX": 0.35,
+        "p2TrickY": 0.65,
+        "p3TrickX": 0.495,
+        "p3TrickY": 0.585,
+        "p4TrickX": 0.63,
+        "p4TrickY": 0.65,
+        "leadScale": 0.51,
+        "leadX": 0.485,
+        "leadY": 0.65,
+        "ind1x": 0.495,
+        "ind1y": 0.8,
+        "ind2x": 0.215,
+        "ind2y": 0.65,
+        "ind3x": 0.495,
+        "ind3y": 0.505,
+        "ind4x": 0.775,
+        "ind4y": 0.65
+      }
+    },
+    "screenWidth": 414,
+    "screenHeight": 896
+  },
+  "iPhone 12/13/14": {
+    "portrait": {
+      "tn51": {
+        "p1Scale": 1.071,
+        "p1x": 0.9,
+        "p1y": 0.9,
+        "p1Spacing": 0.1537,
+        "p2Scale": 0.393,
+        "p2x": 0.134,
+        "p2y": 0.627,
+        "p2Spacing": 0.0256,
+        "p3Scale": 0.393,
+        "p3x": 0.134,
+        "p3y": 0.572,
+        "p3Spacing": 0.0256,
+        "p4Scale": 0.393,
+        "p4x": 0.356,
+        "p4y": 0.411,
+        "p4Spacing": 0.0528,
+        "p5Scale": 0.393,
+        "p5x": 0.86,
+        "p5y": 0.572,
+        "p5Spacing": 0.0256,
+        "p6Scale": 0.393,
+        "p6x": 0.86,
+        "p6y": 0.627,
+        "p6Spacing": 0.0256,
+        "trickScale": 0.393,
+        "p2xOff": 0,
+        "p3xOff": 0,
+        "p5xOff": 0,
+        "p6xOff": 0
+      },
+      "t42": {
+        "p1Scale": 0.92,
+        "p1Spacing": 0.1302,
+        "p1x": 0.905,
+        "p1y": 0.925,
+        "p2Scale": 0.59,
+        "p2x": 0.09,
+        "p2y": 0.65,
+        "p2Spacing": 0.0466,
+        "p3Scale": 0.59,
+        "p3x": 0.235,
+        "p3y": 0.43,
+        "p3Spacing": 0.0826,
+        "p4Scale": 0.59,
+        "p4x": 0.905,
+        "p4y": 0.65,
+        "p4Spacing": 0.0466,
+        "trickScale": 0.59,
+        "p1TrickX": 0.495,
+        "p1TrickY": 0.725,
+        "p2TrickX": 0.35,
+        "p2TrickY": 0.65,
+        "p3TrickX": 0.495,
+        "p3TrickY": 0.585,
+        "p4TrickX": 0.63,
+        "p4TrickY": 0.65,
+        "leadScale": 0.51,
+        "leadX": 0.485,
+        "leadY": 0.65,
+        "ind1x": 0.495,
+        "ind1y": 0.8,
+        "ind2x": 0.215,
+        "ind2y": 0.65,
+        "ind3x": 0.495,
+        "ind3y": 0.505,
+        "ind4x": 0.775,
+        "ind4y": 0.65
+      }
+    },
+    "screenWidth": 390,
+    "screenHeight": 844
+  },
+  "iPhone 14 Pro/15/16": {
+    "portrait": {
+      "tn51": {
+        "p1Scale": 1.071,
+        "p1x": 0.9,
+        "p1y": 0.9,
+        "p1Spacing": 0.1537,
+        "p2Scale": 0.393,
+        "p2x": 0.134,
+        "p2y": 0.627,
+        "p2Spacing": 0.0256,
+        "p3Scale": 0.393,
+        "p3x": 0.134,
+        "p3y": 0.572,
+        "p3Spacing": 0.0256,
+        "p4Scale": 0.393,
+        "p4x": 0.356,
+        "p4y": 0.411,
+        "p4Spacing": 0.0528,
+        "p5Scale": 0.393,
+        "p5x": 0.86,
+        "p5y": 0.572,
+        "p5Spacing": 0.0256,
+        "p6Scale": 0.393,
+        "p6x": 0.86,
+        "p6y": 0.627,
+        "p6Spacing": 0.0256,
+        "trickScale": 0.393,
+        "p2xOff": 0,
+        "p3xOff": 0,
+        "p5xOff": 0,
+        "p6xOff": 0
+      },
+      "t42": {
+        "p1Scale": 0.92,
+        "p1Spacing": 0.1302,
+        "p1x": 0.905,
+        "p1y": 0.925,
+        "p2Scale": 0.59,
+        "p2x": 0.09,
+        "p2y": 0.65,
+        "p2Spacing": 0.0466,
+        "p3Scale": 0.59,
+        "p3x": 0.235,
+        "p3y": 0.43,
+        "p3Spacing": 0.0826,
+        "p4Scale": 0.59,
+        "p4x": 0.905,
+        "p4y": 0.65,
+        "p4Spacing": 0.0466,
+        "trickScale": 0.59,
+        "p1TrickX": 0.495,
+        "p1TrickY": 0.725,
+        "p2TrickX": 0.35,
+        "p2TrickY": 0.65,
+        "p3TrickX": 0.495,
+        "p3TrickY": 0.585,
+        "p4TrickX": 0.63,
+        "p4TrickY": 0.65,
+        "leadScale": 0.51,
+        "leadX": 0.485,
+        "leadY": 0.65,
+        "ind1x": 0.495,
+        "ind1y": 0.8,
+        "ind2x": 0.215,
+        "ind2y": 0.65,
+        "ind3x": 0.495,
+        "ind3y": 0.505,
+        "ind4x": 0.775,
+        "ind4y": 0.65
+      }
+    },
+    "screenWidth": 393,
+    "screenHeight": 852
+  },
+  "iPhone Plus/Max": {
+    "portrait": {
+      "tn51": {
+        "p1Scale": 1.113,
+        "p1x": 0.9,
+        "p1y": 0.9,
+        "p1Spacing": 0.1598,
+        "p2Scale": 0.408,
+        "p2x": 0.134,
+        "p2y": 0.627,
+        "p2Spacing": 0.0267,
+        "p3Scale": 0.408,
+        "p3x": 0.134,
+        "p3y": 0.572,
+        "p3Spacing": 0.0267,
+        "p4Scale": 0.408,
+        "p4x": 0.356,
+        "p4y": 0.411,
+        "p4Spacing": 0.0549,
+        "p5Scale": 0.408,
+        "p5x": 0.86,
+        "p5y": 0.572,
+        "p5Spacing": 0.0267,
+        "p6Scale": 0.408,
+        "p6x": 0.86,
+        "p6y": 0.627,
+        "p6Spacing": 0.0267,
+        "trickScale": 0.408,
+        "p2xOff": 0,
+        "p3xOff": 0,
+        "p5xOff": 0,
+        "p6xOff": 0
+      },
+      "t42": {
+        "p1Scale": 0.956,
+        "p1Spacing": 0.1353,
+        "p1x": 0.905,
+        "p1y": 0.925,
+        "p2Scale": 0.613,
+        "p2x": 0.09,
+        "p2y": 0.65,
+        "p2Spacing": 0.0484,
+        "p3Scale": 0.613,
+        "p3x": 0.235,
+        "p3y": 0.43,
+        "p3Spacing": 0.0859,
+        "p4Scale": 0.613,
+        "p4x": 0.905,
+        "p4y": 0.65,
+        "p4Spacing": 0.0484,
+        "trickScale": 0.613,
+        "p1TrickX": 0.495,
+        "p1TrickY": 0.725,
+        "p2TrickX": 0.35,
+        "p2TrickY": 0.65,
+        "p3TrickX": 0.495,
+        "p3TrickY": 0.585,
+        "p4TrickX": 0.63,
+        "p4TrickY": 0.65,
+        "leadScale": 0.53,
+        "leadX": 0.485,
+        "leadY": 0.65,
+        "ind1x": 0.495,
+        "ind1y": 0.8,
+        "ind2x": 0.215,
+        "ind2y": 0.65,
+        "ind3x": 0.495,
+        "ind3y": 0.505,
+        "ind4x": 0.775,
+        "ind4y": 0.65
+      }
+    },
+    "screenWidth": 430,
+    "screenHeight": 932
+  },
+  "iPhone 16 Pro Max": {
+    "portrait": {
+      "tn51": {
+        "p1Scale": 1.14,
+        "p1x": 0.9,
+        "p1y": 0.9,
+        "p1Spacing": 0.1637,
+        "p2Scale": 0.418,
+        "p2x": 0.134,
+        "p2y": 0.627,
+        "p2Spacing": 0.0273,
+        "p3Scale": 0.418,
+        "p3x": 0.134,
+        "p3y": 0.572,
+        "p3Spacing": 0.0273,
+        "p4Scale": 0.418,
+        "p4x": 0.356,
+        "p4y": 0.411,
+        "p4Spacing": 0.0562,
+        "p5Scale": 0.418,
+        "p5x": 0.86,
+        "p5y": 0.572,
+        "p5Spacing": 0.0273,
+        "p6Scale": 0.418,
+        "p6x": 0.86,
+        "p6y": 0.627,
+        "p6Spacing": 0.0273,
+        "trickScale": 0.418,
+        "p2xOff": 0,
+        "p3xOff": 0,
+        "p5xOff": 0,
+        "p6xOff": 0
+      },
+      "t42": {
+        "p1Scale": 0.98,
+        "p1Spacing": 0.1386,
+        "p1x": 0.905,
+        "p1y": 0.925,
+        "p2Scale": 0.628,
+        "p2x": 0.09,
+        "p2y": 0.65,
+        "p2Spacing": 0.0496,
+        "p3Scale": 0.628,
+        "p3x": 0.235,
+        "p3y": 0.43,
+        "p3Spacing": 0.088,
+        "p4Scale": 0.628,
+        "p4x": 0.905,
+        "p4y": 0.65,
+        "p4Spacing": 0.0496,
+        "trickScale": 0.628,
+        "p1TrickX": 0.495,
+        "p1TrickY": 0.725,
+        "p2TrickX": 0.35,
+        "p2TrickY": 0.65,
+        "p3TrickX": 0.495,
+        "p3TrickY": 0.585,
+        "p4TrickX": 0.63,
+        "p4TrickY": 0.65,
+        "leadScale": 0.543,
+        "leadX": 0.485,
+        "leadY": 0.65,
+        "ind1x": 0.495,
+        "ind1y": 0.8,
+        "ind2x": 0.215,
+        "ind2y": 0.65,
+        "ind3x": 0.495,
+        "ind3y": 0.505,
+        "ind4x": 0.775,
+        "ind4y": 0.65
+      }
+    },
+    "screenWidth": 440,
+    "screenHeight": 956
+  },
+  "iPad Mini": {
+    "portrait": {
+      "tn51": {
+        "p1Scale": 1.639,
+        "p1x": 0.9,
+        "p1y": 0.9,
+        "p1Spacing": 0.2353,
+        "p2Scale": 0.602,
+        "p2x": 0.126,
+        "p2y": 0.627,
+        "p2Spacing": 0.0393,
+        "p3Scale": 0.602,
+        "p3x": 0.126,
+        "p3y": 0.572,
+        "p3Spacing": 0.0393,
+        "p4Scale": 0.602,
+        "p4x": 0.356,
+        "p4y": 0.411,
+        "p4Spacing": 0.0809,
+        "p5Scale": 0.602,
+        "p5x": 0.868,
+        "p5y": 0.572,
+        "p5Spacing": 0.0393,
+        "p6Scale": 0.602,
+        "p6x": 0.868,
+        "p6y": 0.627,
+        "p6Spacing": 0.0393,
+        "trickScale": 0.602,
+        "p2xOff": 0,
+        "p3xOff": 0,
+        "p5xOff": 0,
+        "p6xOff": 0
+      },
+      "t42": {
+        "p1Scale": 1.408,
+        "p1Spacing": 0.1992,
+        "p1x": 0.905,
+        "p1y": 0.925,
+        "p2Scale": 0.903,
+        "p2x": 0.09,
+        "p2y": 0.65,
+        "p2Spacing": 0.0713,
+        "p3Scale": 0.903,
+        "p3x": 0.235,
+        "p3y": 0.43,
+        "p3Spacing": 0.1265,
+        "p4Scale": 0.903,
+        "p4x": 0.905,
+        "p4y": 0.65,
+        "p4Spacing": 0.0713,
+        "trickScale": 0.903,
+        "p1TrickX": 0.495,
+        "p1TrickY": 0.725,
+        "p2TrickX": 0.35,
+        "p2TrickY": 0.65,
+        "p3TrickX": 0.495,
+        "p3TrickY": 0.585,
+        "p4TrickX": 0.63,
+        "p4TrickY": 0.65,
+        "leadScale": 0.781,
+        "leadX": 0.485,
+        "leadY": 0.65,
+        "ind1x": 0.495,
+        "ind1y": 0.8,
+        "ind2x": 0.215,
+        "ind2y": 0.65,
+        "ind3x": 0.495,
+        "ind3y": 0.505,
+        "ind4x": 0.775,
+        "ind4y": 0.65
+      }
+    },
+    "screenWidth": 744,
+    "screenHeight": 1133
+  },
+  "iPad 10th/Air 11": {
+    "portrait": {
+      "tn51": {
+        "p1Scale": 1.766,
+        "p1x": 0.9,
+        "p1y": 0.9,
+        "p1Spacing": 0.2534,
+        "p2Scale": 0.648,
+        "p2x": 0.1242,
+        "p2y": 0.627,
+        "p2Spacing": 0.0423,
+        "p3Scale": 0.648,
+        "p3x": 0.1242,
+        "p3y": 0.572,
+        "p3Spacing": 0.0423,
+        "p4Scale": 0.648,
+        "p4x": 0.356,
+        "p4y": 0.411,
+        "p4Spacing": 0.0871,
+        "p5Scale": 0.648,
+        "p5x": 0.8698,
+        "p5y": 0.572,
+        "p5Spacing": 0.0423,
+        "p6Scale": 0.648,
+        "p6x": 0.8698,
+        "p6y": 0.627,
+        "p6Spacing": 0.0423,
+        "trickScale": 0.648,
+        "p2xOff": 0,
+        "p3xOff": 0,
+        "p5xOff": 0,
+        "p6xOff": 0
+      },
+      "t42": {
+        "p1Scale": 1.517,
+        "p1Spacing": 0.2146,
+        "p1x": 0.905,
+        "p1y": 0.925,
+        "p2Scale": 0.973,
+        "p2x": 0.09,
+        "p2y": 0.65,
+        "p2Spacing": 0.0768,
+        "p3Scale": 0.973,
+        "p3x": 0.235,
+        "p3y": 0.43,
+        "p3Spacing": 0.1363,
+        "p4Scale": 0.973,
+        "p4x": 0.905,
+        "p4y": 0.65,
+        "p4Spacing": 0.0768,
+        "trickScale": 0.973,
+        "p1TrickX": 0.495,
+        "p1TrickY": 0.725,
+        "p2TrickX": 0.35,
+        "p2TrickY": 0.65,
+        "p3TrickX": 0.495,
+        "p3TrickY": 0.585,
+        "p4TrickX": 0.63,
+        "p4TrickY": 0.65,
+        "leadScale": 0.841,
+        "leadX": 0.485,
+        "leadY": 0.65,
+        "ind1x": 0.495,
+        "ind1y": 0.8,
+        "ind2x": 0.215,
+        "ind2y": 0.65,
+        "ind3x": 0.495,
+        "ind3y": 0.505,
+        "ind4x": 0.775,
+        "ind4y": 0.65
+      }
+    },
+    "screenWidth": 820,
+    "screenHeight": 1180
+  },
+  "iPad Pro 11": {
+    "portrait": {
+      "tn51": {
+        "p1Scale": 1.792,
+        "p1x": 0.9,
+        "p1y": 0.9,
+        "p1Spacing": 0.2572,
+        "p2Scale": 0.658,
+        "p2x": 0.1239,
+        "p2y": 0.627,
+        "p2Spacing": 0.0429,
+        "p3Scale": 0.658,
+        "p3x": 0.1239,
+        "p3y": 0.572,
+        "p3Spacing": 0.0429,
+        "p4Scale": 0.658,
+        "p4x": 0.356,
+        "p4y": 0.411,
+        "p4Spacing": 0.0884,
+        "p5Scale": 0.658,
+        "p5x": 0.8701,
+        "p5y": 0.572,
+        "p5Spacing": 0.0429,
+        "p6Scale": 0.658,
+        "p6x": 0.8701,
+        "p6y": 0.627,
+        "p6Spacing": 0.0429,
+        "trickScale": 0.658,
+        "p2xOff": 0,
+        "p3xOff": 0,
+        "p5xOff": 0,
+        "p6xOff": 0
+      },
+      "t42": {
+        "p1Scale": 1.54,
+        "p1Spacing": 0.2178,
+        "p1x": 0.905,
+        "p1y": 0.925,
+        "p2Scale": 0.987,
+        "p2x": 0.09,
+        "p2y": 0.65,
+        "p2Spacing": 0.0779,
+        "p3Scale": 0.987,
+        "p3x": 0.235,
+        "p3y": 0.43,
+        "p3Spacing": 0.1383,
+        "p4Scale": 0.987,
+        "p4x": 0.905,
+        "p4y": 0.65,
+        "p4Spacing": 0.0779,
+        "trickScale": 0.987,
+        "p1TrickX": 0.495,
+        "p1TrickY": 0.725,
+        "p2TrickX": 0.35,
+        "p2TrickY": 0.65,
+        "p3TrickX": 0.495,
+        "p3TrickY": 0.585,
+        "p4TrickX": 0.63,
+        "p4TrickY": 0.65,
+        "leadScale": 0.854,
+        "leadX": 0.485,
+        "leadY": 0.65,
+        "ind1x": 0.495,
+        "ind1y": 0.8,
+        "ind2x": 0.215,
+        "ind2y": 0.65,
+        "ind3x": 0.495,
+        "ind3y": 0.505,
+        "ind4x": 0.775,
+        "ind4y": 0.65
+      }
+    },
+    "screenWidth": 834,
+    "screenHeight": 1194
+  },
+  "iPad Air 13/Pro 13": {
+    "portrait": {
+      "tn51": {
+        "p1Scale": 2.141,
+        "p1x": 0.9,
+        "p1y": 0.9,
+        "p1Spacing": 0.3073,
+        "p2Scale": 0.786,
+        "p2x": 0.1193,
+        "p2y": 0.627,
+        "p2Spacing": 0.0513,
+        "p3Scale": 0.786,
+        "p3x": 0.1193,
+        "p3y": 0.572,
+        "p3Spacing": 0.0513,
+        "p4Scale": 0.786,
+        "p4x": 0.356,
+        "p4y": 0.411,
+        "p4Spacing": 0.1056,
+        "p5Scale": 0.786,
+        "p5x": 0.8747,
+        "p5y": 0.572,
+        "p5Spacing": 0.0513,
+        "p6Scale": 0.786,
+        "p6x": 0.8747,
+        "p6y": 0.627,
+        "p6Spacing": 0.0513,
+        "trickScale": 0.786,
+        "p2xOff": 0,
+        "p3xOff": 0,
+        "p5xOff": 0,
+        "p6xOff": 0
+      },
+      "t42": {
+        "p1Scale": 1.839,
+        "p1Spacing": 0.2602,
+        "p1x": 0.905,
+        "p1y": 0.925,
+        "p2Scale": 1.179,
+        "p2x": 0.09,
+        "p2y": 0.65,
+        "p2Spacing": 0.0931,
+        "p3Scale": 1.179,
+        "p3x": 0.235,
+        "p3y": 0.43,
+        "p3Spacing": 0.1652,
+        "p4Scale": 1.179,
+        "p4x": 0.905,
+        "p4y": 0.65,
+        "p4Spacing": 0.0931,
+        "trickScale": 1.179,
+        "p1TrickX": 0.495,
+        "p1TrickY": 0.725,
+        "p2TrickX": 0.35,
+        "p2TrickY": 0.65,
+        "p3TrickX": 0.495,
+        "p3TrickY": 0.585,
+        "p4TrickX": 0.63,
+        "p4TrickY": 0.65,
+        "leadScale": 1.019,
+        "leadX": 0.485,
+        "leadY": 0.65,
+        "ind1x": 0.495,
+        "ind1y": 0.8,
+        "ind2x": 0.215,
+        "ind2y": 0.65,
+        "ind3x": 0.495,
+        "ind3y": 0.505,
+        "ind4x": 0.775,
+        "ind4y": 0.65
+      }
+    },
+    "screenWidth": 1024,
+    "screenHeight": 1366
+  }
+};
+
+
+// V12.2: Scale Range Multiplier + X-Offset Refinement + Preset File Export/Import
+(function(){
+  // ---- SCALE RANGE MULTIPLIER ----
+  // For each range slider in layout settings, add a 1x/2x/3x cycle button
+  const settingsPanels = ['tn51SettingsBackdrop', 't42SettingsBackdrop', 'boneyardSettingsBackdrop'];
+  const _multState = {}; // { sliderId: multiplier (1,2,3) }
+
+  // Load saved multiplier state
+  try {
+    const saved = localStorage.getItem('tn51_slider_multipliers');
+    if(saved) Object.assign(_multState, JSON.parse(saved));
+  } catch(e){}
+
+  function saveMultState(){
+    try { localStorage.setItem('tn51_slider_multipliers', JSON.stringify(_multState)); } catch(e){}
+  }
+
+  function applyMultiplier(slider, mult){
+    const origMin = parseFloat(slider.dataset.origMin);
+    const origMax = parseFloat(slider.dataset.origMax);
+    const range = origMax - origMin;
+    const newMin = origMin + (mult - 1) * range;
+    const newMax = origMax + (mult - 1) * range;
+    slider.min = newMin;
+    slider.max = newMax;
+    // Clamp current value if out of new range
+    let val = parseFloat(slider.value);
+    if(val < newMin) { slider.value = newMin; slider.dispatchEvent(new Event('input')); }
+    if(val > newMax) { slider.value = newMax; slider.dispatchEvent(new Event('input')); }
+  }
+
+  function initSliderMultipliers(){
+    settingsPanels.forEach(panelId => {
+      const panel = document.getElementById(panelId);
+      if(!panel) return;
+      const sliders = panel.querySelectorAll('input[type="range"]');
+      sliders.forEach(slider => {
+        if(slider.dataset.multInit) return; // already initialized
+        slider.dataset.multInit = '1';
+        slider.dataset.origMin = slider.min;
+        slider.dataset.origMax = slider.max;
+
+        const mult = _multState[slider.id] || 1;
+
+        // Create cycle button
+        const btn = document.createElement('button');
+        btn.textContent = mult + 'x';
+        btn.style.cssText = 'margin-left:4px;padding:1px 5px;font-size:10px;font-weight:700;border:1px solid rgba(255,255,255,0.3);border-radius:4px;background:rgba(255,255,255,0.1);color:#60a5fa;cursor:pointer;min-width:24px;flex-shrink:0;';
+        btn.title = 'Cycle range: 1x/2x/3x';
+
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          let m = _multState[slider.id] || 1;
+          m = m >= 3 ? 1 : m + 1;
+          _multState[slider.id] = m;
+          btn.textContent = m + 'x';
+          btn.style.color = m === 1 ? '#60a5fa' : (m === 2 ? '#f59e0b' : '#ef4444');
+          applyMultiplier(slider, m);
+          saveMultState();
+        });
+
+        // Apply saved multiplier
+        if(mult > 1){
+          applyMultiplier(slider, mult);
+          btn.style.color = mult === 2 ? '#f59e0b' : '#ef4444';
+        }
+
+        // Insert button after the slider (or after value label)
+        const parent = slider.parentElement;
+        if(parent){
+          // Find the value span sibling
+          const valueSpan = parent.querySelector('span[id]');
+          if(valueSpan && valueSpan.nextSibling){
+            valueSpan.parentElement.insertBefore(btn, valueSpan.nextSibling);
+          } else {
+            parent.appendChild(btn);
+          }
+        }
+      });
+    });
+  }
+
+  // Initialize when settings panels are shown
+  const origShowTn51 = window.showTn51Settings;
+  window.showTn51Settings = function(){
+    origShowTn51.apply(this, arguments);
+    setTimeout(initSliderMultipliers, 50);
+  };
+  const origShowT42 = window.showT42Settings;
+  window.showT42Settings = function(){
+    origShowT42.apply(this, arguments);
+    setTimeout(initSliderMultipliers, 50);
+  };
+  const origShowBy2 = window.showBy2Settings;
+  if(origShowBy2){
+    window.showBy2Settings = function(){
+      origShowBy2.apply(this, arguments);
+      setTimeout(initSliderMultipliers, 50);
+    };
+  }
+
+  // ---- TN51 X-OFFSET REFINEMENT ----
+  // Add X-Offset sliders for diagonal players (P2, P3, P5, P6)
+  const xOffKeys = ['p2xOff', 'p3xOff', 'p5xOff', 'p6xOff'];
+  const xOffLabels = {'p2xOff':'P2 X-Offset','p3xOff':'P3 X-Offset','p5xOff':'P5 X-Offset','p6xOff':'P6 X-Offset'};
+
+  function injectXOffsetSliders(){
+    const panel = document.getElementById('tn51SettingsBackdrop');
+    if(!panel || panel.dataset.xoffInit) return;
+    panel.dataset.xoffInit = '1';
+
+    // Find the close button area or the last player section to insert before
+    const resetBtn = document.getElementById('btnTn51Reset');
+    if(!resetBtn) return;
+    const insertBefore = resetBtn.parentElement;
+    if(!insertBefore) return;
+
+    // Create a section for X-Offset sliders
+    const section = document.createElement('div');
+    section.style.cssText = 'padding:8px 16px;border-top:1px solid rgba(255,255,255,0.1);';
+    section.innerHTML = '<div style="font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:6px;">Side Player X-Offset (Cumulative per Domino)</div>';
+
+    xOffKeys.forEach(key => {
+      const val = TN51_SETTINGS[key] || 0;
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px;';
+      row.innerHTML = '<label style="font-size:11px;color:rgba(255,255,255,0.7);min-width:70px;">' + xOffLabels[key] + '</label>'
+        + '<input type="range" id="tn51s_' + key + '" min="-0.02" max="0.02" step="0.0005" value="' + val + '" style="flex:1;accent-color:#f59e0b;">'
+        + '<span id="tn51sv_' + key + '" style="font-size:10px;color:#fff;min-width:42px;text-align:right;">' + val.toFixed(4) + '</span>'
+        + '<input type="number" id="tn51sn_' + key + '" value="' + val + '" step="0.0001" style="width:60px;padding:2px 4px;font-size:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:4px;color:#fff;text-align:center;">';
+      section.appendChild(row);
+    });
+
+    insertBefore.parentElement.insertBefore(section, insertBefore);
+
+    // Wire up sliders and numeric inputs
+    xOffKeys.forEach(key => {
+      const slider = document.getElementById('tn51s_' + key);
+      const label = document.getElementById('tn51sv_' + key);
+      const numInput = document.getElementById('tn51sn_' + key);
+
+      function updateVal(val){
+        TN51_SETTINGS[key] = val;
+        if(label) label.textContent = val.toFixed(4);
+        if(slider) slider.value = val;
+        if(numInput) numInput.value = val;
+        applyTn51Settings();
+        saveToStorage(getTn51Key(), TN51_SETTINGS);
+      }
+
+      if(slider) slider.addEventListener('input', function(){ updateVal(parseFloat(this.value)); });
+      if(numInput) numInput.addEventListener('input', function(){
+        const v = parseFloat(this.value);
+        if(!isNaN(v)) updateVal(v);
+      });
+    });
+  }
+
+  // Inject when TN51 settings shown
+  const origShowTn51_2 = window.showTn51Settings;
+  window.showTn51Settings = function(){
+    origShowTn51_2.apply(this, arguments);
+    setTimeout(injectXOffsetSliders, 60);
+  };
+
+  // ---- PRESET FILE EXPORT/IMPORT ----
+  // Add buttons for exporting all presets to JSON file and importing from file
+
+  function getAllPresets(){
+    try {
+      const raw = localStorage.getItem('tn51_device_presets');
+      return raw ? JSON.parse(raw) : {};
+    } catch(e){ return {}; }
+  }
+
+  function saveAllPresets(presets){
+    try { localStorage.setItem('tn51_device_presets', JSON.stringify(presets)); } catch(e){}
+  }
+
+  function exportPresetsToFile(){
+    const presets = getAllPresets();
+    const screenW = window.innerWidth;
+    const screenH = window.innerHeight;
+    const dpr = window.devicePixelRatio || 1;
+
+    const exportData = {
+      version: 'V12.2',
+      exportedFrom: {
+        screenWidth: screenW,
+        screenHeight: screenH,
+        devicePixelRatio: dpr,
+        userAgent: navigator.userAgent.substring(0, 120)
+      },
+      exportDate: new Date().toISOString(),
+      presets: presets,
+      // Also include built-in presets for reference
+      builtInPresets: typeof BUILTIN_DEVICE_PRESETS !== 'undefined' ? BUILTIN_DEVICE_PRESETS : {}
+    };
+
+    const json = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([json], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dominoes_presets_' + screenW + 'x' + screenH + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function importPresetsFromFile(){
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.addEventListener('change', function(){
+      const file = this.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e){
+        try {
+          const data = JSON.parse(e.target.result);
+          if(!data.presets || typeof data.presets !== 'object'){
+            alert('Invalid preset file — no presets found.');
+            return;
+          }
+          const existing = getAllPresets();
+          let imported = 0;
+          for(const name in data.presets){
+            existing[name] = data.presets[name];
+            imported++;
+          }
+          saveAllPresets(existing);
+          alert('Imported ' + imported + ' preset(s). Total presets: ' + Object.keys(existing).length);
+        } catch(err){
+          alert('Error reading file: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+    input.click();
+  }
+
+  // Add Export/Import File buttons to each settings panel
+  function injectFileButtons(panelId, afterBtnId){
+    const panel = document.getElementById(panelId);
+    if(!panel || panel.dataset.fileInit) return;
+    panel.dataset.fileInit = '1';
+
+    const afterBtn = document.getElementById(afterBtnId);
+    if(!afterBtn) return;
+    const container = afterBtn.parentElement;
+    if(!container) return;
+
+    const fileRow = document.createElement('div');
+    fileRow.style.cssText = 'display:flex;gap:8px;justify-content:center;margin-top:8px;';
+
+    const expBtn = document.createElement('button');
+    expBtn.textContent = 'Export All to File';
+    expBtn.className = 'glossBtn';
+    expBtn.style.cssText = 'padding:6px 12px;font-size:11px;font-weight:600;background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;border-radius:8px;color:#fff;cursor:pointer;';
+    expBtn.addEventListener('click', exportPresetsToFile);
+
+    const impBtn = document.createElement('button');
+    impBtn.textContent = 'Import from File';
+    impBtn.className = 'glossBtn';
+    impBtn.style.cssText = 'padding:6px 12px;font-size:11px;font-weight:600;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:8px;color:#fff;cursor:pointer;';
+    impBtn.addEventListener('click', importPresetsFromFile);
+
+    fileRow.appendChild(expBtn);
+    fileRow.appendChild(impBtn);
+    container.appendChild(fileRow);
+
+    // Also add screen info label
+    const infoLabel = document.createElement('div');
+    infoLabel.style.cssText = 'text-align:center;font-size:10px;color:rgba(255,255,255,0.4);margin-top:4px;';
+    infoLabel.textContent = 'Screen: ' + window.innerWidth + 'x' + window.innerHeight + ' @' + (window.devicePixelRatio || 1).toFixed(1) + 'x';
+    container.appendChild(infoLabel);
+  }
+
+  // Inject file buttons when panels open
+  const origShowTn51_3 = window.showTn51Settings;
+  window.showTn51Settings = function(){
+    origShowTn51_3.apply(this, arguments);
+    setTimeout(() => injectFileButtons('tn51SettingsBackdrop', 'btnDeviceLoadPreset'), 70);
+  };
+  const origShowT42_2 = window.showT42Settings;
+  window.showT42Settings = function(){
+    origShowT42_2.apply(this, arguments);
+    setTimeout(() => injectFileButtons('t42SettingsBackdrop', 'btnT42DeviceLoad'), 70);
+  };
+
+})();
+
+
+// V12.2: Auto-apply closest built-in preset on first load (if no saved settings)
+(function(){
+  function findClosestPreset(){
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    let bestName = null;
+    let bestDist = Infinity;
+    for(const name in BUILTIN_DEVICE_PRESETS){
+      const p = BUILTIN_DEVICE_PRESETS[name];
+      const dw = w - p.screenWidth;
+      const dh = h - p.screenHeight;
+      const dist = Math.sqrt(dw*dw + dh*dh);
+      if(dist < bestDist){ bestDist = dist; bestName = name; }
+    }
+    return bestName;
+  }
+
+  // Add "Auto-Detect" and "Load Built-in Preset" buttons to preset system
+  // Extend the existing device preset load to include built-in presets
+  const origLoadPreset = window._loadDevicePreset;
+
+  // Create a global function to load a built-in preset
+  window.loadBuiltInPreset = function(name){
+    const preset = BUILTIN_DEVICE_PRESETS[name];
+    if(!preset) return;
+    const orient = getOrientation();
+    const data = preset[orient];
+    if(!data) { alert('No ' + orient + ' settings for ' + name); return; }
+
+    if(data.tn51){
+      Object.assign(TN51_SETTINGS, data.tn51);
+      saveToStorage(getTn51Key(), TN51_SETTINGS);
+      if(GAME_MODE === 'TN51') applyTn51Settings();
+    }
+    if(data.t42){
+      Object.assign(T42_SETTINGS, data.t42);
+      saveToStorage(getT42Key(), T42_SETTINGS);
+      if(GAME_MODE === 'T42') applyT42Settings();
+    }
+
+    // Refresh sliders if panel is open
+    if(typeof showTn51Settings === 'function' && document.getElementById('tn51SettingsBackdrop').style.display === 'flex'){
+      showTn51Settings();
+    }
+    if(typeof showT42Settings === 'function' && document.getElementById('t42SettingsBackdrop').style.display === 'flex'){
+      showT42Settings();
+    }
+  };
+
+  // Add a "Load Built-in Preset" button that shows a list
+  window.showBuiltInPresetPicker = function(){
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);';
+
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const closest = findClosestPreset();
+
+    let html = '<div style="background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:16px;padding:20px;color:#fff;min-width:280px;max-width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.1);">';
+    html += '<div style="font-size:16px;font-weight:700;margin-bottom:4px;">Built-in Device Presets</div>';
+    html += '<div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:12px;">Your screen: ' + w + 'x' + h + ' | Closest match: ' + (closest || 'none') + '</div>';
+
+    // Group into iPhones and iPads
+    html += '<div style="font-size:12px;font-weight:700;color:#22c55e;margin-bottom:6px;">iPhones</div>';
+    for(const name in BUILTIN_DEVICE_PRESETS){
+      if(name.indexOf('iPad') >= 0) continue;
+      const p = BUILTIN_DEVICE_PRESETS[name];
+      const isBest = (name === closest);
+      html += '<button class="builtinPresetBtn" data-name="' + name + '" style="display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:4px;border-radius:8px;border:1px solid ' + (isBest ? '#22c55e' : 'rgba(255,255,255,0.1)') + ';background:' + (isBest ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)') + ';color:#fff;cursor:pointer;font-size:13px;">';
+      html += '<span style="font-weight:600;">' + name + '</span>';
+      html += '<span style="font-size:11px;opacity:0.5;margin-left:8px;">' + p.screenWidth + 'x' + p.screenHeight + '</span>';
+      if(isBest) html += '<span style="font-size:10px;color:#22c55e;margin-left:8px;">★ Best match</span>';
+      html += '</button>';
+    }
+
+    html += '<div style="font-size:12px;font-weight:700;color:#f59e0b;margin:10px 0 6px;">iPads</div>';
+    for(const name in BUILTIN_DEVICE_PRESETS){
+      if(name.indexOf('iPad') < 0) continue;
+      const p = BUILTIN_DEVICE_PRESETS[name];
+      const isBest = (name === closest);
+      html += '<button class="builtinPresetBtn" data-name="' + name + '" style="display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:4px;border-radius:8px;border:1px solid ' + (isBest ? '#22c55e' : 'rgba(255,255,255,0.1)') + ';background:' + (isBest ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)') + ';color:#fff;cursor:pointer;font-size:13px;">';
+      html += '<span style="font-weight:600;">' + name + '</span>';
+      html += '<span style="font-size:11px;opacity:0.5;margin-left:8px;">' + p.screenWidth + 'x' + p.screenHeight + '</span>';
+      if(isBest) html += '<span style="font-size:10px;color:#22c55e;margin-left:8px;">★ Best match</span>';
+      html += '</button>';
+    }
+
+    html += '<div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">';
+    html += '<button id="builtinAutoApply" style="padding:8px 16px;font-size:13px;font-weight:700;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:8px;color:#fff;cursor:pointer;">Auto-Detect & Apply</button>';
+    html += '<button id="builtinClose" style="padding:8px 16px;font-size:13px;font-weight:600;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:8px;color:#fff;cursor:pointer;">Close</button>';
+    html += '</div></div>';
+
+    overlay.innerHTML = html;
+    document.body.appendChild(overlay);
+
+    // Wire up buttons
+    overlay.querySelectorAll('.builtinPresetBtn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        loadBuiltInPreset(btn.dataset.name);
+        overlay.remove();
+      });
+    });
+
+    document.getElementById('builtinAutoApply').addEventListener('click', () => {
+      if(closest) loadBuiltInPreset(closest);
+      overlay.remove();
+    });
+
+    document.getElementById('builtinClose').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.remove(); });
+  };
+
+  // Inject "Built-in Presets" button into settings panels
+  function injectBuiltInButton(panelId, afterBtnId){
+    const panel = document.getElementById(panelId);
+    if(!panel || panel.dataset.builtinInit) return;
+    panel.dataset.builtinInit = '1';
+
+    const afterBtn = document.getElementById(afterBtnId);
+    if(!afterBtn) return;
+    const container = afterBtn.parentElement;
+    if(!container) return;
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;justify-content:center;margin-top:8px;';
+
+    const btn = document.createElement('button');
+    btn.textContent = 'Built-in Device Presets';
+    btn.className = 'glossBtn';
+    btn.style.cssText = 'padding:6px 14px;font-size:11px;font-weight:600;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:8px;color:#fff;cursor:pointer;';
+    btn.addEventListener('click', window.showBuiltInPresetPicker);
+    row.appendChild(btn);
+    container.appendChild(row);
+  }
+
+  const origShowTn51_4 = window.showTn51Settings;
+  window.showTn51Settings = function(){
+    origShowTn51_4.apply(this, arguments);
+    setTimeout(() => injectBuiltInButton('tn51SettingsBackdrop', 'btnDeviceLoadPreset'), 80);
+  };
+  const origShowT42_3 = window.showT42Settings;
+  window.showT42Settings = function(){
+    origShowT42_3.apply(this, arguments);
+    setTimeout(() => injectBuiltInButton('t42SettingsBackdrop', 'btnT42DeviceLoad'), 80);
+  };
+
+})();
+
 // V12: Screen name is now inline on start screen — no popup needed
 // updateScreenNameUI() is called in the IIFE above
 
@@ -26256,6 +27455,11 @@ if ('serviceWorker' in navigator) {
   }
   const TN51_KEYS = Object.keys(TN51_SETTINGS);
   const TN51_DEFAULTS = Object.assign({}, TN51_SETTINGS);
+// V12.2: Ensure xOffset defaults exist
+if(!TN51_DEFAULTS.p2xOff) TN51_DEFAULTS.p2xOff = 0;
+if(!TN51_DEFAULTS.p3xOff) TN51_DEFAULTS.p3xOff = 0;
+if(!TN51_DEFAULTS.p5xOff) TN51_DEFAULTS.p5xOff = 0;
+if(!TN51_DEFAULTS.p6xOff) TN51_DEFAULTS.p6xOff = 0;
 
   if(_tn51Btn) _tn51Btn.addEventListener('click', showTn51Settings);
   document.getElementById('btnCloseTn51Settings').addEventListener('click', hideTn51Settings);
