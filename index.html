@@ -25134,448 +25134,6 @@ var BUILTIN_DEVICE_PRESETS = {
 };
 
 
-// V12.2: Scale Range Multiplier + X-Offset Refinement + Preset File Export/Import
-(function(){
-  // ---- SCALE RANGE MULTIPLIER ----
-  // For each range slider in layout settings, add a 1x/2x/3x cycle button
-  const settingsPanels = ['tn51SettingsBackdrop', 't42SettingsBackdrop', 'boneyardSettingsBackdrop'];
-  const _multState = {}; // { sliderId: multiplier (1,2,3) }
-
-  // Load saved multiplier state
-  try {
-    const saved = localStorage.getItem('tn51_slider_multipliers');
-    if(saved) Object.assign(_multState, JSON.parse(saved));
-  } catch(e){}
-
-  function saveMultState(){
-    try { localStorage.setItem('tn51_slider_multipliers', JSON.stringify(_multState)); } catch(e){}
-  }
-
-  function applyMultiplier(slider, mult){
-    const origMin = parseFloat(slider.dataset.origMin);
-    const origMax = parseFloat(slider.dataset.origMax);
-    const range = origMax - origMin;
-    const newMin = origMin + (mult - 1) * range;
-    const newMax = origMax + (mult - 1) * range;
-    slider.min = newMin;
-    slider.max = newMax;
-    // Clamp current value if out of new range
-    let val = parseFloat(slider.value);
-    if(val < newMin) { slider.value = newMin; slider.dispatchEvent(new Event('input')); }
-    if(val > newMax) { slider.value = newMax; slider.dispatchEvent(new Event('input')); }
-  }
-
-  function initSliderMultipliers(){
-    settingsPanels.forEach(panelId => {
-      const panel = document.getElementById(panelId);
-      if(!panel) return;
-      const sliders = panel.querySelectorAll('input[type="range"]');
-      sliders.forEach(slider => {
-        if(slider.dataset.multInit) return; // already initialized
-        slider.dataset.multInit = '1';
-        slider.dataset.origMin = slider.min;
-        slider.dataset.origMax = slider.max;
-
-        const mult = _multState[slider.id] || 1;
-
-        // Create cycle button
-        const btn = document.createElement('button');
-        btn.textContent = mult + 'x';
-        btn.style.cssText = 'margin-left:4px;padding:1px 5px;font-size:10px;font-weight:700;border:1px solid rgba(255,255,255,0.3);border-radius:4px;background:rgba(255,255,255,0.1);color:#60a5fa;cursor:pointer;min-width:24px;flex-shrink:0;';
-        btn.title = 'Cycle range: 1x/2x/3x';
-
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          let m = _multState[slider.id] || 1;
-          m = m >= 3 ? 1 : m + 1;
-          _multState[slider.id] = m;
-          btn.textContent = m + 'x';
-          btn.style.color = m === 1 ? '#60a5fa' : (m === 2 ? '#f59e0b' : '#ef4444');
-          applyMultiplier(slider, m);
-          saveMultState();
-        });
-
-        // Apply saved multiplier
-        if(mult > 1){
-          applyMultiplier(slider, mult);
-          btn.style.color = mult === 2 ? '#f59e0b' : '#ef4444';
-        }
-
-        // Insert button after the slider (or after value label)
-        const parent = slider.parentElement;
-        if(parent){
-          // Find the value span sibling
-          const valueSpan = parent.querySelector('span[id]');
-          if(valueSpan && valueSpan.nextSibling){
-            valueSpan.parentElement.insertBefore(btn, valueSpan.nextSibling);
-          } else {
-            parent.appendChild(btn);
-          }
-        }
-      });
-    });
-  }
-
-  // Initialize when settings panels are shown
-  const origShowTn51 = window.showTn51Settings;
-  window.showTn51Settings = function(){
-    origShowTn51.apply(this, arguments);
-    setTimeout(initSliderMultipliers, 50);
-  };
-  const origShowT42 = window.showT42Settings;
-  window.showT42Settings = function(){
-    origShowT42.apply(this, arguments);
-    setTimeout(initSliderMultipliers, 50);
-  };
-  const origShowBy2 = window.showBy2Settings;
-  if(origShowBy2){
-    window.showBy2Settings = function(){
-      origShowBy2.apply(this, arguments);
-      setTimeout(initSliderMultipliers, 50);
-    };
-  }
-
-  // ---- TN51 X-OFFSET REFINEMENT ----
-  // Add X-Offset sliders for diagonal players (P2, P3, P5, P6)
-  const xOffKeys = ['p2xOff', 'p3xOff', 'p5xOff', 'p6xOff'];
-  const xOffLabels = {'p2xOff':'P2 X-Offset','p3xOff':'P3 X-Offset','p5xOff':'P5 X-Offset','p6xOff':'P6 X-Offset'};
-
-  function injectXOffsetSliders(){
-    const panel = document.getElementById('tn51SettingsBackdrop');
-    if(!panel || panel.dataset.xoffInit) return;
-    panel.dataset.xoffInit = '1';
-
-    // Find the close button area or the last player section to insert before
-    const resetBtn = document.getElementById('btnTn51Reset');
-    if(!resetBtn) return;
-    const insertBefore = resetBtn.parentElement;
-    if(!insertBefore) return;
-
-    // Create a section for X-Offset sliders
-    const section = document.createElement('div');
-    section.style.cssText = 'padding:8px 16px;border-top:1px solid rgba(255,255,255,0.1);';
-    section.innerHTML = '<div style="font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:6px;">Side Player X-Offset (Cumulative per Domino)</div>';
-
-    xOffKeys.forEach(key => {
-      const val = TN51_SETTINGS[key] || 0;
-      const row = document.createElement('div');
-      row.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px;';
-      row.innerHTML = '<label style="font-size:11px;color:rgba(255,255,255,0.7);min-width:70px;">' + xOffLabels[key] + '</label>'
-        + '<input type="range" id="tn51s_' + key + '" min="-0.02" max="0.02" step="0.0005" value="' + val + '" style="flex:1;accent-color:#f59e0b;">'
-        + '<span id="tn51sv_' + key + '" style="font-size:10px;color:#fff;min-width:42px;text-align:right;">' + val.toFixed(4) + '</span>'
-        + '<input type="number" id="tn51sn_' + key + '" value="' + val + '" step="0.0001" style="width:60px;padding:2px 4px;font-size:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:4px;color:#fff;text-align:center;">';
-      section.appendChild(row);
-    });
-
-    insertBefore.parentElement.insertBefore(section, insertBefore);
-
-    // Wire up sliders and numeric inputs
-    xOffKeys.forEach(key => {
-      const slider = document.getElementById('tn51s_' + key);
-      const label = document.getElementById('tn51sv_' + key);
-      const numInput = document.getElementById('tn51sn_' + key);
-
-      function updateVal(val){
-        TN51_SETTINGS[key] = val;
-        if(label) label.textContent = val.toFixed(4);
-        if(slider) slider.value = val;
-        if(numInput) numInput.value = val;
-        applyTn51Settings();
-        saveToStorage(getTn51Key(), TN51_SETTINGS);
-      }
-
-      if(slider) slider.addEventListener('input', function(){ updateVal(parseFloat(this.value)); });
-      if(numInput) numInput.addEventListener('input', function(){
-        const v = parseFloat(this.value);
-        if(!isNaN(v)) updateVal(v);
-      });
-    });
-  }
-
-  // Inject when TN51 settings shown
-  const origShowTn51_2 = window.showTn51Settings;
-  window.showTn51Settings = function(){
-    origShowTn51_2.apply(this, arguments);
-    setTimeout(injectXOffsetSliders, 60);
-  };
-
-  // ---- PRESET FILE EXPORT/IMPORT ----
-  // Add buttons for exporting all presets to JSON file and importing from file
-
-  function getAllPresets(){
-    try {
-      const raw = localStorage.getItem('tn51_device_presets');
-      return raw ? JSON.parse(raw) : {};
-    } catch(e){ return {}; }
-  }
-
-  function saveAllPresets(presets){
-    try { localStorage.setItem('tn51_device_presets', JSON.stringify(presets)); } catch(e){}
-  }
-
-  function exportPresetsToFile(){
-    const presets = getAllPresets();
-    const screenW = window.innerWidth;
-    const screenH = window.innerHeight;
-    const dpr = window.devicePixelRatio || 1;
-
-    const exportData = {
-      version: 'V12.2',
-      exportedFrom: {
-        screenWidth: screenW,
-        screenHeight: screenH,
-        devicePixelRatio: dpr,
-        userAgent: navigator.userAgent.substring(0, 120)
-      },
-      exportDate: new Date().toISOString(),
-      presets: presets,
-      // Also include built-in presets for reference
-      builtInPresets: typeof BUILTIN_DEVICE_PRESETS !== 'undefined' ? BUILTIN_DEVICE_PRESETS : {}
-    };
-
-    const json = JSON.stringify(exportData, null, 2);
-    const blob = new Blob([json], {type: 'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'dominoes_presets_' + screenW + 'x' + screenH + '.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  function importPresetsFromFile(){
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.addEventListener('change', function(){
-      const file = this.files[0];
-      if(!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e){
-        try {
-          const data = JSON.parse(e.target.result);
-          if(!data.presets || typeof data.presets !== 'object'){
-            alert('Invalid preset file — no presets found.');
-            return;
-          }
-          const existing = getAllPresets();
-          let imported = 0;
-          for(const name in data.presets){
-            existing[name] = data.presets[name];
-            imported++;
-          }
-          saveAllPresets(existing);
-          alert('Imported ' + imported + ' preset(s). Total presets: ' + Object.keys(existing).length);
-        } catch(err){
-          alert('Error reading file: ' + err.message);
-        }
-      };
-      reader.readAsText(file);
-    });
-    input.click();
-  }
-
-  // Add Export/Import File buttons to each settings panel
-  function injectFileButtons(panelId, afterBtnId){
-    const panel = document.getElementById(panelId);
-    if(!panel || panel.dataset.fileInit) return;
-    panel.dataset.fileInit = '1';
-
-    const afterBtn = document.getElementById(afterBtnId);
-    if(!afterBtn) return;
-    const container = afterBtn.parentElement;
-    if(!container) return;
-
-    const fileRow = document.createElement('div');
-    fileRow.style.cssText = 'display:flex;gap:8px;justify-content:center;margin-top:8px;';
-
-    const expBtn = document.createElement('button');
-    expBtn.textContent = 'Export All to File';
-    expBtn.className = 'glossBtn';
-    expBtn.style.cssText = 'padding:6px 12px;font-size:11px;font-weight:600;background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;border-radius:8px;color:#fff;cursor:pointer;';
-    expBtn.addEventListener('click', exportPresetsToFile);
-
-    const impBtn = document.createElement('button');
-    impBtn.textContent = 'Import from File';
-    impBtn.className = 'glossBtn';
-    impBtn.style.cssText = 'padding:6px 12px;font-size:11px;font-weight:600;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:8px;color:#fff;cursor:pointer;';
-    impBtn.addEventListener('click', importPresetsFromFile);
-
-    fileRow.appendChild(expBtn);
-    fileRow.appendChild(impBtn);
-    container.appendChild(fileRow);
-
-    // Also add screen info label
-    const infoLabel = document.createElement('div');
-    infoLabel.style.cssText = 'text-align:center;font-size:10px;color:rgba(255,255,255,0.4);margin-top:4px;';
-    infoLabel.textContent = 'Screen: ' + window.innerWidth + 'x' + window.innerHeight + ' @' + (window.devicePixelRatio || 1).toFixed(1) + 'x';
-    container.appendChild(infoLabel);
-  }
-
-  // Inject file buttons when panels open
-  const origShowTn51_3 = window.showTn51Settings;
-  window.showTn51Settings = function(){
-    origShowTn51_3.apply(this, arguments);
-    setTimeout(() => injectFileButtons('tn51SettingsBackdrop', 'btnDeviceLoadPreset'), 70);
-  };
-  const origShowT42_2 = window.showT42Settings;
-  window.showT42Settings = function(){
-    origShowT42_2.apply(this, arguments);
-    setTimeout(() => injectFileButtons('t42SettingsBackdrop', 'btnT42DeviceLoad'), 70);
-  };
-
-})();
-
-
-// V12.2: Auto-apply closest built-in preset on first load (if no saved settings)
-(function(){
-  function findClosestPreset(){
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    let bestName = null;
-    let bestDist = Infinity;
-    for(const name in BUILTIN_DEVICE_PRESETS){
-      const p = BUILTIN_DEVICE_PRESETS[name];
-      const dw = w - p.screenWidth;
-      const dh = h - p.screenHeight;
-      const dist = Math.sqrt(dw*dw + dh*dh);
-      if(dist < bestDist){ bestDist = dist; bestName = name; }
-    }
-    return bestName;
-  }
-
-  // Add "Auto-Detect" and "Load Built-in Preset" buttons to preset system
-  // Extend the existing device preset load to include built-in presets
-  const origLoadPreset = window._loadDevicePreset;
-
-  // Create a global function to load a built-in preset
-  window.loadBuiltInPreset = function(name){
-    const preset = BUILTIN_DEVICE_PRESETS[name];
-    if(!preset) return;
-    const orient = getOrientation();
-    const data = preset[orient];
-    if(!data) { alert('No ' + orient + ' settings for ' + name); return; }
-
-    if(data.tn51){
-      Object.assign(TN51_SETTINGS, data.tn51);
-      saveToStorage(getTn51Key(), TN51_SETTINGS);
-      if(GAME_MODE === 'TN51') applyTn51Settings();
-    }
-    if(data.t42){
-      Object.assign(T42_SETTINGS, data.t42);
-      saveToStorage(getT42Key(), T42_SETTINGS);
-      if(GAME_MODE === 'T42') applyT42Settings();
-    }
-
-    // Refresh sliders if panel is open
-    if(typeof showTn51Settings === 'function' && document.getElementById('tn51SettingsBackdrop').style.display === 'flex'){
-      showTn51Settings();
-    }
-    if(typeof showT42Settings === 'function' && document.getElementById('t42SettingsBackdrop').style.display === 'flex'){
-      showT42Settings();
-    }
-  };
-
-  // Add a "Load Built-in Preset" button that shows a list
-  window.showBuiltInPresetPicker = function(){
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);';
-
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const closest = findClosestPreset();
-
-    let html = '<div style="background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:16px;padding:20px;color:#fff;min-width:280px;max-width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.1);">';
-    html += '<div style="font-size:16px;font-weight:700;margin-bottom:4px;">Built-in Device Presets</div>';
-    html += '<div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:12px;">Your screen: ' + w + 'x' + h + ' | Closest match: ' + (closest || 'none') + '</div>';
-
-    // Group into iPhones and iPads
-    html += '<div style="font-size:12px;font-weight:700;color:#22c55e;margin-bottom:6px;">iPhones</div>';
-    for(const name in BUILTIN_DEVICE_PRESETS){
-      if(name.indexOf('iPad') >= 0) continue;
-      const p = BUILTIN_DEVICE_PRESETS[name];
-      const isBest = (name === closest);
-      html += '<button class="builtinPresetBtn" data-name="' + name + '" style="display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:4px;border-radius:8px;border:1px solid ' + (isBest ? '#22c55e' : 'rgba(255,255,255,0.1)') + ';background:' + (isBest ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)') + ';color:#fff;cursor:pointer;font-size:13px;">';
-      html += '<span style="font-weight:600;">' + name + '</span>';
-      html += '<span style="font-size:11px;opacity:0.5;margin-left:8px;">' + p.screenWidth + 'x' + p.screenHeight + '</span>';
-      if(isBest) html += '<span style="font-size:10px;color:#22c55e;margin-left:8px;">★ Best match</span>';
-      html += '</button>';
-    }
-
-    html += '<div style="font-size:12px;font-weight:700;color:#f59e0b;margin:10px 0 6px;">iPads</div>';
-    for(const name in BUILTIN_DEVICE_PRESETS){
-      if(name.indexOf('iPad') < 0) continue;
-      const p = BUILTIN_DEVICE_PRESETS[name];
-      const isBest = (name === closest);
-      html += '<button class="builtinPresetBtn" data-name="' + name + '" style="display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:4px;border-radius:8px;border:1px solid ' + (isBest ? '#22c55e' : 'rgba(255,255,255,0.1)') + ';background:' + (isBest ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)') + ';color:#fff;cursor:pointer;font-size:13px;">';
-      html += '<span style="font-weight:600;">' + name + '</span>';
-      html += '<span style="font-size:11px;opacity:0.5;margin-left:8px;">' + p.screenWidth + 'x' + p.screenHeight + '</span>';
-      if(isBest) html += '<span style="font-size:10px;color:#22c55e;margin-left:8px;">★ Best match</span>';
-      html += '</button>';
-    }
-
-    html += '<div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">';
-    html += '<button id="builtinAutoApply" style="padding:8px 16px;font-size:13px;font-weight:700;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:8px;color:#fff;cursor:pointer;">Auto-Detect & Apply</button>';
-    html += '<button id="builtinClose" style="padding:8px 16px;font-size:13px;font-weight:600;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:8px;color:#fff;cursor:pointer;">Close</button>';
-    html += '</div></div>';
-
-    overlay.innerHTML = html;
-    document.body.appendChild(overlay);
-
-    // Wire up buttons
-    overlay.querySelectorAll('.builtinPresetBtn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        loadBuiltInPreset(btn.dataset.name);
-        overlay.remove();
-      });
-    });
-
-    document.getElementById('builtinAutoApply').addEventListener('click', () => {
-      if(closest) loadBuiltInPreset(closest);
-      overlay.remove();
-    });
-
-    document.getElementById('builtinClose').addEventListener('click', () => overlay.remove());
-    overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.remove(); });
-  };
-
-  // Inject "Built-in Presets" button into settings panels
-  function injectBuiltInButton(panelId, afterBtnId){
-    const panel = document.getElementById(panelId);
-    if(!panel || panel.dataset.builtinInit) return;
-    panel.dataset.builtinInit = '1';
-
-    const afterBtn = document.getElementById(afterBtnId);
-    if(!afterBtn) return;
-    const container = afterBtn.parentElement;
-    if(!container) return;
-
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;gap:8px;justify-content:center;margin-top:8px;';
-
-    const btn = document.createElement('button');
-    btn.textContent = 'Built-in Device Presets';
-    btn.className = 'glossBtn';
-    btn.style.cssText = 'padding:6px 14px;font-size:11px;font-weight:600;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:8px;color:#fff;cursor:pointer;';
-    btn.addEventListener('click', window.showBuiltInPresetPicker);
-    row.appendChild(btn);
-    container.appendChild(row);
-  }
-
-  const origShowTn51_4 = window.showTn51Settings;
-  window.showTn51Settings = function(){
-    origShowTn51_4.apply(this, arguments);
-    setTimeout(() => injectBuiltInButton('tn51SettingsBackdrop', 'btnDeviceLoadPreset'), 80);
-  };
-  const origShowT42_3 = window.showT42Settings;
-  window.showT42Settings = function(){
-    origShowT42_3.apply(this, arguments);
-    setTimeout(() => injectBuiltInButton('t42SettingsBackdrop', 'btnT42DeviceLoad'), 80);
-  };
-
-})();
 
 // V12: Screen name is now inline on start screen — no popup needed
 // updateScreenNameUI() is called in the IIFE above
@@ -27783,6 +27341,255 @@ if(!TN51_DEFAULTS.p6xOff) TN51_DEFAULTS.p6xOff = 0;
   // Apply persisted TN51 settings if in TN51 mode
   if(GAME_MODE === 'TN51' && _savedTn51) applyTn51Settings();
   // Apply persisted T42 settings (already handled by initGameMode calling applyT42Settings)
+})();
+
+
+// V12.2: Scale Range Multiplier + X-Offset + File Export/Import + Built-in Presets
+// Uses MutationObserver since settings functions are inside an IIFE
+(function(){
+  var _multState = {};
+  try { var s = localStorage.getItem('tn51_slider_multipliers'); if(s) _multState = JSON.parse(s); } catch(e){}
+  function saveMultState(){ try { localStorage.setItem('tn51_slider_multipliers', JSON.stringify(_multState)); } catch(e){} }
+
+  function applyMultiplier(slider, mult){
+    var origMin = parseFloat(slider.dataset.origMin);
+    var origMax = parseFloat(slider.dataset.origMax);
+    var range = origMax - origMin;
+    slider.min = origMin + (mult - 1) * range;
+    slider.max = origMax + (mult - 1) * range;
+    var val = parseFloat(slider.value);
+    if(val < parseFloat(slider.min)){ slider.value = slider.min; slider.dispatchEvent(new Event('input')); }
+    if(val > parseFloat(slider.max)){ slider.value = slider.max; slider.dispatchEvent(new Event('input')); }
+  }
+
+  function initSliderMultipliers(panel){
+    var sliders = panel.querySelectorAll('input[type="range"]');
+    sliders.forEach(function(slider){
+      if(slider.dataset.multInit) return;
+      slider.dataset.multInit = '1';
+      slider.dataset.origMin = slider.min;
+      slider.dataset.origMax = slider.max;
+      var mult = _multState[slider.id] || 1;
+      var btn = document.createElement('button');
+      btn.textContent = mult + 'x';
+      btn.style.cssText = 'margin-left:4px;padding:1px 5px;font-size:10px;font-weight:700;border:1px solid rgba(255,255,255,0.3);border-radius:4px;background:rgba(255,255,255,0.1);color:' + (mult===1?'#60a5fa':mult===2?'#f59e0b':'#ef4444') + ';cursor:pointer;min-width:24px;flex-shrink:0;';
+      btn.addEventListener('click', function(e){
+        e.preventDefault(); e.stopPropagation();
+        var m = _multState[slider.id] || 1;
+        m = m >= 3 ? 1 : m + 1;
+        _multState[slider.id] = m;
+        btn.textContent = m + 'x';
+        btn.style.color = m===1?'#60a5fa':m===2?'#f59e0b':'#ef4444';
+        applyMultiplier(slider, m);
+        saveMultState();
+      });
+      if(mult > 1) applyMultiplier(slider, mult);
+      // Insert after value label span or at end of parent
+      var parent = slider.parentElement;
+      if(parent){
+        var spans = parent.querySelectorAll('span[id]');
+        var lastSpan = spans.length > 0 ? spans[spans.length-1] : null;
+        if(lastSpan) lastSpan.insertAdjacentElement('afterend', btn);
+        else parent.appendChild(btn);
+      }
+    });
+  }
+
+  // ---- X-OFFSET SLIDERS ----
+  function injectXOffsetSliders(panel){
+    if(panel.dataset.xoffInit) return;
+    panel.dataset.xoffInit = '1';
+    var resetBtn = document.getElementById('btnTn51Reset');
+    if(!resetBtn || !resetBtn.parentElement) return;
+    var section = document.createElement('div');
+    section.style.cssText = 'padding:8px 16px;border-top:1px solid rgba(255,255,255,0.1);';
+    section.innerHTML = '<div style="font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:6px;">Side Player X-Offset (per Domino)</div>';
+    var keys = [['p2xOff','P2'],['p3xOff','P3'],['p5xOff','P5'],['p6xOff','P6']];
+    keys.forEach(function(pair){
+      var key = pair[0], label = pair[1];
+      var val = TN51_SETTINGS[key] || 0;
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px;';
+      row.innerHTML = '<label style="font-size:11px;color:rgba(255,255,255,0.7);min-width:28px;">' + label + '</label>'
+        + '<input type="range" id="tn51s_' + key + '" min="-0.02" max="0.02" step="0.0005" value="' + val + '" style="flex:1;accent-color:#f59e0b;">'
+        + '<span id="tn51sv_' + key + '" style="font-size:10px;color:#fff;min-width:42px;text-align:right;">' + val.toFixed(4) + '</span>'
+        + '<input type="number" id="tn51sn_' + key + '" value="' + val + '" step="0.0001" style="width:58px;padding:2px;font-size:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:4px;color:#fff;text-align:center;">';
+      section.appendChild(row);
+    });
+    resetBtn.parentElement.parentElement.insertBefore(section, resetBtn.parentElement);
+    // Wire sliders
+    keys.forEach(function(pair){
+      var key = pair[0];
+      var slider = document.getElementById('tn51s_' + key);
+      var lbl = document.getElementById('tn51sv_' + key);
+      var num = document.getElementById('tn51sn_' + key);
+      function update(v){ TN51_SETTINGS[key]=v; if(lbl)lbl.textContent=v.toFixed(4); if(slider)slider.value=v; if(num)num.value=v; applyTn51Settings(); try{var k2=window.getTn51Key?getTn51Key():'tn51_tn51_layout_portrait';localStorage.setItem(k2,JSON.stringify(TN51_SETTINGS));}catch(e){} }
+      if(slider) slider.addEventListener('input', function(){ update(parseFloat(this.value)); });
+      if(num) num.addEventListener('input', function(){ var v=parseFloat(this.value); if(!isNaN(v)) update(v); });
+    });
+  }
+
+  // ---- FILE EXPORT/IMPORT ----
+  function getAllPresets(){ try{ var r=localStorage.getItem('tn51_device_presets'); return r?JSON.parse(r):{}; }catch(e){return {};} }
+  function saveAllPresets(p){ try{localStorage.setItem('tn51_device_presets',JSON.stringify(p));}catch(e){} }
+
+  function exportPresetsToFile(){
+    var presets = getAllPresets();
+    var data = { version:'V12.2', exportedFrom:{ screenWidth:window.innerWidth, screenHeight:window.innerHeight, dpr:window.devicePixelRatio||1, ua:navigator.userAgent.substring(0,120) }, exportDate:new Date().toISOString(), presets:presets, builtInPresets:typeof BUILTIN_DEVICE_PRESETS!=='undefined'?BUILTIN_DEVICE_PRESETS:{} };
+    var json = JSON.stringify(data, null, 2);
+    var blob = new Blob([json], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href=url; a.download='dominoes_presets_'+window.innerWidth+'x'+window.innerHeight+'.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+
+  function importPresetsFromFile(){
+    var input = document.createElement('input'); input.type='file'; input.accept='.json';
+    input.addEventListener('change', function(){
+      var file = this.files[0]; if(!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e){
+        try {
+          var data = JSON.parse(e.target.result);
+          if(!data.presets || typeof data.presets !== 'object'){ alert('Invalid preset file.'); return; }
+          var existing = getAllPresets(); var count = 0;
+          for(var name in data.presets){ existing[name] = data.presets[name]; count++; }
+          saveAllPresets(existing);
+          alert('Imported ' + count + ' preset(s). Total: ' + Object.keys(existing).length);
+        } catch(err){ alert('Error: ' + err.message); }
+      };
+      reader.readAsText(file);
+    });
+    input.click();
+  }
+
+  function injectFileButtons(panel, afterBtnId){
+    if(panel.dataset.fileInit) return;
+    panel.dataset.fileInit = '1';
+    var afterBtn = document.getElementById(afterBtnId);
+    if(!afterBtn || !afterBtn.parentElement) return;
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap;';
+    var expBtn = document.createElement('button');
+    expBtn.textContent = '\u{1F4E4} Export All to File';
+    expBtn.style.cssText = 'padding:6px 12px;font-size:11px;font-weight:600;background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;border-radius:8px;color:#fff;cursor:pointer;';
+    expBtn.addEventListener('click', exportPresetsToFile);
+    var impBtn = document.createElement('button');
+    impBtn.textContent = '\u{1F4E5} Import from File';
+    impBtn.style.cssText = 'padding:6px 12px;font-size:11px;font-weight:600;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:8px;color:#fff;cursor:pointer;';
+    impBtn.addEventListener('click', importPresetsFromFile);
+    row.appendChild(expBtn); row.appendChild(impBtn);
+    afterBtn.parentElement.appendChild(row);
+    // Screen info
+    var info = document.createElement('div');
+    info.style.cssText = 'text-align:center;font-size:10px;color:rgba(255,255,255,0.4);margin-top:4px;';
+    info.textContent = 'Screen: ' + window.innerWidth + '\u00d7' + window.innerHeight + ' @' + (window.devicePixelRatio||1).toFixed(1) + 'x';
+    afterBtn.parentElement.appendChild(info);
+  }
+
+  // ---- BUILT-IN PRESET PICKER ----
+  function findClosestPreset(){
+    var w=window.innerWidth, h=window.innerHeight, best=null, bestD=Infinity;
+    for(var name in BUILTIN_DEVICE_PRESETS){
+      var p=BUILTIN_DEVICE_PRESETS[name];
+      var d=Math.sqrt(Math.pow(w-p.screenWidth,2)+Math.pow(h-p.screenHeight,2));
+      if(d<bestD){bestD=d;best=name;}
+    } return best;
+  }
+
+  window.loadBuiltInPreset = function(name){
+    var preset = BUILTIN_DEVICE_PRESETS[name]; if(!preset) return;
+    var orient = (window.innerWidth > window.innerHeight) ? 'landscape' : 'portrait';
+    var data = preset[orient]; if(!data){ alert('No '+orient+' data for '+name); return; }
+    if(data.tn51){ Object.assign(TN51_SETTINGS, data.tn51); try{localStorage.setItem('tn51_tn51_layout_'+orient, JSON.stringify(TN51_SETTINGS));}catch(e){} if(typeof applyTn51Settings==='function') applyTn51Settings(); }
+    if(data.t42){ Object.assign(T42_SETTINGS, data.t42); try{localStorage.setItem('tn51_t42_layout_'+orient, JSON.stringify(T42_SETTINGS));}catch(e){} if(typeof applyT42Settings==='function') applyT42Settings(); }
+  };
+
+  window.showBuiltInPresetPicker = function(){
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);';
+    var w=window.innerWidth, h=window.innerHeight, closest=findClosestPreset();
+    var html = '<div style="background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:16px;padding:20px;color:#fff;min-width:280px;max-width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.1);">';
+    html += '<div style="font-size:16px;font-weight:700;margin-bottom:4px;">Built-in Device Presets</div>';
+    html += '<div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:12px;">Your screen: '+w+'\u00d7'+h+' | Best match: '+(closest||'none')+'</div>';
+    html += '<div style="font-size:12px;font-weight:700;color:#22c55e;margin-bottom:6px;">iPhones</div>';
+    for(var name in BUILTIN_DEVICE_PRESETS){
+      if(name.indexOf('iPad')>=0) continue;
+      var p=BUILTIN_DEVICE_PRESETS[name], isBest=(name===closest);
+      html += '<button class="_bipBtn" data-name="'+name+'" style="display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:4px;border-radius:8px;border:1px solid '+(isBest?'#22c55e':'rgba(255,255,255,0.1)')+';background:'+(isBest?'rgba(34,197,94,0.15)':'rgba(255,255,255,0.05)')+';color:#fff;cursor:pointer;font-size:13px;">';
+      html += '<b>'+name+'</b> <span style="font-size:11px;opacity:0.5;">'+p.screenWidth+'\u00d7'+p.screenHeight+'</span>';
+      if(isBest) html += ' <span style="font-size:10px;color:#22c55e;">\u2605 Best match</span>';
+      html += '</button>';
+    }
+    html += '<div style="font-size:12px;font-weight:700;color:#f59e0b;margin:10px 0 6px;">iPads</div>';
+    for(var name in BUILTIN_DEVICE_PRESETS){
+      if(name.indexOf('iPad')<0) continue;
+      var p=BUILTIN_DEVICE_PRESETS[name], isBest=(name===closest);
+      html += '<button class="_bipBtn" data-name="'+name+'" style="display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:4px;border-radius:8px;border:1px solid '+(isBest?'#22c55e':'rgba(255,255,255,0.1)')+';background:'+(isBest?'rgba(34,197,94,0.15)':'rgba(255,255,255,0.05)')+';color:#fff;cursor:pointer;font-size:13px;">';
+      html += '<b>'+name+'</b> <span style="font-size:11px;opacity:0.5;">'+p.screenWidth+'\u00d7'+p.screenHeight+'</span>';
+      if(isBest) html += ' <span style="font-size:10px;color:#22c55e;">\u2605 Best match</span>';
+      html += '</button>';
+    }
+    html += '<div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">';
+    html += '<button id="_bipAuto" style="padding:8px 16px;font-size:13px;font-weight:700;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:8px;color:#fff;cursor:pointer;">Auto-Detect & Apply</button>';
+    html += '<button id="_bipClose" style="padding:8px 16px;font-size:13px;font-weight:600;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:8px;color:#fff;cursor:pointer;">Close</button>';
+    html += '</div></div>';
+    overlay.innerHTML = html;
+    document.body.appendChild(overlay);
+    overlay.querySelectorAll('._bipBtn').forEach(function(btn){ btn.addEventListener('click', function(){ loadBuiltInPreset(btn.dataset.name); overlay.remove(); }); });
+    document.getElementById('_bipAuto').addEventListener('click', function(){ if(closest) loadBuiltInPreset(closest); overlay.remove(); });
+    document.getElementById('_bipClose').addEventListener('click', function(){ overlay.remove(); });
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+  };
+
+  function injectBuiltInButton(panel, afterBtnId){
+    if(panel.dataset.builtinInit) return;
+    panel.dataset.builtinInit = '1';
+    var afterBtn = document.getElementById(afterBtnId);
+    if(!afterBtn || !afterBtn.parentElement) return;
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;justify-content:center;margin-top:8px;';
+    var btn = document.createElement('button');
+    btn.textContent = '\u{1F4F1} Built-in Device Presets';
+    btn.style.cssText = 'padding:6px 14px;font-size:11px;font-weight:600;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:8px;color:#fff;cursor:pointer;';
+    btn.addEventListener('click', window.showBuiltInPresetPicker);
+    row.appendChild(btn);
+    afterBtn.parentElement.appendChild(row);
+  }
+
+  // ---- OBSERVER: Detect when settings panels open ----
+  var observer = new MutationObserver(function(mutations){
+    mutations.forEach(function(m){
+      if(m.type !== 'attributes' || m.attributeName !== 'style') return;
+      var el = m.target;
+      if(!el.id) return;
+      var isVisible = el.style.display === 'flex';
+      if(!isVisible) return;
+
+      if(el.id === 'tn51SettingsBackdrop'){
+        initSliderMultipliers(el);
+        injectXOffsetSliders(el);
+        injectFileButtons(el, 'btnDeviceLoadPreset');
+        injectBuiltInButton(el, 'btnDeviceLoadPreset');
+      }
+      if(el.id === 't42SettingsBackdrop'){
+        initSliderMultipliers(el);
+        injectFileButtons(el, 'btnT42DeviceLoad');
+        injectBuiltInButton(el, 'btnT42DeviceLoad');
+      }
+      if(el.id === 'boneyardSettingsBackdrop'){
+        initSliderMultipliers(el);
+        injectFileButtons(el, 'btnBy2DeviceLoad');
+      }
+    });
+  });
+
+  // Observe settings panels for display changes
+  ['tn51SettingsBackdrop', 't42SettingsBackdrop', 'boneyardSettingsBackdrop'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) observer.observe(el, { attributes: true, attributeFilter: ['style'] });
+  });
+
 })();
 
 /******************************************************************************
