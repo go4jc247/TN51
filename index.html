@@ -47,11 +47,11 @@
     overflow:hidden;
   }
   /* V12.3: Game wrapper — aspect-ratio-constrained container for ALL game elements */
-  /* Zoom works by reducing actual container size — black bars appear on all sides */
+  /* Zoom shrinks virtual viewport so aspect ratio system scales everything proportionally */
   #gameWrapper{
     position:relative;
-    width: calc(min(100vw, calc(100vh * var(--ar-w) / var(--ar-h))) * var(--game-zoom, 1));
-    height: calc(min(100vh, calc(100vw * var(--ar-h) / var(--ar-w))) * var(--game-zoom, 1));
+    width: min(calc(100vw * var(--game-zoom, 1)), calc(100vh * var(--game-zoom, 1) * var(--ar-w) / var(--ar-h)));
+    height: min(calc(100vh * var(--game-zoom, 1)), calc(100vw * var(--game-zoom, 1) * var(--ar-h) / var(--ar-w)));
     overflow:hidden;
   }
   #tableMain{
