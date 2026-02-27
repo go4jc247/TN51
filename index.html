@@ -3,14 +3,11 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>TN51 / T42 / Moon Dominoes V12.3.1</title>
+<title>TN51 / T42 / Moon Dominoes V12.2</title>
 <style>
   :root{
     --feltA:#1a8f37; --feltB:#0f6e2a; --feltC:#0a4f1d;
     --text: rgba(255,255,255,0.95);
-    --ar-w: 414;
-    --ar-h: 896;
-    --game-zoom: 1;
     --tileW: 56px;
     --tileH: 112px;
     --r: 12px;
@@ -36,31 +33,12 @@
     -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   }
 
-  /* V12.3: Viewport wrapper — fills screen, black letterbox background */
-  #viewportWrapper{
-    position:fixed;
-    inset:0;
-    background:#000;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    overflow:hidden;
-  }
-  /* V12.3: Game wrapper — aspect-ratio-constrained container for ALL game elements */
-  /* Zoom shrinks virtual viewport so aspect ratio system scales everything proportionally */
-  #gameWrapper{
-    position:relative;
-    width: min(calc(100vw * var(--game-zoom, 1)), calc(100vh * var(--game-zoom, 1) * var(--ar-w) / var(--ar-h)));
-    height: min(calc(100vh * var(--game-zoom, 1)), calc(100vw * var(--game-zoom, 1) * var(--ar-h) / var(--ar-w)));
-    overflow:hidden;
-  }
   #tableMain{
-    position:absolute;
+    position:fixed;
     inset:0;
     background:
       radial-gradient(circle at 50% 35%, rgba(255,255,255,0.10) 0%, rgba(0,0,0,0.08) 45%, rgba(0,0,0,0.32) 100%),
       radial-gradient(circle at 50% 35%, var(--feltA) 0%, var(--feltB) 55%, var(--feltC) 100%);
-    overflow:hidden;
   }
 
   /* Shadow layer sits below sprite layer so shadows don't cast on other dominoes */
@@ -247,7 +225,7 @@
 
   /* ==== Top bar with scoring ==== */
   #topbar{
-    position:absolute;
+    position:fixed;
     top:0; left:0; right:0;
     padding: calc(6px + env(safe-area-inset-top)) 10px 6px 10px;
     background: linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.10));
@@ -493,7 +471,7 @@
 
   /* ==== Modal/Overlay System ==== */
   .modalBackdrop{
-    position:absolute;
+    position:fixed;
     inset:0;
     background:rgba(0,0,0,0.0);
     display:flex;
@@ -1289,8 +1267,6 @@
 </head>
 <body>
 
-<div id="viewportWrapper">
-<div id="gameWrapper">
 <div id="topbar">
   <div id="topRow">
     <div class="pill scorePill" id="team1Pill">
@@ -1338,6 +1314,7 @@
     </div>
   </div>
 </div>
+
 <div id="tableMain">
   <!-- Trick History Background - darkened area for indentation effect -->
   <div id="trickHistoryBg"></div>
@@ -1434,7 +1411,7 @@
     </div>
     <div style="text-align:center;">
       <div style="font-size:24px;font-weight:800;color:#fff;margin-bottom:4px;">TN51 / TX42 Dominoes</div>
-      <div style="font-size:16px;font-weight:700;color:#60a5fa;margin-bottom:12px;" id="aboutVersion">V12.3.1</div>
+      <div style="font-size:16px;font-weight:700;color:#60a5fa;margin-bottom:12px;" id="aboutVersion">V12.2</div>
       <div style="font-size:12px;color:#9ca3af;line-height:1.6;">
         <div>Built: February 2026</div>
         <div>Game modes: Tennessee 51, Texas 42</div>
@@ -2061,21 +2038,6 @@
       </div>
     </div>
 
-    <!-- Zoom Controls -->
-    <div style="border-top:1px solid rgba(255,255,255,0.15);padding:12px 16px;">
-      <div style="font-size:13px;color:rgba(255,255,255,0.8);font-weight:600;margin-bottom:10px;">Display Zoom</div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:12px;">
-        <button id="btnZoomOut" style="width:40px;height:40px;border-radius:10px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.15);color:#fff;font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;" title="Zoom Out">&minus;</button>
-        <div style="text-align:center;min-width:60px;">
-          <div id="zoomValueDisplay" style="font-size:18px;font-weight:700;color:#fff;">100%</div>
-        </div>
-        <button id="btnZoomIn" style="width:40px;height:40px;border-radius:10px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.15);color:#fff;font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;" title="Zoom In">+</button>
-      </div>
-      <div style="text-align:center;margin-top:6px;">
-        <button id="btnZoomReset" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:11px;cursor:pointer;text-decoration:underline;">Reset to 100%</button>
-      </div>
-      <div style="font-size:10px;color:rgba(255,255,255,0.4);text-align:center;margin-top:4px;">If content is cut off at edges, zoom out</div>
-    </div>
     <div style="border-top:1px solid rgba(255,255,255,0.15);padding:12px 16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <span style="font-size:13px;color:rgba(255,255,255,0.8);font-weight:600;">Developer Mode</span>
@@ -6416,7 +6378,7 @@ let mpMarksToWin = 7;            // Marks to win for MP game (host sets)
 let mpPreferredSeat = -1;         // Guest's preferred seat (-1 = auto)
 let mpHelloNonce = null;           // Unique nonce sent with hello, used to match seat_assign
 const MP_WS_URL = 'wss://tn51-tx42-relay.onrender.com';  // V10_122: PRODUCTION
-const MP_VERSION = 'V12.3.1';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
+const MP_VERSION = 'V12.2';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
 
 // ═══════════════════════════════════════════════════════════════
 // V10_FIX: Multiplayer Sync Fix Variables
@@ -14776,48 +14738,6 @@ function lerp(a,b,t){ return a+(b-a)*t; }
 function smoothstep(t){ t=clamp01(t); return t*t*(3-2*t); }
 function getRect(){ return document.getElementById('tableMain').getBoundingClientRect(); }
 function normToPx(xN,yN){ const r=getRect(); return { x: r.width*xN, y: r.height*yN }; }
-
-// V12.3: Fixed aspect ratio container with letterboxing
-(function(){
-  // Default aspect ratio: iPhone 11 portrait (414:896)
-  var AR_W = 414;
-  var AR_H = 896;
-
-  // Store/load aspect ratio preference
-  try {
-    var savedAR = localStorage.getItem('tn51_aspect_ratio');
-    if(savedAR){
-      var parsed = JSON.parse(savedAR);
-      if(parsed.w && parsed.h){ AR_W = parsed.w; AR_H = parsed.h; }
-    }
-  } catch(e){}
-
-  window._gameAspectRatio = { w: AR_W, h: AR_H };
-
-  function updateAspectRatioCSS(){
-    // Update CSS variables for aspect ratio
-    document.documentElement.style.setProperty('--ar-w', AR_W);
-    document.documentElement.style.setProperty('--ar-h', AR_H);
-  }
-
-  // Run on load and resize
-  updateAspectRatioCSS();
-  window.addEventListener('resize', function(){
-    clearTimeout(window._arResizeTimer);
-    window._arResizeTimer = setTimeout(updateAspectRatioCSS, 100);
-  });
-
-  // Expose for settings
-  window.setGameAspectRatio = function(w, h){
-    AR_W = w; AR_H = h;
-    window._gameAspectRatio = { w: w, h: h };
-    try { localStorage.setItem('tn51_aspect_ratio', JSON.stringify({w:w,h:h})); } catch(e){}
-    updateAspectRatioCSS();
-  };
-
-  // CSS handles orientation changes automatically via min() functions
-})();
-
 
 /******************************************************************************
  * DRAWING FUNCTIONS
@@ -24068,62 +23988,6 @@ function hideStartScreen(){
   document.getElementById('startScreenBackdrop').style.display = 'none';
 }
 
-
-// === Zoom Controls ===
-(function(){
-  var ZOOM_KEY = 'tn51_game_zoom';
-  var ZOOM_STEP = 5;  // 5% per click
-  var ZOOM_MIN = 70;  // 70%
-  var ZOOM_MAX = 110; // 110%
-
-  function getZoomPercent(){
-    var saved = localStorage.getItem(ZOOM_KEY);
-    return saved ? parseInt(saved, 10) : 100;
-  }
-
-  function applyZoom(pct){
-    pct = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pct));
-    var scale = pct / 100;
-    document.documentElement.style.setProperty('--game-zoom', scale);
-    localStorage.setItem(ZOOM_KEY, pct);
-    var display = document.getElementById('zoomValueDisplay');
-    if(display) display.textContent = pct + '%';
-    return pct;
-  }
-
-  // Apply saved zoom on load
-  var currentZoom = applyZoom(getZoomPercent());
-
-  // Wire up buttons when they exist
-  function wireZoomButtons(){
-    var btnIn = document.getElementById('btnZoomIn');
-    var btnOut = document.getElementById('btnZoomOut');
-    var btnReset = document.getElementById('btnZoomReset');
-    if(!btnIn) return;
-
-    btnOut.addEventListener('click', function(){
-      currentZoom = applyZoom(currentZoom - ZOOM_STEP);
-    });
-    btnIn.addEventListener('click', function(){
-      currentZoom = applyZoom(currentZoom + ZOOM_STEP);
-    });
-    btnReset.addEventListener('click', function(){
-      currentZoom = applyZoom(100);
-    });
-
-    // Set initial display
-    var display = document.getElementById('zoomValueDisplay');
-    if(display) display.textContent = currentZoom + '%';
-  }
-
-  // Buttons might not exist yet (they're in the DOM already as part of the HTML)
-  if(document.getElementById('btnZoomIn')){
-    wireZoomButtons();
-  } else {
-    document.addEventListener('DOMContentLoaded', wireZoomButtons);
-  }
-})();
-
 // Game Settings popup
 let selectedMarksToWin = 7;
 
@@ -27728,77 +27592,6 @@ if(!TN51_DEFAULTS.p6xOff) TN51_DEFAULTS.p6xOff = 0;
 
 })();
 
-
-// V12.3: Move fixed-position game UI elements inside tableMain
-(function(){
-  var table = document.getElementById('tableMain');
-  if(!table) return;
-
-  // Move topbar (score panel) inside tableMain — it's currently before gameWrapper
-  var topbar = document.getElementById('topbar');
-  if(topbar && topbar.parentElement !== table){
-    table.insertBefore(topbar, table.firstChild);
-  }
-
-  // Elements to move inside tableMain (they use position:fixed but should be relative to game area)
-  var idsToMove = ['statusBar', 'settingsBtn', 'settingsMenu',
-                   'trumpDisplay', 'playerNameDisplay'];
-
-  idsToMove.forEach(function(id){
-    var el = document.getElementById(id);
-    if(el && el.parentElement !== table){
-      table.appendChild(el);
-    }
-  });
-
-  // Also move elements by class
-  ['settingsBtn', 'settingsMenu'].forEach(function(cls){
-    var els = document.querySelectorAll('.' + cls);
-    els.forEach(function(el){
-      if(el.parentElement !== table) table.appendChild(el);
-    });
-  });
-
-  // Also move score panel inside tableMain
-  var scorePanel = document.getElementById('scorePanel');
-  if(!scorePanel){
-    // Score panel might be a different element — find the team score containers
-    var team1 = document.getElementById('team1Panel');
-    var team2 = document.getElementById('team2Panel');
-    var marks = document.getElementById('marksPanel');
-    [team1, team2, marks].forEach(function(el){
-      if(el && el.parentElement !== table) table.appendChild(el);
-    });
-  } else {
-    if(scorePanel.parentElement !== table) table.appendChild(scorePanel);
-  }
-
-  // Move chat icon and MP indicator too
-  var chatIcon = document.getElementById('mpChatIcon');
-  var mpIndicator = document.getElementById('mpIndicator');
-  var yourTurnBanner = document.getElementById('yourTurnBanner');
-  [chatIcon, mpIndicator, yourTurnBanner].forEach(function(el){
-    if(el && el.parentElement !== table) table.appendChild(el);
-  });
-
-  // Change position:fixed to position:absolute for game UI elements
-  // (they're now children of tableMain which is position:relative)
-  var style = document.createElement('style');
-  style.textContent = '#topbar{position:absolute!important;}\n#statusBar{position:absolute!important;}'
-    + '.settingsBtn{position:absolute!important;}'
-    + '.settingsMenu{position:absolute!important;}'
-    + '#trumpDisplay{position:absolute!important;}'
-    + '#playerNameDisplay{position:absolute!important;}'
-    + '#scorePanel{position:absolute!important;}'
-    + '.team1Panel,.team2Panel,#team1Panel,#team2Panel{position:absolute!important;}'
-    + '#marksPanel{position:absolute!important;}'
-    + '#mpChatIcon{position:absolute!important;}'
-    + '#mpIndicator,#mpIndicatorDock{position:absolute!important;}'
-    + '#yourTurnBanner{position:absolute!important;}'
-    + '.modalBackdrop{position:absolute!important;}';
-  document.head.appendChild(style);
-})();
-
 /******************************************************************************
  * V10_122c: GLOBAL ERROR HANDLERS FOR iOS STABILITY
  * Prevents silent crashes from unhandled promise rejections and errors
@@ -27915,8 +27708,6 @@ setInterval(() => {
   </div>
 </div>
 
-</div><!-- /gameWrapper -->
-</div><!-- /viewportWrapper -->
 </body>
 </html>
 
