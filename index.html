@@ -10,6 +10,7 @@
     --text: rgba(255,255,255,0.95);
     --ar-w: 414;
     --ar-h: 896;
+    --game-zoom: 1;
     --tileW: 56px;
     --tileH: 112px;
     --r: 12px;
@@ -51,6 +52,8 @@
     width: min(100vw, calc(100vh * var(--ar-w) / var(--ar-h)));
     height: min(100vh, calc(100vw * var(--ar-h) / var(--ar-w)));
     overflow:hidden;
+    transform: scale(var(--game-zoom, 1));
+    transform-origin: center center;
   }
   #tableMain{
     position:absolute;
@@ -2059,6 +2062,21 @@
       </div>
     </div>
 
+    <!-- Zoom Controls -->
+    <div style="border-top:1px solid rgba(255,255,255,0.15);padding:12px 16px;">
+      <div style="font-size:13px;color:rgba(255,255,255,0.8);font-weight:600;margin-bottom:10px;">Display Zoom</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;">
+        <button id="btnZoomOut" style="width:40px;height:40px;border-radius:10px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.15);color:#fff;font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;" title="Zoom Out">&minus;</button>
+        <div style="text-align:center;min-width:60px;">
+          <div id="zoomValueDisplay" style="font-size:18px;font-weight:700;color:#fff;">100%</div>
+        </div>
+        <button id="btnZoomIn" style="width:40px;height:40px;border-radius:10px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.15);color:#fff;font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;" title="Zoom In">+</button>
+      </div>
+      <div style="text-align:center;margin-top:6px;">
+        <button id="btnZoomReset" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:11px;cursor:pointer;text-decoration:underline;">Reset to 100%</button>
+      </div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.4);text-align:center;margin-top:4px;">If content is cut off at edges, zoom out</div>
+    </div>
     <div style="border-top:1px solid rgba(255,255,255,0.15);padding:12px 16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <span style="font-size:13px;color:rgba(255,255,255,0.8);font-weight:600;">Developer Mode</span>
@@ -6399,7 +6417,7 @@ let mpMarksToWin = 7;            // Marks to win for MP game (host sets)
 let mpPreferredSeat = -1;         // Guest's preferred seat (-1 = auto)
 let mpHelloNonce = null;           // Unique nonce sent with hello, used to match seat_assign
 const MP_WS_URL = 'wss://tn51-tx42-relay.onrender.com';  // V10_122: PRODUCTION
-const MP_VERSION = 'V12.3';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
+const MP_VERSION = 'V12.3.1.1';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
 
 // ═══════════════════════════════════════════════════════════════
 // V10_FIX: Multiplayer Sync Fix Variables
@@ -24050,6 +24068,62 @@ function showStartScreen(){
 function hideStartScreen(){
   document.getElementById('startScreenBackdrop').style.display = 'none';
 }
+
+
+// === Zoom Controls ===
+(function(){
+  var ZOOM_KEY = 'tn51_game_zoom';
+  var ZOOM_STEP = 5;  // 5% per click
+  var ZOOM_MIN = 70;  // 70%
+  var ZOOM_MAX = 110; // 110%
+
+  function getZoomPercent(){
+    var saved = localStorage.getItem(ZOOM_KEY);
+    return saved ? parseInt(saved, 10) : 100;
+  }
+
+  function applyZoom(pct){
+    pct = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pct));
+    var scale = pct / 100;
+    document.documentElement.style.setProperty('--game-zoom', scale);
+    localStorage.setItem(ZOOM_KEY, pct);
+    var display = document.getElementById('zoomValueDisplay');
+    if(display) display.textContent = pct + '%';
+    return pct;
+  }
+
+  // Apply saved zoom on load
+  var currentZoom = applyZoom(getZoomPercent());
+
+  // Wire up buttons when they exist
+  function wireZoomButtons(){
+    var btnIn = document.getElementById('btnZoomIn');
+    var btnOut = document.getElementById('btnZoomOut');
+    var btnReset = document.getElementById('btnZoomReset');
+    if(!btnIn) return;
+
+    btnOut.addEventListener('click', function(){
+      currentZoom = applyZoom(currentZoom - ZOOM_STEP);
+    });
+    btnIn.addEventListener('click', function(){
+      currentZoom = applyZoom(currentZoom + ZOOM_STEP);
+    });
+    btnReset.addEventListener('click', function(){
+      currentZoom = applyZoom(100);
+    });
+
+    // Set initial display
+    var display = document.getElementById('zoomValueDisplay');
+    if(display) display.textContent = currentZoom + '%';
+  }
+
+  // Buttons might not exist yet (they're in the DOM already as part of the HTML)
+  if(document.getElementById('btnZoomIn')){
+    wireZoomButtons();
+  } else {
+    document.addEventListener('DOMContentLoaded', wireZoomButtons);
+  }
+})();
 
 // Game Settings popup
 let selectedMarksToWin = 7;
