@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>TN51 / T42 / Moon Dominoes V12.4</title>
+<title>TN51 / T42 / Moon Dominoes V12.5</title>
 <style>
   :root{
     --feltA:#1a8f37; --feltB:#0f6e2a; --feltC:#0a4f1d;
@@ -1418,6 +1418,19 @@
   <div class="settingsItem" id="menuRestart">Restart Game</div>
   <div class="settingsItem" id="menuHome">Home</div>
   <div class="settingsItem" id="menuChangeName">Change Name</div>
+  <div class="settingsDivider" id="devMenuDivider" style="display:none;"></div>
+  <div class="settingsItem" id="menuDevTools" style="display:none;">Developer Tools ▸</div>
+  <div id="devToolsSubmenu" style="display:none;padding:4px 8px 8px;">
+    <div class="settingsItem" id="menuDevTn51" style="font-size:12px;padding:6px 16px;">TN51 Layout</div>
+    <div class="settingsItem" id="menuDevT42" style="font-size:12px;padding:6px 16px;">T42 Layout</div>
+    <div class="settingsItem" id="menuDevMoon" style="font-size:12px;padding:6px 16px;">Moon Layout</div>
+    <div class="settingsItem" id="menuDevBoneyard" style="font-size:12px;padding:6px 16px;">Boneyard</div>
+    <div class="settingsItem" id="menuDevPipDetails" style="font-size:12px;padding:6px 16px;">Pip Details</div>
+    <div class="settingsItem" id="menuDevPipColors" style="font-size:12px;padding:6px 16px;">Pip Colors</div>
+    <div class="settingsItem" id="menuDevZIndex" style="font-size:12px;padding:6px 16px;">Z-Index</div>
+    <div class="settingsItem" id="menuDevDominoStyle" style="font-size:12px;padding:6px 16px;">Domino Style</div>
+    <div class="settingsItem" id="menuDevExportAll" style="font-size:12px;padding:6px 16px;">Export All</div>
+  </div>
   <div class="settingsDivider"></div>
   <div class="settingsItem" id="menuAbout">About</div>
 </div>
@@ -1432,7 +1445,7 @@
     </div>
     <div style="text-align:center;">
       <div style="font-size:24px;font-weight:800;color:#fff;margin-bottom:4px;">TN51 / TX42 Dominoes</div>
-      <div style="font-size:16px;font-weight:700;color:#60a5fa;margin-bottom:12px;" id="aboutVersion">V12.4</div>
+      <div style="font-size:16px;font-weight:700;color:#60a5fa;margin-bottom:12px;" id="aboutVersion">V12.5</div>
       <div style="font-size:12px;color:#9ca3af;line-height:1.6;">
         <div>Built: February 2026</div>
         <div>Game modes: Tennessee 51, Texas 42</div>
@@ -6415,7 +6428,7 @@ let mpMarksToWin = 7;            // Marks to win for MP game (host sets)
 let mpPreferredSeat = -1;         // Guest's preferred seat (-1 = auto)
 let mpHelloNonce = null;           // Unique nonce sent with hello, used to match seat_assign
 const MP_WS_URL = 'wss://tn51-tx42-relay.onrender.com';  // V10_122: PRODUCTION
-const MP_VERSION = 'V12.4';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
+const MP_VERSION = 'V12.5';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
 
 // ═══════════════════════════════════════════════════════════════
 // V10_FIX: Multiplayer Sync Fix Variables
@@ -24460,6 +24473,34 @@ document.getElementById('btnNelloDoublesOnly').addEventListener('click', () => {
 
 // V12.2: Built-in device presets
 var BUILTIN_DEVICE_PRESETS = {
+  "iPhone Old": {
+    "portrait": {
+      "tn51": {
+        "p1Scale": 0.95, "p1x": 0.88, "p1y": 0.85, "p1Spacing": 0.145,
+        "p2Scale": 0.35, "p2x": 0.134, "p2y": 0.60, "p2Spacing": 0.024,
+        "p3Scale": 0.35, "p3x": 0.134, "p3y": 0.55, "p3Spacing": 0.024,
+        "p4Scale": 0.35, "p4x": 0.356, "p4y": 0.40, "p4Spacing": 0.050,
+        "p5Scale": 0.35, "p5x": 0.86, "p5y": 0.55, "p5Spacing": 0.024,
+        "p6Scale": 0.35, "p6x": 0.86, "p6y": 0.60, "p6Spacing": 0.024,
+        "trickScale": 0.35,
+        "p2xOff": 0, "p3xOff": 0, "p5xOff": 0, "p6xOff": 0,
+        "topBarY": 0.04, "thBgY": 0.20, "thBgHeight": 0.18
+      },
+      "t42": {
+        "p1Scale": 0.82, "p1Spacing": 0.125, "p1x": 0.88, "p1y": 0.87,
+        "p2Scale": 0.52, "p2x": 0.09, "p2y": 0.62, "p2Spacing": 0.044,
+        "p3Scale": 0.52, "p3x": 0.235, "p3y": 0.42, "p3Spacing": 0.078,
+        "p4Scale": 0.52, "p4x": 0.905, "p4y": 0.62, "p4Spacing": 0.044,
+        "trickScale": 0.52,
+        "p1TrickX": 0.495, "p1TrickY": 0.70, "p2TrickX": 0.35, "p2TrickY": 0.62,
+        "p3TrickX": 0.495, "p3TrickY": 0.56, "p4TrickX": 0.63, "p4TrickY": 0.62,
+        "leadScale": 0.45, "leadX": 0.485, "leadY": 0.62,
+        "ind1x": 0.495, "ind1y": 0.77, "ind2x": 0.215, "ind2y": 0.62,
+        "ind3x": 0.495, "ind3y": 0.49, "ind4x": 0.775, "ind4y": 0.62,
+        "topBarY": 0.04, "thBgY": 0.20, "thBgHeight": 0.18
+      }
+    }
+  },
   "iPhone SE/8": {
     "portrait": {
       "tn51": {
@@ -25410,7 +25451,7 @@ if ('serviceWorker' in navigator) {
 .t42s-group span { font-size:11px;color:#fff;margin-left:6px; }
 .t42s-section { font-size:12px;font-weight:700;color:#4ecdc4;margin:12px 0 6px 0;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.15); }
 .t42s-section:first-child { margin-top:0; }
-#devTabsWrap { position:fixed; bottom:10px; left:0; right:0; z-index:900; display:none; height:30px; }
+#devTabsWrap { position:fixed; bottom:10px; left:0; right:0; z-index:900; display:none !important; height:30px; }
 #devTabsArrowL, #devTabsArrowR { position:absolute; top:0; width:24px; height:30px; z-index:901; background:rgba(0,0,0,0.8); color:#fff; border:none; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
 #devTabsArrowL { left:0; border-radius:0 6px 6px 0; }
 #devTabsArrowR { right:0; border-radius:6px 0 0 6px; }
@@ -25504,6 +25545,24 @@ if ('serviceWorker' in navigator) {
   if(_savedT42) Object.assign(T42_SETTINGS, _savedT42);
   const _savedTn51 = loadFromStorage(getTn51Key()) || loadFromStorage('tn51_tn51_layout');
   if(_savedTn51) Object.assign(TN51_SETTINGS, _savedTn51);
+
+  // V12.5: Apply topbar/trick history settings immediately after load
+  (function(){
+    var topbar = document.getElementById('topbar');
+    if(topbar && TN51_SETTINGS.topBarY) topbar.style.top = (TN51_SETTINGS.topBarY * 100) + '%';
+    var thBg = document.getElementById('trickHistoryBg');
+    if(thBg && TN51_SETTINGS.thBgY !== undefined){
+      thBg.style.setProperty('--th-top', (TN51_SETTINGS.thBgY * 100) + '%');
+    }
+    if(thBg && TN51_SETTINGS.thBgHeight !== undefined){
+      thBg.style.setProperty('--th-height', (TN51_SETTINGS.thBgHeight * 100) + '%');
+    }
+    var by2 = document.getElementById('boneyard2Container');
+    if(by2 && TN51_SETTINGS.thBgY !== undefined){
+      by2.style.setProperty('--th-top', (TN51_SETTINGS.thBgY * 100) + '%');
+      by2.style.setProperty('--th-height', (TN51_SETTINGS.thBgHeight * 100) + '%');
+    }
+  })();
 
   // Load dynamic pip settings
   const _savedFancyLine = loadFromStorage('tn51_fancy_line');
