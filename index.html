@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>TN51 / T42 / Moon Dominoes V12.3</title>
+<title>TN51 / T42 / Moon Dominoes V12.4</title>
 <style>
   :root{
     --feltA:#1a8f37; --feltB:#0f6e2a; --feltC:#0a4f1d;
@@ -1432,7 +1432,7 @@
     </div>
     <div style="text-align:center;">
       <div style="font-size:24px;font-weight:800;color:#fff;margin-bottom:4px;">TN51 / TX42 Dominoes</div>
-      <div style="font-size:16px;font-weight:700;color:#60a5fa;margin-bottom:12px;" id="aboutVersion">V12.3</div>
+      <div style="font-size:16px;font-weight:700;color:#60a5fa;margin-bottom:12px;" id="aboutVersion">V12.4</div>
       <div style="font-size:12px;color:#9ca3af;line-height:1.6;">
         <div>Built: February 2026</div>
         <div>Game modes: Tennessee 51, Texas 42</div>
@@ -6136,6 +6136,7 @@ let TN51_SETTINGS = {
   p6Scale: 0.393, p6x: 0.86, p6y: 0.627, p6Spacing: 0.027,
   trickScale: 0.393,
   p2xOff: 0, p3xOff: 0, p5xOff: 0, p6xOff: 0,
+  topBarY: 0, thBgY: 0.16, thBgHeight: 0.22,
 };
 
 function applyTn51Settings(){
@@ -6165,6 +6166,20 @@ function applyTn51Settings(){
     const sec = L.find(x => x.name === n);
     if(sec) sec.dominoes[0].scale = s.trickScale;
   });
+  // V12.4: Top bar offset and trick history backdrop
+  const topbar = document.getElementById('topbar');
+  if(topbar) topbar.style.top = (s.topBarY * 100) + '%';
+  const thBg = document.getElementById('trickHistoryBg');
+  if(thBg){
+    thBg.style.setProperty('--th-top', (s.thBgY * 100) + '%');
+    thBg.style.setProperty('--th-height', (s.thBgHeight * 100) + '%');
+  }
+  // Also update boneyard2Container which shares --th-* positioning
+  const by2 = document.getElementById('boneyard2Container');
+  if(by2){
+    by2.style.setProperty('--th-top', (s.thBgY * 100) + '%');
+    by2.style.setProperty('--th-height', (s.thBgHeight * 100) + '%');
+  }
   refreshLayout();
 }
 
@@ -6207,6 +6222,7 @@ let T42_SETTINGS = {
   ind2x: 0.215, ind2y: 0.65,
   ind3x: 0.495, ind3y: 0.505,
   ind4x: 0.775, ind4y: 0.65,
+  topBarY: 0, thBgY: 0.16, thBgHeight: 0.22,
 };
 
 // Ghost preview dominos for T42 Layout Settings
@@ -6399,7 +6415,7 @@ let mpMarksToWin = 7;            // Marks to win for MP game (host sets)
 let mpPreferredSeat = -1;         // Guest's preferred seat (-1 = auto)
 let mpHelloNonce = null;           // Unique nonce sent with hello, used to match seat_assign
 const MP_WS_URL = 'wss://tn51-tx42-relay.onrender.com';  // V10_122: PRODUCTION
-const MP_VERSION = 'V12.3';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
+const MP_VERSION = 'V12.4';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
 
 // ═══════════════════════════════════════════════════════════════
 // V10_FIX: Multiplayer Sync Fix Variables
@@ -25258,6 +25274,11 @@ if ('serviceWorker' in navigator) {
       <div class="t42s-group"><label>Y</label><input type="range" min="0.50" max="0.80" step="0.005" id="tn51s_p6y"><span id="tn51sv_p6y"></span></div>
       <div class="t42s-group"><label>Spacing</label><input type="range" min="0.01" max="0.06" step="0.001" id="tn51s_p6Spacing"><span id="tn51sv_p6Spacing"></span></div>
 
+      <div class="t42s-section">Top Bar &amp; Trick History</div>
+      <div class="t42s-group"><label>Top Bar Y</label><input type="range" min="0" max="0.15" step="0.005" id="tn51s_topBarY"><span id="tn51sv_topBarY"></span></div>
+      <div class="t42s-group"><label>Trick BG Y</label><input type="range" min="0.05" max="0.35" step="0.005" id="tn51s_thBgY"><span id="tn51sv_thBgY"></span></div>
+      <div class="t42s-group"><label>Trick BG Height</label><input type="range" min="0.10" max="0.40" step="0.005" id="tn51s_thBgHeight"><span id="tn51sv_thBgHeight"></span></div>
+
       <div class="t42s-section">Trick Area</div>
       <div class="t42s-group"><label>Trick Scale</label><input type="range" min="0.2" max="0.8" step="0.01" id="tn51s_trickScale"><span id="tn51sv_trickScale"></span></div>
 
@@ -25305,6 +25326,11 @@ if ('serviceWorker' in navigator) {
       <div class="t42s-group"><label>X</label><input type="range" min="0.65" max="0.97" step="0.005" id="t42s_p4x"><span id="t42sv_p4x"></span></div>
       <div class="t42s-group"><label>Y (Center)</label><input type="range" min="0.40" max="0.80" step="0.005" id="t42s_p4y"><span id="t42sv_p4y"></span></div>
       <div class="t42s-group"><label>Spacing</label><input type="range" min="0.02" max="0.08" step="0.001" id="t42s_p4Spacing"><span id="t42sv_p4Spacing"></span></div>
+
+      <div class="t42s-section">Top Bar &amp; Trick History</div>
+      <div class="t42s-group"><label>Top Bar Y</label><input type="range" min="0" max="0.15" step="0.005" id="t42s_topBarY"><span id="t42sv_topBarY"></span></div>
+      <div class="t42s-group"><label>Trick BG Y</label><input type="range" min="0.05" max="0.35" step="0.005" id="t42s_thBgY"><span id="t42sv_thBgY"></span></div>
+      <div class="t42s-group"><label>Trick BG Height</label><input type="range" min="0.10" max="0.40" step="0.005" id="t42s_thBgHeight"><span id="t42sv_thBgHeight"></span></div>
 
       <div class="t42s-section">Trick Area (Center)</div>
       <div class="t42s-group"><label>Trick Scale</label><input type="range" min="0.2" max="0.8" step="0.01" id="t42s_trickScale"><span id="t42sv_trickScale"></span></div>
@@ -27081,6 +27107,9 @@ if(!TN51_DEFAULTS.p2xOff) TN51_DEFAULTS.p2xOff = 0;
 if(!TN51_DEFAULTS.p3xOff) TN51_DEFAULTS.p3xOff = 0;
 if(!TN51_DEFAULTS.p5xOff) TN51_DEFAULTS.p5xOff = 0;
 if(!TN51_DEFAULTS.p6xOff) TN51_DEFAULTS.p6xOff = 0;
+if(TN51_DEFAULTS.topBarY === undefined) TN51_DEFAULTS.topBarY = 0;
+if(TN51_DEFAULTS.thBgY === undefined) TN51_DEFAULTS.thBgY = 0.16;
+if(TN51_DEFAULTS.thBgHeight === undefined) TN51_DEFAULTS.thBgHeight = 0.22;
 
   if(_tn51Btn) _tn51Btn.addEventListener('click', showTn51Settings);
   document.getElementById('btnCloseTn51Settings').addEventListener('click', hideTn51Settings);
