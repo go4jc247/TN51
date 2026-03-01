@@ -14180,6 +14180,8 @@ function showWidowSwap(){
 
     Promise.all(promises).then(function(){
       // handSprite flew to widow position — it becomes the new widowSprite
+      // V12.5: Save reference to old widow sprite before reassigning
+      var oldWidowEl = widowSprite;
       widowSprite = handSprite;
       widowSprite.id = 'widowSpriteEl';
       widowSprite._tile = session.moon_widow;
@@ -14222,6 +14224,12 @@ function showWidowSwap(){
         }
       }
       sprites[localSeat] = newSprites;
+
+      // V12.5: Remove old widow sprite (flew to hand pos, now replaced by fresh sprites)
+      if(oldWidowEl && oldWidowEl !== widowSprite){
+        if(oldWidowEl._shadow) oldWidowEl._shadow.remove();
+        oldWidowEl.remove();
+      }
 
       var lbl = document.getElementById('moonWidowLabel');
       if(lbl) lbl.textContent = 'Discard';
