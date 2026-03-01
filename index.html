@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>TN51 / T42 / Moon Dominoes V12.4</title>
+<title>TN51 / T42 / Moon Dominoes V12.5</title>
 <style>
   :root{
     --feltA:#1a8f37; --feltB:#0f6e2a; --feltC:#0a4f1d;
@@ -1453,7 +1453,7 @@
     </div>
     <div style="text-align:center;">
       <div style="font-size:24px;font-weight:800;color:#fff;margin-bottom:4px;">TN51 / TX42 Dominoes</div>
-      <div style="font-size:16px;font-weight:700;color:#60a5fa;margin-bottom:12px;" id="aboutVersion">V12.4</div>
+      <div style="font-size:16px;font-weight:700;color:#60a5fa;margin-bottom:12px;" id="aboutVersion">V12.5</div>
       <div style="font-size:12px;color:#9ca3af;line-height:1.6;">
         <div>Built: February 2026</div>
         <div>Game modes: Tennessee 51, Texas 42</div>
@@ -4456,7 +4456,7 @@ function choose_tile_ai(gameState, playerIndex, contract="NORMAL", returnRec=fal
   if(_dbg.enabled){
     const _earlyLed = !isLead ? gameState._led_suit_for_trick() : null;
     _dbg.seat = p;
-    _dbg.myTeam = p % 2;
+    _dbg.myTeam = GAME_MODE === 'MOON' ? p : (p % 2);
     _dbg.trickNum = gameState.trick_number;
     _dbg.isLead = isLead;
     _dbg.ledPip = _earlyLed === -1 ? 'TRUMP' : (_earlyLed !== null ? _earlyLed : null);
@@ -4489,6 +4489,9 @@ function choose_tile_ai(gameState, playerIndex, contract="NORMAL", returnRec=fal
   const isNello = contract === "NELLO";
   const maxPip = gameState.max_pip;
   const myTeam = GAME_MODE === 'MOON' ? p : (p % 2);
+  const isMoon = GAME_MODE === 'MOON';
+  const isSameTeam = (seat) => isMoon ? seat === p : (seat % 2) === myTeam;
+  const isOpponent = (seat) => seat !== p && !isSameTeam(seat);
   const trickNum = gameState.trick_number; // 0-indexed: how many tricks completed so far
   const totalTricks = gameState.hand_size || 6;
 
@@ -4514,7 +4517,7 @@ function choose_tile_ai(gameState, playerIndex, contract="NORMAL", returnRec=fal
     const winnerSeat = gameState._determine_trick_winner();
     currentWinner = winnerSeat;
     partnerWinning = GAME_MODE !== 'MOON' && (winnerSeat % 2) === myTeam && winnerSeat !== p;
-    if(isNello) bidderWinning = (winnerSeat % 2) !== myTeam;
+    if(isNello) bidderWinning = !isSameTeam(winnerSeat);
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -4532,7 +4535,7 @@ function choose_tile_ai(gameState, playerIndex, contract="NORMAL", returnRec=fal
   for(let s = 0; s < gameState.player_count; s++) playerPlays[s] = [];
 
   let trickIdx = 0;
-  for(let team = 0; team < 2; team++){
+  for(let team = 0; team < (gameState.tricks_team || []).length; team++){
     for(const record of (gameState.tricks_team[team] || [])){
       for(let seat = 0; seat < record.length; seat++){
         const t = record[seat];
@@ -4823,7 +4826,7 @@ function choose_tile_ai(gameState, playerIndex, contract="NORMAL", returnRec=fal
   // Also: if a player was off-suit and didn't trump in, they MIGHT be void in trump.
 
   // Scan completed tricks for trump-void signals
-  for(let team = 0; team < 2; team++){
+  for(let team = 0; team < (gameState.tricks_team || []).length; team++){
     for(const record of (gameState.tricks_team[team] || [])){
       // Find what was played in this trick
       const plays = [];
@@ -4909,7 +4912,7 @@ function choose_tile_ai(gameState, playerIndex, contract="NORMAL", returnRec=fal
 
         // Identify opponents who played trump in this trick (excluding us and the double/winner)
         const opponentsInTrick = trumpPlays.filter(tp =>
-          tp.seat !== p && tp.seat % 2 !== myTeam
+          tp.seat !== p && !isSameTeam(tp.seat)
         );
 
         if(opponentsInTrick.length > 0){
@@ -4985,7 +4988,7 @@ function choose_tile_ai(gameState, playerIndex, contract="NORMAL", returnRec=fal
   {
     const trumpReveals = {}; // seat → [{rank, trickIdx, tile}]
     let retroTrickIdx = 0;
-    for(let team = 0; team < 2; team++){
+    for(let team = 0; team < (gameState.tricks_team || []).length; team++){
       for(const record of (gameState.tricks_team[team] || [])){
         for(let seat = 0; seat < record.length; seat++){
           const t = record[seat];
@@ -5004,7 +5007,7 @@ function choose_tile_ai(gameState, playerIndex, contract="NORMAL", returnRec=fal
     // likely void.
     for(let s = 0; s < gameState.player_count; s++){
       if(s === p) continue;
-      if(s % 2 === myTeam) continue;
+      if(isSameTeam(s)) continue;
       if(trumpVoidConfirmed[s]) continue;
       const oppPlays = trumpReveals[s] || [];
       if(oppPlays.length === 0) continue;
@@ -5055,7 +5058,7 @@ function choose_tile_ai(gameState, playerIndex, contract="NORMAL", returnRec=fal
   // We have trump control if ALL opponents are void in trump (confirmed or highly likely)
   let opponentsVoidInTrump = true;
   for(let s = 0; s < gameState.player_count; s++){
-    if(s % 2 === myTeam) continue; // skip teammates
+    if(isSameTeam(s)) continue; // skip teammates
     if(!gameState.active_players.includes(s)) continue; // skip inactive
     if(!trumpVoidConfirmed[s] && trumpVoidLikely[s] < 0.8){
       opponentsVoidInTrump = false;
@@ -5072,7 +5075,7 @@ function choose_tile_ai(gameState, playerIndex, contract="NORMAL", returnRec=fal
   // Partners have trump = check if any partners still have trump tiles
   let partnersHaveTrump = false;
   for(let s = 0; s < gameState.player_count; s++){
-    if(s % 2 !== myTeam || s === p) continue;
+    if(!isSameTeam(s) || s === p) continue;
     if(!trumpVoidConfirmed[s] && trumpVoidLikely[s] < 0.5){
       // Partner might still have trump
       partnersHaveTrump = true;
@@ -5088,6 +5091,8 @@ function choose_tile_ai(gameState, playerIndex, contract="NORMAL", returnRec=fal
     // All remaining trumps are held by partners
     partnersHoldRemainingTrumps = true;
   }
+  // V12.5: Moon is individual — no partners exist
+  if(isMoon){ partnersHaveTrump = false; partnersHoldRemainingTrumps = false; }
 
   const weHaveTrumpControl = opponentsVoidInTrump && (trumpsInHand.length > 0 || partnersHaveTrump);
 
@@ -5099,7 +5104,7 @@ function choose_tile_ai(gameState, playerIndex, contract="NORMAL", returnRec=fal
       const voids = Array.from(voidIn[s]);
       const pLabel = (typeof seatToPlayer === 'function') ? ('P'+seatToPlayer(s)) : ('P'+(s+1));
       _dbg.voidTracking[pLabel] = {
-        team: s % 2 === myTeam ? 'ours' : 'opp',
+        team: isSameTeam(s) ? 'ours' : 'opp',
         voidSuits: voids,
         trumpVoidConfirmed: trumpVoidConfirmed[s],
         trumpVoidLikely: trumpVoidLikely[s]
@@ -5474,7 +5479,7 @@ function choose_tile_ai(gameState, playerIndex, contract="NORMAL", returnRec=fal
             // (they can still play and might win)
             let oppCanPlay = false;
             for(let s = 0; s < gameState.player_count; s++){
-              if(s % 2 === myTeam || !gameState.active_players.includes(s)) continue;
+              if(isSameTeam(s) || !gameState.active_players.includes(s)) continue;
               if(!voidIn[s].has(ledSuit)){ oppCanPlay = true; break; }
             }
             if(!oppCanPlay) score += 20; // great: opponents can't follow this suit
@@ -5563,7 +5568,7 @@ function choose_tile_ai(gameState, playerIndex, contract="NORMAL", returnRec=fal
           // NEW: Check if opponents are void in this suit (they'll have to play off-suit or trump)
           let oppsVoid = 0;
           for(let s = 0; s < gameState.player_count; s++){
-            if(s % 2 === myTeam || !gameState.active_players.includes(s)) continue;
+            if(isSameTeam(s) || !gameState.active_players.includes(s)) continue;
             if(voidIn[s].has(ledSuit)) oppsVoid++;
           }
           // If some opponents are void and might trump, that's dangerous
@@ -5580,7 +5585,7 @@ function choose_tile_ai(gameState, playerIndex, contract="NORMAL", returnRec=fal
 
         // ── offTracker: Catcher protection (opponent) / Misdirection (partner) ──
         if (offTracker && offTracker.trumpMode === 'PIP') {
-          const isBidderOpponent = (p % 2) !== offTracker.bidderTeam;
+          const isBidderOpponent = isMoon ? (offTracker.bidderTeam !== p) : ((p % 2) !== offTracker.bidderTeam);
           const suspicion = getOffSuspicion();
           if (suspicion && suspicion.length > 0) {
             const topSuspect = suspicion[0];
@@ -5768,7 +5773,7 @@ function choose_tile_ai(gameState, playerIndex, contract="NORMAL", returnRec=fal
       if(t && gameState._is_trump_tile(t)){
         const r = getTrumpRankNum(t);
         if(r > highestTrickTrump) highestTrickTrump = r;
-        if(seat % 2 !== myTeam) opponentHasTrumpInTrick = true;
+        if(!isSameTeam(seat)) opponentHasTrumpInTrick = true;
         else if(seat !== p) partnerHasTrumpInTrick = true;
       }
     }
@@ -6420,7 +6425,7 @@ let mpMarksToWin = 7;            // Marks to win for MP game (host sets)
 let mpPreferredSeat = -1;         // Guest's preferred seat (-1 = auto)
 let mpHelloNonce = null;           // Unique nonce sent with hello, used to match seat_assign
 const MP_WS_URL = 'wss://tn51-tx42-relay.onrender.com';  // V10_122: PRODUCTION
-const MP_VERSION = 'V12.4';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
+const MP_VERSION = 'V12.5';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
 
 // ═══════════════════════════════════════════════════════════════
 // V10_FIX: Multiplayer Sync Fix Variables
@@ -14273,27 +14278,27 @@ function aiWidowSwap(seat){
 
 // ===== MOON WIDOW ON-TABLE DISPLAY =====
 var MOON_SETTINGS = {
-  ind1x: 0.495, ind1y: 0.80,
-  ind2x: 0.215, ind2y: 0.65,
-  ind3x: 0.775, ind3y: 0.65,
-  p1HandScale: 1.071, p1HandX: 0.9, p1HandY: 0.9, p1HandSpacing: 0.13487,
-  p2HandScale: 0.393, p2HandX: 0.165, p2HandY: 0.600, p2HandSpacing: 0.0456,
-  p3HandScale: 0.393, p3HandX: 0.835, p3HandY: 0.600, p3HandSpacing: 0.0456,
+  ind1x: 0.495, ind1y: 0.8,
+  ind2x: 0.25, ind2y: 0.65,
+  ind3x: 0.75, ind3y: 0.65,
+  p1HandScale: 0.87, p1HandX: 0.895, p1HandY: 0.915, p1HandSpacing: 0.132,
+  p2HandScale: 0.695, p2HandX: 0.1, p2HandY: 0.65, p2HandSpacing: 0.049,
+  p3HandScale: 0.695, p3HandX: 0.905, p3HandY: 0.65, p3HandSpacing: 0.049,
   trickScale: 0.30,
-  thColSpacing: 0.10,
-  thRowSpacing: 0.025,
-  thBlockGap: 0.015,
+  thColSpacing: 0.103,
+  thRowSpacing: 0.022,
+  thBlockGap: 0.003,
   thBaseX: 0.12,
-  widowLabelY: -70,
+  widowLabelY: -30,
   widowHorizontal: true,
-  widowScale: 1.0,
-  widowSwapX: 0.50,
-  widowSwapY: 0.50,
+  widowScale: 1.27,
+  widowSwapX: 0.5,
+  widowSwapY: 0.655,
   widowSwapScale: 1.0,
-  trickHistoryX: 0.0,
-  trickHistoryY: 0.0,
-  bidPopupX: 0.50,
-  bidPopupY: 0.08
+  trickHistoryX: 0,
+  trickHistoryY: 13,
+  bidPopupX: 0.47,
+  bidPopupY: 0.485
 };
 (function loadMoonSettings(){
   try {
@@ -20816,7 +20821,7 @@ function renderBoneyard(){
 
   // Build played set from tricks_team
   if(session && session.game){
-    for(let team = 0; team < 2; team++){
+    for(let team = 0; team < (gameState.tricks_team || []).length; team++){
       for(const record of (session.game.tricks_team[team] || [])){
         for(let seat = 0; seat < record.length; seat++){
           const t = record[seat];
