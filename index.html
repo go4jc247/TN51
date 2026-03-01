@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>TN51 / T42 / Moon Dominoes V12.5</title>
+<title>TN51 / T42 / Moon Dominoes V12.6</title>
 <style>
   :root{
     --feltA:#1a8f37; --feltB:#0f6e2a; --feltC:#0a4f1d;
@@ -1419,15 +1419,21 @@
   <div class="settingsItem" id="menuMonteCarlo">Monte Carlo</div>
   <div class="settingsItem" id="menuMPLog" style="display:none;">Export MP Log</div>
   <div class="settingsDivider"></div>
-  <div class="settingsItem" id="menuSoundSettings" style="padding:8px 16px;font-weight:bold;">🔊 Sound Settings</div>
+  <div class="settingsItem" id="menuSoundSettings" style="padding:8px 16px;font-weight:bold;">⚙️ Game Settings</div>
   <div id="soundSettingsPanel" style="display:none;padding:4px 16px 8px;">
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-      <span style="font-size:11px;color:#aaa;width:32px;">SFX</span>
+      <span style="font-size:11px;color:#aaa;width:52px;">Speed</span>
+      <span style="font-size:14px;">⚡</span>
+      <input type="range" id="animSpeedSlider" min="25" max="300" step="25" value="200" style="flex:1;accent-color:#f59e0b;height:4px;">
+      <span id="animSpeedVal" style="font-size:10px;color:#aaa;width:32px;text-align:right;">200%</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+      <span style="font-size:11px;color:#aaa;width:52px;">SFX</span>
       <span id="sfxIcon" style="font-size:14px;cursor:pointer;">🔊</span>
       <input type="range" id="sfxVolume" min="0" max="200" value="70" style="flex:1;accent-color:#22c55e;height:4px;">
     </div>
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-      <span style="font-size:11px;color:#aaa;width:32px;">BGM</span>
+      <span style="font-size:11px;color:#aaa;width:52px;">BGM</span>
       <span id="bgmIcon" style="font-size:14px;cursor:pointer;">🔊</span>
       <input type="range" id="bgmVolume" min="0" max="100" value="50" style="flex:1;accent-color:#3b82f6;height:4px;">
     </div>
@@ -1453,7 +1459,7 @@
     </div>
     <div style="text-align:center;">
       <div style="font-size:24px;font-weight:800;color:#fff;margin-bottom:4px;">TN51 / TX42 Dominoes</div>
-      <div style="font-size:16px;font-weight:700;color:#60a5fa;margin-bottom:12px;" id="aboutVersion">V12.5</div>
+      <div style="font-size:16px;font-weight:700;color:#60a5fa;margin-bottom:12px;" id="aboutVersion">V12.6</div>
       <div style="font-size:12px;color:#9ca3af;line-height:1.6;">
         <div>Built: February 2026</div>
         <div>Game modes: Tennessee 51, Texas 42</div>
@@ -2693,6 +2699,9 @@ const DOMINO_STYLE = {
     HIGHLIGHTED: "#e8e8e8",
   },
 
+  // V12.6: Edge thickness (Z-separation between front/back panels in px)
+  EDGE_THICKNESS: 20,
+
   // INVALID STATE - opacity for pips and center line when tile is invalid/illegal
   INVALID_OPACITY: 0.35,
 
@@ -2754,7 +2763,7 @@ const DOMINO_STYLE = {
 
 // SPEED MULTIPLIER - Affects all animation timings
 // 1 = normal speed, 2 = 2x faster, 0.5 = half speed
-const SPEED_MULTIPLIER = 2;
+var SPEED_MULTIPLIER = 2;
 
 const ANIM = {
   // Main animation durations (will be divided by SPEED_MULTIPLIER)
@@ -2771,6 +2780,22 @@ const ANIM = {
   // Easing
   EASING: 'ease-in-out'                            // Animation easing function
 };
+
+// V12.6: Animation speed control
+var ANIM_BASE = { PLAY_DURATION:400, FLIP_DURATION:300, COLLECT_DURATION:350, HAND_RECENTER_DURATION:250, HAND_RECENTER_DELAY:150, COLLECT_STAGGER:120, OPPONENT_PLAY_DELAY:300 };
+function updateAnimSpeed(pct){
+  var mult = Math.max(0.25, pct / 100);
+  SPEED_MULTIPLIER = mult;
+  ANIM.PLAY_DURATION = ANIM_BASE.PLAY_DURATION / mult;
+  ANIM.FLIP_DURATION = ANIM_BASE.FLIP_DURATION / mult;
+  ANIM.COLLECT_DURATION = ANIM_BASE.COLLECT_DURATION / mult;
+  ANIM.HAND_RECENTER_DURATION = ANIM_BASE.HAND_RECENTER_DURATION / mult;
+  ANIM.HAND_RECENTER_DELAY = ANIM_BASE.HAND_RECENTER_DELAY / mult;
+  ANIM.COLLECT_STAGGER = ANIM_BASE.COLLECT_STAGGER / mult;
+  ANIM.OPPONENT_PLAY_DELAY = ANIM_BASE.OPPONENT_PLAY_DELAY / mult;
+  try{ localStorage.setItem('tn51_anim_speed', pct); }catch(e){}
+}
+(function(){ try{ var s=localStorage.getItem('tn51_anim_speed'); updateAnimSpeed(s?parseInt(s):200); }catch(e){ updateAnimSpeed(200); } })();
 
 /******************************************************************************
  * GAME ENGINE - Core game logic from Tennessee 51 v18
@@ -3494,7 +3519,7 @@ function evaluateHandForBid(hand) {
   const doubles = [];
   const blanks = [];
   const maxBid = GAME_MODE === 'MOON' ? 7 : (GAME_MODE === 'T42' ? 42 : 51);
-  const minBid = GAME_MODE === 'MOON' ? 1 : (GAME_MODE === 'T42' ? 30 : 34);
+  const minBid = GAME_MODE === 'MOON' ? 4 : (GAME_MODE === 'T42' ? 30 : 34);
   const midBid = GAME_MODE === 'MOON' ? 4 : (GAME_MODE === 'T42' ? 36 : 39);
   const maxPip = session.game.max_pip;
 
@@ -6425,7 +6450,7 @@ let mpMarksToWin = 7;            // Marks to win for MP game (host sets)
 let mpPreferredSeat = -1;         // Guest's preferred seat (-1 = auto)
 let mpHelloNonce = null;           // Unique nonce sent with hello, used to match seat_assign
 const MP_WS_URL = 'wss://tn51-tx42-relay.onrender.com';  // V10_122: PRODUCTION
-const MP_VERSION = 'V12.5';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
+const MP_VERSION = 'V12.6';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
 
 // ═══════════════════════════════════════════════════════════════
 // V10_FIX: Multiplayer Sync Fix Variables
@@ -12244,7 +12269,7 @@ let biddingState = null;
  * BIDDING SYSTEM - Slider-based bidding with free range 34-51
  ******************************************************************************/
 
-let currentBidSelection = GAME_MODE === 'MOON' ? 1 : (GAME_MODE === 'T42' ? 30 : 34); // numeric value or 'Pass' or '2x' or 'Moon' etc
+let currentBidSelection = GAME_MODE === 'MOON' ? 4 : (GAME_MODE === 'T42' ? 30 : 34); // numeric value or 'Pass' or '2x' or 'Moon' etc
 let bidMode = 'range'; // 'pass', 'range', '2x', or multiplier like '3x'
 
 function initBiddingRound() {
@@ -12268,7 +12293,7 @@ function initBiddingRound() {
     biddingState.bidderOrder.push((firstBidder + i) % _pc);  // Clockwise order
   }
 
-  currentBidSelection = GAME_MODE === 'MOON' ? 1 : (GAME_MODE === 'T42' ? 30 : 34);
+  currentBidSelection = GAME_MODE === 'MOON' ? 4 : (GAME_MODE === 'T42' ? 30 : 34);
   bidMode = 'range';
 }
 
@@ -12278,7 +12303,7 @@ function setupBidSlider() {
   const twoxNotch = document.getElementById('bid2xNotch');
 
   // Set slider min based on current high bid
-  const _baseBid = GAME_MODE === 'MOON' ? 1 : (GAME_MODE === 'T42' ? 30 : 34);
+  const _baseBid = GAME_MODE === 'MOON' ? 4 : (GAME_MODE === 'T42' ? 30 : 34);
   const minBid = Math.max(_baseBid, (biddingState ? biddingState.highBid + 1 : _baseBid));
   slider.min = minBid;
   slider.max = GAME_MODE === 'MOON' ? 7 : (GAME_MODE === 'T42' ? 42 : 51);
@@ -12467,7 +12492,7 @@ function updateBidButton(){
   const btn = document.getElementById('btnBidConfirm');
   if(!btn) return;
   const maxBid = GAME_MODE === 'MOON' ? 7 : (GAME_MODE === 'T42' ? 42 : 51);
-  const baseBid = GAME_MODE === 'MOON' ? 1 : (GAME_MODE === 'T42' ? 30 : 34);
+  const baseBid = GAME_MODE === 'MOON' ? 4 : (GAME_MODE === 'T42' ? 30 : 34);
 
   if(currentBidSelection === 'Pass'){
     btn.textContent = 'Pass';
@@ -15207,9 +15232,20 @@ function makeSprite(tile){
     drawPlainSlab(cvs[2].getContext("2d"), w, h, highlighted);  // Back
     drawPlainSlab(cvs[3].getContext("2d"), w, h, highlighted);  // Inside
   }
+  // V12.6: Update edge strip color based on highlight state
+  function updateEdgeColor(){
+    var edgeCol = el._highlighted ? (DOMINO_STYLE.EDGE.HIGHLIGHTED||'#e8e8e8') : (DOMINO_STYLE.EDGE.NORMAL||'#d7d7d7');
+    edge.style.background = edgeCol;
+    edge.style.borderColor = edgeCol;
+  }
   // Expose for live style updates
-  el.redrawCanvases = redrawCanvases;
+  el.redrawCanvases = function(){ redrawCanvases(); updateEdgeColor(); };
+  el.updateEdgeThickness = function(){
+    // Force re-apply rotY to recalculate edge sizing
+    el.setRotY(el._pose ? el._pose.ry : 0);
+  };
   redrawCanvases();
+  updateEdgeColor();
 
   // Method to update domino state and redraw
   el.setState = (highlighted, valid) => {
@@ -15234,7 +15270,7 @@ function makeSprite(tile){
       if(inFlip){ stack.appendChild(panelA); stack.appendChild(panelB); }
       else { stack.appendChild(panelB); stack.appendChild(panelA); }
     }
-    const zSep=20;
+    const zSep=DOMINO_STYLE.EDGE_THICKNESS||20;
     const zA=inFlip?-zSep:zSep, zB=inFlip?zSep:-zSep;
     panelA.style.transform=`translateZ(${zA}px) rotateY(${deg}deg)`;
     panelB.style.transform=`translateZ(${zB}px) rotateY(${deg}deg)`;
@@ -21944,6 +21980,20 @@ document.getElementById('menuSoundSettings').addEventListener('click', function(
 });
 
 // SFX volume
+// V12.6: Animation speed slider
+(function(){
+  var slider = document.getElementById('animSpeedSlider');
+  var valSpan = document.getElementById('animSpeedVal');
+  if(slider){
+    var saved = localStorage.getItem('tn51_anim_speed');
+    if(saved){ slider.value = parseInt(saved); if(valSpan) valSpan.textContent = saved + '%'; }
+    slider.addEventListener('input', function(){
+      var pct = parseInt(this.value);
+      updateAnimSpeed(pct);
+      if(valSpan) valSpan.textContent = pct + '%';
+    });
+  }
+})();
 document.getElementById('sfxVolume').addEventListener('input', function(){
   SFX.setSfxVolume(parseInt(this.value) / 100);
 });
@@ -23546,7 +23596,7 @@ document.getElementById('btnBidConfirm').addEventListener('click', () => {
   }
 
   // Check if current bid is valid (above high bid or in multiplier mode)
-  const minRequired = biddingState ? biddingState.highBid + 1 : (GAME_MODE === 'MOON' ? 1 : (GAME_MODE === 'T42' ? 30 : 34));
+  const minRequired = biddingState ? biddingState.highBid + 1 : (GAME_MODE === 'MOON' ? 4 : (GAME_MODE === 'T42' ? 30 : 34));
   const numVal = typeof currentBidSelection === 'number' ? currentBidSelection : parseInt(currentBidSelection);
 
   if(bidMode === 'range' && numVal < minRequired){
@@ -26025,8 +26075,15 @@ if ('serviceWorker' in navigator) {
 
       // Edge colors
       _dsHeader('Edge Colors');
-      _dsColorRow('Normal', function(){ return DOMINO_STYLE.EDGE.NORMAL; }, function(v){ DOMINO_STYLE.EDGE.NORMAL = v; });
-      _dsColorRow('Highlighted', function(){ return DOMINO_STYLE.EDGE.HIGHLIGHTED; }, function(v){ DOMINO_STYLE.EDGE.HIGHLIGHTED = v; });
+      _dsColorRow('Normal', function(){ return DOMINO_STYLE.EDGE.NORMAL; }, function(v){ DOMINO_STYLE.EDGE.NORMAL = v; _updateAllEdgeColors(); });
+      _dsColorRow('Highlighted', function(){ return DOMINO_STYLE.EDGE.HIGHLIGHTED; }, function(v){ DOMINO_STYLE.EDGE.HIGHLIGHTED = v; _updateAllEdgeColors(); });
+
+      // V12.6: Edge thickness
+      _dsHeader('Edge Thickness');
+      _dsSliderRow('Panel Separation', function(){ return DOMINO_STYLE.EDGE_THICKNESS; }, function(v){
+        DOMINO_STYLE.EDGE_THICKNESS = v;
+        _updateAllEdgeThickness();
+      }, 0, 60, 1);
 
       // Border & Bevel
       _dsHeader('Border & Bevel');
@@ -26057,6 +26114,18 @@ if ('serviceWorker' in navigator) {
       document.body.appendChild(dsPanel);
     }
 
+    // V12.6: Update edge colors and thickness on all visible sprites
+    function _updateAllEdgeColors(){
+      document.querySelectorAll('#spriteLayer .dominoSprite').forEach(function(el){
+        if(el.redrawCanvases) el.redrawCanvases();
+      });
+    }
+    function _updateAllEdgeThickness(){
+      document.querySelectorAll('#spriteLayer .dominoSprite').forEach(function(el){
+        if(el.updateEdgeThickness) el.updateEdgeThickness();
+      });
+    }
+
     function _rgbaToHex(rgba){
       if(!rgba || rgba.startsWith('#')) return rgba || '#ffffff';
       var m = rgba.match(/[\d.]+/g);
@@ -26075,6 +26144,7 @@ if ('serviceWorker' in navigator) {
           BORDER_WIDTH: DOMINO_STYLE.BORDER_WIDTH,
           BEVEL_OPACITY: DOMINO_STYLE.BEVEL_OPACITY,
           BEVEL_WIDTH: DOMINO_STYLE.BEVEL_WIDTH,
+          EDGE_THICKNESS: DOMINO_STYLE.EDGE_THICKNESS,
           INVALID_OPACITY: DOMINO_STYLE.INVALID_OPACITY,
           sizeOffset: window._dsSizeOffset || 0,
           spacingOffset: window._dsSpacingOffset || 0
@@ -26095,6 +26165,7 @@ if ('serviceWorker' in navigator) {
         if(d.BORDER_WIDTH !== undefined) DOMINO_STYLE.BORDER_WIDTH = d.BORDER_WIDTH;
         if(d.BEVEL_OPACITY !== undefined) DOMINO_STYLE.BEVEL_OPACITY = d.BEVEL_OPACITY;
         if(d.BEVEL_WIDTH !== undefined) DOMINO_STYLE.BEVEL_WIDTH = d.BEVEL_WIDTH;
+        if(d.EDGE_THICKNESS !== undefined) DOMINO_STYLE.EDGE_THICKNESS = d.EDGE_THICKNESS;
         if(d.INVALID_OPACITY !== undefined) DOMINO_STYLE.INVALID_OPACITY = d.INVALID_OPACITY;
         if(d.sizeOffset){
           window._dsSizeOffset = d.sizeOffset;
