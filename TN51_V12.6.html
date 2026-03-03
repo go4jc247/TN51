@@ -39,7 +39,7 @@
   #viewportWrapper{
     position:fixed;
     inset:0;
-    background: var(--feltC, #0a4f1d);
+    background:#000;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -1408,6 +1408,7 @@
   <div class="settingsItem" id="menuResumeGame" style="display:none;">Resume Saved Game</div>
   <div class="settingsItem" id="menuNewHand">New Hand (Random)</div>
   <div class="settingsItem" id="menuPassPlay">Pass & Play: OFF</div>
+  <div class="settingsItem" id="menuMultiplayer">Multiplayer</div>
   <div class="settingsItem" id="menuHint">Hint: OFF</div>
   <div class="settingsItem" id="menuBones">Bones</div>
   <div class="settingsDivider"></div>
@@ -1439,23 +1440,6 @@
     <div id="bgmTrackList" style="max-height:120px;overflow-y:auto;border-top:1px solid #333;padding-top:4px;margin-top:2px;">
       <div style="color:#888;font-size:11px;">Scanning for music...</div>
     </div>
-    <div style="border-top:1px solid #333;padding-top:6px;margin-top:6px;">
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-        <span style="font-size:11px;color:#aaa;width:80px;">Letterbox</span>
-        <div id="letterboxToggle" style="position:relative;width:40px;height:22px;background:rgba(34,197,94,0.8);border-radius:11px;cursor:pointer;transition:background 0.2s;">
-          <div id="letterboxKnob" style="position:absolute;top:2px;left:20px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>
-        </div>
-        <span id="letterboxLabel" style="font-size:10px;color:#aaa;">ON</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-        <span style="font-size:11px;color:#aaa;width:80px;">Game Logs</span>
-        <div id="mpLogToggle" style="position:relative;width:40px;height:22px;background:rgba(255,255,255,0.2);border-radius:11px;cursor:pointer;transition:background 0.2s;">
-          <div id="mpLogKnob" style="position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>
-        </div>
-        <span id="mpLogLabel" style="font-size:10px;color:#aaa;">OFF</span>
-      </div>
-      <div style="font-size:9px;color:#666;margin-top:2px;">Game Logs controls visibility of Game Log, AI Log, and Export MP Log in multiplayer.</div>
-    </div>
   </div>
   <div class="settingsDivider"></div>
   <div class="settingsItem" id="menuRestart">Restart Game</div>
@@ -1475,7 +1459,7 @@
     </div>
     <div style="text-align:center;">
       <div style="font-size:24px;font-weight:800;color:#fff;margin-bottom:4px;">TN51 / TX42 Dominoes</div>
-      <div style="font-size:16px;font-weight:700;color:#60a5fa;margin-bottom:12px;" id="aboutVersion">V12.10.1</div>
+      <div style="font-size:16px;font-weight:700;color:#60a5fa;margin-bottom:12px;" id="aboutVersion">V12.6</div>
       <div style="font-size:12px;color:#9ca3af;line-height:1.6;">
         <div>Built: February 2026</div>
         <div>Game modes: Tennessee 51, Texas 42</div>
@@ -1613,7 +1597,7 @@
       </div>
       <div id="mcMain">
         <div style="margin-bottom:10px;font-size:12px;color:rgba(255,255,255,0.8);">
-          Tap your tiles in the order you want to lead them. Select ALL tiles for full simulation, or select SOME tiles for control analysis (stops when control is lost).
+          Tap your tiles in the order you want to lead them. The simulation will test how often your bid makes.
         </div>
         <div id="mcTileSelect" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:12px;"></div>
         <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;">
@@ -2745,7 +2729,7 @@ const DOMINO_STYLE = {
   BEVEL_WIDTH: 2,
 
   // DYNAMIC PIPS - ring, highlights, gradient (toggled via menu)
-  PIPFX_ENABLED: true,
+  PIPFX_ENABLED: false,
   PIPFX_RING_WIDTH_RATIO: 0.34,
   PIPFX_RING_OPACITY: 0.06,
   PIPFX_HI1_OPACITY: 0.33,
@@ -2760,7 +2744,7 @@ const DOMINO_STYLE = {
   PIPFX_GRADIENT: true,
 
   // FANCY CENTER LINE (toggled via menu)
-  FANCY_LINE_ENABLED: true,
+  FANCY_LINE_ENABLED: false,
   FANCY_LINE_COLOR: "rgba(0,0,0,0.90)",
   CENTER_LINE_HI_COLOR: "rgba(255,255,255,1)",
   CENTER_LINE_HI_OPACITY: 0.45,
@@ -6171,7 +6155,7 @@ function applyMoonSettings(){
     var blkGap = s.thBlockGap || 0.015;
     var baseX = s.thBaseX || 0.12;
     var baseY = 0.05;
-    var thScale = s.thScale || s.trickScale || 0.30;
+    var thScale = s.trickScale || 0.30;
     var idx = 0;
     for(var blk = 0; blk < 3; blk++){
       var blockBaseY = baseY + blk * (3 * rowSp + blkGap);
@@ -6203,25 +6187,6 @@ let TN51_SETTINGS = {
   p6Scale: 0.393, p6x: 0.86, p6y: 0.627, p6Spacing: 0.027,
   trickScale: 0.393,
   p2xOff: 0, p3xOff: 0, p5xOff: 0, p6xOff: 0,
-  // V12.9.4: Trick positions (per-player played domino X/Y)
-  p1TrickX: 0.495, p1TrickY: 0.678,
-  p2TrickX: 0.380, p2TrickY: 0.639,
-  p3TrickX: 0.380, p3TrickY: 0.561,
-  p4TrickX: 0.495, p4TrickY: 0.522,
-  p5TrickX: 0.610, p5TrickY: 0.561,
-  p6TrickX: 0.610, p6TrickY: 0.639,
-  // V12.9.4: Lead domino position
-  leadScale: 0.393, leadX: 0.495, leadY: 0.600,
-  // V12.9.4: Player indicator positions
-  ind1x: 0.50, ind1y: 0.72,
-  ind2x: 0.32, ind2y: 0.68,
-  ind3x: 0.32, ind3y: 0.52,
-  ind4x: 0.50, ind4y: 0.47,
-  ind5x: 0.68, ind5y: 0.52,
-  ind6x: 0.68, ind6y: 0.68,
-  // V12.9.5: Trick history layout
-  thScale: 0.393, thBaseX: 0.106, thBaseY: 0.197,
-  thRowSpacing: 0.1111, thColSpacing: 0.0311,
 };
 
 function applyTn51Settings(){
@@ -6233,59 +6198,25 @@ function applyTn51Settings(){
   if(p1h){ for(let i = 0; i < p1h.dominoes.length; i++){ p1h.dominoes[i].xN = s.p1x - i * s.p1Spacing; p1h.dominoes[i].yN = s.p1y; p1h.dominoes[i].scale = s.p1Scale; }}
   // P2 Hand (bottom-left, diagonal 240°)
   const p2h = L.find(x => x.name === 'Player_2_Hand');
-  if(p2h){ for(let i = 0; i < p2h.dominoes.length; i++){ p2h.dominoes[i].xN = s.p2x + i * s.p2Spacing + i * (s.p2xOff || 0); p2h.dominoes[i].yN = s.p2y + i * s.p2Spacing; p2h.dominoes[i].scale = s.p2Scale; }}
+  if(p2h){ for(let i = 0; i < p2h.dominoes.length; i++){ p2h.dominoes[i].xN = s.p2x + i * s.p2Spacing; p2h.dominoes[i].yN = s.p2y + i * s.p2Spacing; p2h.dominoes[i].scale = s.p2Scale; }}
   // P3 Hand (top-left, diagonal 120°)
   const p3h = L.find(x => x.name === 'Player_3_Hand');
-  if(p3h){ for(let i = 0; i < p3h.dominoes.length; i++){ p3h.dominoes[i].xN = s.p3x + i * s.p3Spacing + i * (s.p3xOff || 0); p3h.dominoes[i].yN = s.p3y - i * s.p3Spacing; p3h.dominoes[i].scale = s.p3Scale; }}
+  if(p3h){ for(let i = 0; i < p3h.dominoes.length; i++){ p3h.dominoes[i].xN = s.p3x + i * s.p3Spacing; p3h.dominoes[i].yN = s.p3y - i * s.p3Spacing; p3h.dominoes[i].scale = s.p3Scale; }}
   // P4 Hand (top, horizontal, left-to-right)
   const p4h = L.find(x => x.name === 'Player_4_Hand');
   if(p4h){ for(let i = 0; i < p4h.dominoes.length; i++){ p4h.dominoes[i].xN = s.p4x + i * s.p4Spacing; p4h.dominoes[i].yN = s.p4y; p4h.dominoes[i].scale = s.p4Scale; }}
   // P5 Hand (top-right, diagonal 60°)
   const p5h = L.find(x => x.name === 'Player_5_Hand');
-  if(p5h){ for(let i = 0; i < p5h.dominoes.length; i++){ p5h.dominoes[i].xN = s.p5x - i * s.p5Spacing - i * (s.p5xOff || 0); p5h.dominoes[i].yN = s.p5y - i * s.p5Spacing; p5h.dominoes[i].scale = s.p5Scale; }}
+  if(p5h){ for(let i = 0; i < p5h.dominoes.length; i++){ p5h.dominoes[i].xN = s.p5x - i * s.p5Spacing; p5h.dominoes[i].yN = s.p5y - i * s.p5Spacing; p5h.dominoes[i].scale = s.p5Scale; }}
   // P6 Hand (bottom-right, diagonal 300°)
   const p6h = L.find(x => x.name === 'Player_6_Hand');
-  if(p6h){ for(let i = 0; i < p6h.dominoes.length; i++){ p6h.dominoes[i].xN = s.p6x - i * s.p6Spacing - i * (s.p6xOff || 0); p6h.dominoes[i].yN = s.p6y + i * s.p6Spacing; p6h.dominoes[i].scale = s.p6Scale; }}
-  // V12.9.4: Played dominos — full X/Y + scale control
-  const _tn51TrickNames = ['Player_1_Played_Domino','Player_2_Played_Domino','Player_3_Played_Domino','Player_4_Played_Domino','Player_5_Played_Domino','Player_6_Played_Domino'];
-  const _tn51TrickKeys = [
-    {x:'p1TrickX',y:'p1TrickY'},{x:'p2TrickX',y:'p2TrickY'},{x:'p3TrickX',y:'p3TrickY'},
-    {x:'p4TrickX',y:'p4TrickY'},{x:'p5TrickX',y:'p5TrickY'},{x:'p6TrickX',y:'p6TrickY'}
-  ];
-  for(let ti=0;ti<6;ti++){
-    const sec = L.find(x => x.name === _tn51TrickNames[ti]);
-    if(sec){ sec.dominoes[0].xN = s[_tn51TrickKeys[ti].x]; sec.dominoes[0].yN = s[_tn51TrickKeys[ti].y]; sec.dominoes[0].scale = s.trickScale; }
-  }
-  // V12.9.4: Lead domino position + scale
-  const _tn51Lead = L.find(x => x.name === 'Lead_Domino');
-  if(_tn51Lead){ _tn51Lead.dominoes[0].xN = s.leadX; _tn51Lead.dominoes[0].yN = s.leadY; _tn51Lead.dominoes[0].scale = s.leadScale; }
-  // V12.9.4: Sync PLACEHOLDER_CONFIG
-  PLACEHOLDER_CONFIG.players[1].xN = s.p1TrickX; PLACEHOLDER_CONFIG.players[1].yN = s.p1TrickY;
-  PLACEHOLDER_CONFIG.players[2].xN = s.p2TrickX; PLACEHOLDER_CONFIG.players[2].yN = s.p2TrickY;
-  PLACEHOLDER_CONFIG.players[3].xN = s.p3TrickX; PLACEHOLDER_CONFIG.players[3].yN = s.p3TrickY;
-  PLACEHOLDER_CONFIG.players[4].xN = s.p4TrickX; PLACEHOLDER_CONFIG.players[4].yN = s.p4TrickY;
-  PLACEHOLDER_CONFIG.players[5].xN = s.p5TrickX; PLACEHOLDER_CONFIG.players[5].yN = s.p5TrickY;
-  PLACEHOLDER_CONFIG.players[6].xN = s.p6TrickX; PLACEHOLDER_CONFIG.players[6].yN = s.p6TrickY;
-  PLACEHOLDER_CONFIG.lead.xN = s.leadX; PLACEHOLDER_CONFIG.lead.yN = s.leadY;
-  // V12.9.5: Rebuild Trick_History from settings
-  const _tn51TH = L.find(x => x.name === 'Trick_History');
-  if(_tn51TH){
-    var _thIdx = 0;
-    for(var _thR = 0; _thR < 8; _thR++){
-      for(var _thC = 0; _thC < 6; _thC++){
-        if(_tn51TH.dominoes[_thIdx]){
-          _tn51TH.dominoes[_thIdx].xN = s.thBaseX + _thR * s.thRowSpacing;
-          _tn51TH.dominoes[_thIdx].yN = s.thBaseY + _thC * s.thColSpacing;
-          _tn51TH.dominoes[_thIdx].scale = s.thScale;
-        }
-        _thIdx++;
-      }
-    }
-  }
+  if(p6h){ for(let i = 0; i < p6h.dominoes.length; i++){ p6h.dominoes[i].xN = s.p6x - i * s.p6Spacing; p6h.dominoes[i].yN = s.p6y + i * s.p6Spacing; p6h.dominoes[i].scale = s.p6Scale; }}
+  // Played dominos — use trickScale
+  ['Player_1_Played_Domino','Player_2_Played_Domino','Player_3_Played_Domino','Player_4_Played_Domino','Player_5_Played_Domino','Player_6_Played_Domino'].forEach(n => {
+    const sec = L.find(x => x.name === n);
+    if(sec) sec.dominoes[0].scale = s.trickScale;
+  });
   refreshLayout();
-  createPlaceholders();
-  positionPlayerIndicators();
-  if(typeof repositionTrickHistorySprites === 'function') repositionTrickHistorySprites();
 }
 
 let T42_SETTINGS = {
@@ -6327,9 +6258,6 @@ let T42_SETTINGS = {
   ind2x: 0.215, ind2y: 0.65,
   ind3x: 0.495, ind3y: 0.505,
   ind4x: 0.775, ind4y: 0.65,
-  // V12.9.5: Trick history layout
-  thScale: 0.393, thBaseX: 0.106, thBaseY: 0.2281,
-  thRowSpacing: 0.1111, thColSpacing: 0.0311,
 };
 
 // Ghost preview dominos for T42 Layout Settings
@@ -6380,39 +6308,6 @@ function showT42GhostDominos(){
     document.getElementById('tableMain').appendChild(leadGhost);
     _t42GhostSprites.push(leadGhost);
   }
-  // V12.9.5: Indicator position ghosts
-  for(let _ip = 1; _ip <= 4; _ip++){
-    const _ix = T42_SETTINGS['ind'+_ip+'x'];
-    const _iy = T42_SETTINGS['ind'+_ip+'y'];
-    const _ipx = normToPx(_ix, _iy);
-    const _indG = document.createElement('div');
-    _indG.style.cssText = 'position:absolute;width:28px;height:28px;border-radius:50%;background:rgba(96,165,250,0.25);border:1px solid rgba(96,165,250,0.5);pointer-events:none;z-index:50;text-align:center;line-height:28px;font-size:10px;color:rgba(96,165,250,0.7);';
-    _indG.style.left = (_ipx.x - 14) + 'px';
-    _indG.style.top = (_ipx.y - 14) + 'px';
-    _indG.textContent = 'P' + _ip;
-    document.getElementById('tableMain').appendChild(_indG);
-    _t42GhostSprites.push(_indG);
-  }
-  // V12.9.6: Trick history — full domino sprites at ALL positions (double blanks)
-  const _t42ThSec = getActiveLayout().sections.find(s => s.name === 'Trick_History');
-  if(_t42ThSec){
-    for(let _gIdx = 0; _gIdx < _t42ThSec.dominoes.length; _gIdx++){
-      const _gd = _t42ThSec.dominoes[_gIdx];
-      if(!_gd) continue;
-      const _thSprite = makeSprite([0,0]);
-      const _gpx = normToPx(_gd.xN, _gd.yN);
-      _thSprite.setPose({x: _gpx.x - 28, y: _gpx.y - 56, s: _gd.scale, rz: _gd.rotZ, ry: _gd.rotY});
-      _thSprite.style.opacity = '0.3';
-      _thSprite.style.pointerEvents = 'none';
-      if(_thSprite._shadow) _thSprite._shadow.style.opacity = '0.1';
-      sprLayer.appendChild(_thSprite);
-      if(_thSprite._shadow){
-        const _shL = document.getElementById('shadowLayer');
-        if(_shL) _shL.appendChild(_thSprite._shadow);
-      }
-      _t42GhostSprites.push(_thSprite);
-    }
-  }
 }
 
 function removeT42GhostDominos(){
@@ -6427,197 +6322,6 @@ function removeT42GhostDominos(){
 function refreshT42Ghosts(){
   // Refresh ghost positions after slider change
   showT42GhostDominos();
-}
-
-// V12.9.4: Ghost preview dominos for TN51 Layout Settings
-var _tn51GhostSprites = [];
-var _tn51GhostTimer = null;
-
-function showTN51GhostDominos(){
-  removeTN51GhostDominos();
-  if(GAME_MODE !== 'TN51') return;
-  const sprLayer = document.getElementById('spriteLayer');
-  if(!sprLayer) return;
-  const sampleTiles = [[6,6],[5,3],[4,2],[6,1],[3,0],[5,5]];
-  const positions = [
-    {name:'Player_1_Played_Domino'}, {name:'Player_2_Played_Domino'},
-    {name:'Player_3_Played_Domino'}, {name:'Player_4_Played_Domino'},
-    {name:'Player_5_Played_Domino'}, {name:'Player_6_Played_Domino'}
-  ];
-  for(let i = 0; i < 6; i++){
-    const section = getActiveLayout().sections.find(s => s.name === positions[i].name);
-    if(!section || !section.dominoes[0]) continue;
-    const d = section.dominoes[0];
-    const sprite = makeSprite(sampleTiles[i]);
-    const px = normToPx(d.xN, d.yN);
-    sprite.setPose({x: px.x - 28, y: px.y - 56, s: d.scale, rz: d.rotZ, ry: d.rotY});
-    sprite.style.opacity = '0.35';
-    sprite.style.pointerEvents = 'none';
-    if(sprite._shadow) sprite._shadow.style.opacity = '0.15';
-    sprLayer.appendChild(sprite);
-    if(sprite._shadow){
-      const shLayer = document.getElementById('shadowLayer');
-      if(shLayer) shLayer.appendChild(sprite._shadow);
-    }
-    _tn51GhostSprites.push(sprite);
-  }
-  // Lead pip ghost
-  const leadSec = getActiveLayout().sections.find(s => s.name === 'Lead_Domino');
-  if(leadSec && leadSec.dominoes[0]){
-    const ld = leadSec.dominoes[0];
-    const lpx = normToPx(ld.xN, ld.yN);
-    const leadGhost = document.createElement('div');
-    leadGhost.style.cssText = 'position:absolute;width:28px;height:44px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:4px;pointer-events:none;z-index:50;';
-    leadGhost.style.left = (lpx.x - 14) + 'px';
-    leadGhost.style.top = (lpx.y - 22) + 'px';
-    leadGhost.textContent = 'L';
-    leadGhost.style.color = 'rgba(255,255,255,0.4)';
-    leadGhost.style.textAlign = 'center';
-    leadGhost.style.lineHeight = '44px';
-    leadGhost.style.fontSize = '11px';
-    document.getElementById('tableMain').appendChild(leadGhost);
-    _tn51GhostSprites.push(leadGhost);
-  }
-  // V12.9.6: Trick history — full domino sprites at ALL positions (double blanks)
-  const _tn51ThSec = getActiveLayout().sections.find(s => s.name === 'Trick_History');
-  if(_tn51ThSec){
-    for(let _gIdx = 0; _gIdx < _tn51ThSec.dominoes.length; _gIdx++){
-      const _gd = _tn51ThSec.dominoes[_gIdx];
-      if(!_gd) continue;
-      const _thSprite = makeSprite([0,0]);
-      const _gpx = normToPx(_gd.xN, _gd.yN);
-      _thSprite.setPose({x: _gpx.x - 28, y: _gpx.y - 56, s: _gd.scale, rz: _gd.rotZ, ry: _gd.rotY});
-      _thSprite.style.opacity = '0.3';
-      _thSprite.style.pointerEvents = 'none';
-      if(_thSprite._shadow) _thSprite._shadow.style.opacity = '0.1';
-      sprLayer.appendChild(_thSprite);
-      if(_thSprite._shadow){
-        const _shL = document.getElementById('shadowLayer');
-        if(_shL) _shL.appendChild(_thSprite._shadow);
-      }
-      _tn51GhostSprites.push(_thSprite);
-    }
-  }
-  // Indicator position ghosts (small circles)
-  for(let p = 1; p <= 6; p++){
-    const ix = TN51_SETTINGS['ind'+p+'x'];
-    const iy = TN51_SETTINGS['ind'+p+'y'];
-    const ipx = normToPx(ix, iy);
-    const indGhost = document.createElement('div');
-    indGhost.style.cssText = 'position:absolute;width:28px;height:28px;border-radius:50%;background:rgba(96,165,250,0.25);border:1px solid rgba(96,165,250,0.5);pointer-events:none;z-index:50;text-align:center;line-height:28px;font-size:10px;color:rgba(96,165,250,0.7);';
-    indGhost.style.left = (ipx.x - 14) + 'px';
-    indGhost.style.top = (ipx.y - 14) + 'px';
-    indGhost.textContent = 'P' + p;
-    document.getElementById('tableMain').appendChild(indGhost);
-    _tn51GhostSprites.push(indGhost);
-  }
-}
-
-function removeTN51GhostDominos(){
-  for(const s of _tn51GhostSprites){
-    if(s._shadow) s._shadow.remove();
-    s.remove();
-  }
-  _tn51GhostSprites = [];
-  if(_tn51GhostTimer){ clearTimeout(_tn51GhostTimer); _tn51GhostTimer = null; }
-}
-
-function refreshTN51Ghosts(){
-  showTN51GhostDominos();
-}
-
-// V12.9.5: Ghost preview dominos for Moon Layout Settings
-var _moonGhostSprites = [];
-
-function showMoonGhostDominos(){
-  removeMoonGhostDominos();
-  if(GAME_MODE !== 'MOON') return;
-  const sprLayer = document.getElementById('spriteLayer');
-  if(!sprLayer) return;
-  const sampleTiles = [[6,6],[5,3],[4,2]];
-  const positions = ['Player_1_Played_Domino','Player_2_Played_Domino','Player_3_Played_Domino'];
-  for(let i = 0; i < 3; i++){
-    const section = getActiveLayout().sections.find(s => s.name === positions[i]);
-    if(!section || !section.dominoes[0]) continue;
-    const d = section.dominoes[0];
-    const sprite = makeSprite(sampleTiles[i]);
-    const px = normToPx(d.xN, d.yN);
-    sprite.setPose({x: px.x - 28, y: px.y - 56, s: d.scale, rz: d.rotZ, ry: d.rotY});
-    sprite.style.opacity = '0.35';
-    sprite.style.pointerEvents = 'none';
-    if(sprite._shadow) sprite._shadow.style.opacity = '0.15';
-    sprLayer.appendChild(sprite);
-    if(sprite._shadow){
-      const shLayer = document.getElementById('shadowLayer');
-      if(shLayer) shLayer.appendChild(sprite._shadow);
-    }
-    _moonGhostSprites.push(sprite);
-  }
-  // Lead ghost
-  const leadSec = getActiveLayout().sections.find(s => s.name === 'Lead_Domino');
-  if(leadSec && leadSec.dominoes[0]){
-    const ld = leadSec.dominoes[0];
-    const lpx = normToPx(ld.xN, ld.yN);
-    const leadGhost = document.createElement('div');
-    leadGhost.style.cssText = 'position:absolute;width:28px;height:44px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:4px;pointer-events:none;z-index:50;';
-    leadGhost.style.left = (lpx.x - 14) + 'px';
-    leadGhost.style.top = (lpx.y - 22) + 'px';
-    leadGhost.textContent = 'L';
-    leadGhost.style.color = 'rgba(255,255,255,0.4)';
-    leadGhost.style.textAlign = 'center';
-    leadGhost.style.lineHeight = '44px';
-    leadGhost.style.fontSize = '11px';
-    document.getElementById('tableMain').appendChild(leadGhost);
-    _moonGhostSprites.push(leadGhost);
-  }
-  // Indicator ghosts
-  for(let p = 1; p <= 3; p++){
-    const ix = MOON_SETTINGS['ind'+p+'x'];
-    const iy = MOON_SETTINGS['ind'+p+'y'];
-    const ipx = normToPx(ix, iy);
-    const indGhost = document.createElement('div');
-    indGhost.style.cssText = 'position:absolute;width:28px;height:28px;border-radius:50%;background:rgba(96,165,250,0.25);border:1px solid rgba(96,165,250,0.5);pointer-events:none;z-index:50;text-align:center;line-height:28px;font-size:10px;color:rgba(96,165,250,0.7);';
-    indGhost.style.left = (ipx.x - 14) + 'px';
-    indGhost.style.top = (ipx.y - 14) + 'px';
-    indGhost.textContent = 'P' + p;
-    document.getElementById('tableMain').appendChild(indGhost);
-    _moonGhostSprites.push(indGhost);
-  }
-  // V12.9.6: Trick history — full domino sprites at ALL positions (double blanks)
-  const _moonThSec = getActiveLayout().sections.find(s => s.name === 'Trick_History');
-  if(_moonThSec){
-    var _mThXOff = (MOON_SETTINGS.trickHistoryX || 0) / 100;
-    var _mThYOff = (MOON_SETTINGS.trickHistoryY || 0) / 100;
-    var _mThScale = MOON_SETTINGS.thScale || MOON_SETTINGS.trickScale || 0.30;
-    for(let _gIdx = 0; _gIdx < _moonThSec.dominoes.length; _gIdx++){
-      const _gd = _moonThSec.dominoes[_gIdx];
-      if(!_gd) continue;
-      const _thSprite = makeSprite([0,0]);
-      const _gpx = normToPx(_gd.xN + _mThXOff, _gd.yN + _mThYOff);
-      _thSprite.setPose({x: _gpx.x - 28, y: _gpx.y - 56, s: _mThScale, rz: _gd.rotZ, ry: _gd.rotY});
-      _thSprite.style.opacity = '0.3';
-      _thSprite.style.pointerEvents = 'none';
-      if(_thSprite._shadow) _thSprite._shadow.style.opacity = '0.1';
-      sprLayer.appendChild(_thSprite);
-      if(_thSprite._shadow){
-        const _shL = document.getElementById('shadowLayer');
-        if(_shL) _shL.appendChild(_thSprite._shadow);
-      }
-      _moonGhostSprites.push(_thSprite);
-    }
-  }
-}
-
-function removeMoonGhostDominos(){
-  for(const s of _moonGhostSprites){
-    if(s._shadow) s._shadow.remove();
-    s.remove();
-  }
-  _moonGhostSprites = [];
-}
-
-function refreshMoonGhosts(){
-  showMoonGhostDominos();
 }
 
 function applyT42Settings(){
@@ -6683,26 +6387,9 @@ function applyT42Settings(){
   PLACEHOLDER_CONFIG_T42.players[4].yN = s.p4TrickY;
   PLACEHOLDER_CONFIG_T42.lead.xN = s.leadX;
   PLACEHOLDER_CONFIG_T42.lead.yN = s.leadY;
-  // V12.9.5: Rebuild Trick_History from settings
-  const _t42TH = L.find(x => x.name === 'Trick_History');
-  if(_t42TH){
-    var _thIdx = 0;
-    for(var _thR = 0; _thR < 8; _thR++){
-      for(var _thC = 0; _thC < 4; _thC++){
-        if(_t42TH.dominoes[_thIdx]){
-          _t42TH.dominoes[_thIdx].xN = s.thBaseX + _thR * s.thRowSpacing;
-          _t42TH.dominoes[_thIdx].yN = s.thBaseY + _thC * s.thColSpacing;
-          _t42TH.dominoes[_thIdx].scale = s.thScale;
-        }
-        _thIdx++;
-      }
-    }
-  }
   // Refresh
   refreshLayout();
-  createPlaceholders();
   positionPlayerIndicators();
-  if(typeof repositionTrickHistorySprites === 'function') repositionTrickHistorySprites();
 }
 
 // T42 placeholder positions
@@ -6763,7 +6450,7 @@ let mpMarksToWin = 7;            // Marks to win for MP game (host sets)
 let mpPreferredSeat = -1;         // Guest's preferred seat (-1 = auto)
 let mpHelloNonce = null;           // Unique nonce sent with hello, used to match seat_assign
 const MP_WS_URL = 'wss://tn51-tx42-relay.onrender.com';  // V10_122: PRODUCTION
-const MP_VERSION = 'V12.9.7';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
+const MP_VERSION = 'V12.6';  // V11.4: Score fix, boneyard fix, chat, haptics, your-turn banner, bid wording, thumbs-down exit, domino flip fix
 
 // ═══════════════════════════════════════════════════════════════
 // V10_FIX: Multiplayer Sync Fix Variables
@@ -12366,14 +12053,13 @@ function ppRotateBoard(viewingSeat) {
 
 // Reposition player indicators based on rotation
 function ppRepositionIndicators() {
-  // V12.9.4: Use TN51_SETTINGS for indicator positions
   const indicatorPositions_TN51 = {
-    1: { xN: TN51_SETTINGS.ind1x, yN: TN51_SETTINGS.ind1y },
-    2: { xN: TN51_SETTINGS.ind2x, yN: TN51_SETTINGS.ind2y },
-    3: { xN: TN51_SETTINGS.ind3x, yN: TN51_SETTINGS.ind3y },
-    4: { xN: TN51_SETTINGS.ind4x, yN: TN51_SETTINGS.ind4y },
-    5: { xN: TN51_SETTINGS.ind5x, yN: TN51_SETTINGS.ind5y },
-    6: { xN: TN51_SETTINGS.ind6x, yN: TN51_SETTINGS.ind6y }
+    1: { xN: 0.50, yN: 0.72 },
+    2: { xN: 0.32, yN: 0.68 },
+    3: { xN: 0.32, yN: 0.52 },
+    4: { xN: 0.50, yN: 0.47 },
+    5: { xN: 0.68, yN: 0.52 },
+    6: { xN: 0.68, yN: 0.68 }
   };
   const indicatorPositions_T42 = {
     1: { xN: T42_SETTINGS.ind1x, yN: T42_SETTINGS.ind1y },
@@ -14632,14 +14318,13 @@ var MOON_SETTINGS = {
   p2HandScale: 0.695, p2HandX: 0.1, p2HandY: 0.65, p2HandSpacing: 0.049,
   p3HandScale: 0.695, p3HandX: 0.905, p3HandY: 0.65, p3HandSpacing: 0.049,
   trickScale: 0.30,
-  thScale: 0.30,
   thColSpacing: 0.103,
   thRowSpacing: 0.022,
   thBlockGap: 0.003,
   thBaseX: 0.12,
   widowLabelY: -30,
   widowHorizontal: true,
-  widowScale: 1.37,
+  widowScale: 1.27,
   widowSwapX: 0.5,
   widowSwapY: 0.655,
   widowSwapScale: 1.0,
@@ -14655,7 +14340,7 @@ var MOON_SETTINGS = {
   } catch(e){}
 })();
 
-var MOON_WIDOW_POS = { xN: 0.5, yN: 0.42 }; // Centered
+var MOON_WIDOW_POS = { xN: 0.835, yN: 0.33 }; // Above Player 3
 var widowSprite = null; // Actual domino sprite for the widow tile
 (function loadMoonWidowPos(){
   try {
@@ -14952,7 +14637,7 @@ function showMoonSettingsPanel(){
 
   // Hands section
   addSection('P1 Hand (You)');
-  var saveMoonLayout = function(){ saveMoon(); if(typeof applyMoonSettings === 'function') applyMoonSettings(); if(typeof refreshMoonGhosts === 'function') refreshMoonGhosts(); };
+  var saveMoonLayout = function(){ saveMoon(); if(typeof applyMoonSettings === 'function') applyMoonSettings(); };
   addSlider('P1 Scale', 'p1HandScale', MOON_SETTINGS, 0, 200, 0.5, saveMoonLayout);
   addSlider('P1 X', 'p1HandX', MOON_SETTINGS, 0, 100, 0.5, saveMoonLayout);
   addSlider('P1 Y', 'p1HandY', MOON_SETTINGS, 0, 100, 0.5, saveMoonLayout);
@@ -15015,11 +14700,10 @@ function showMoonSettingsPanel(){
   // Lead domino position
   addSlider('Lead X', 'xN', _pcm.lead, 0, 100, 0.5, _savePCM);
   addSlider('Lead Y', 'yN', _pcm.lead, 0, 100, 0.5, _savePCM);
-  addSlider('Current Trick Scale', 'trickScale', MOON_SETTINGS, 0, 200, 0.5, saveMoonLayout);
 
   // Trick history section
   addSection('Trick History');
-  addSlider('TH Scale', 'thScale', MOON_SETTINGS, 0, 100, 0.5, saveMoonLayout);
+  addSlider('Trick Scale', 'trickScale', MOON_SETTINGS, 0, 100, 0.5, saveMoonLayout);
   addSlider('History X Offset', 'trickHistoryX', MOON_SETTINGS, -50, 50, 0.5, saveMoon);
   addSlider('History Y Offset', 'trickHistoryY', MOON_SETTINGS, -50, 50, 0.5, saveMoon);
   addSlider('Column Spacing', 'thColSpacing', MOON_SETTINGS, 0, 30, 0.1, saveMoonLayout);
@@ -16815,7 +16499,7 @@ function createPlaceholders(){
   // A domino at scale 1.0 = 56×112px. Rotated 90° = width:112, height:56.
   // TN51 uses default 44×22 (≈ 112×0.393, 56×0.393).
   // T42 uses trickScale from T42_SETTINGS for proper sizing.
-  const _phScale = (GAME_MODE === 'T42') ? T42_SETTINGS.trickScale : (GAME_MODE === 'MOON') ? (MOON_SETTINGS.trickScale || 0.30) : TN51_SETTINGS.trickScale;
+  const _phScale = (GAME_MODE === 'T42') ? T42_SETTINGS.trickScale : 0.393;
   const _phW = Math.round(BASE_H * _phScale);  // 112 * scale (rotated width)
   const _phH = Math.round(BASE_W * _phScale);  // 56 * scale (rotated height)
   for(let p = 1; p <= _phCount; p++){
@@ -16901,14 +16585,13 @@ function positionPlayerIndicators(){
   // Player positions (xN, yN) - positioned BETWEEN hand center and played domino placeholder
   // P1: Special case - close to placeholder since there's a big gap
   // Others: Centered between rack middle and placeholder
-  // V12.9.4: Use TN51_SETTINGS for indicator positions (adjustable via layout panel)
   const indicatorPositions_TN51 = {
-    1: { xN: TN51_SETTINGS.ind1x, yN: TN51_SETTINGS.ind1y },
-    2: { xN: TN51_SETTINGS.ind2x, yN: TN51_SETTINGS.ind2y },
-    3: { xN: TN51_SETTINGS.ind3x, yN: TN51_SETTINGS.ind3y },
-    4: { xN: TN51_SETTINGS.ind4x, yN: TN51_SETTINGS.ind4y },
-    5: { xN: TN51_SETTINGS.ind5x, yN: TN51_SETTINGS.ind5y },
-    6: { xN: TN51_SETTINGS.ind6x, yN: TN51_SETTINGS.ind6y }
+    1: { xN: 0.50, yN: 0.72 },   // P1: close to placeholder (big gap from hand)
+    2: { xN: 0.32, yN: 0.68 },   // P2: moved inward towards center
+    3: { xN: 0.32, yN: 0.52 },   // P3: moved inward towards center
+    4: { xN: 0.50, yN: 0.47 },   // P4: between hand and placeholder (inside)
+    5: { xN: 0.68, yN: 0.52 },   // P5: moved inward towards center
+    6: { xN: 0.68, yN: 0.68 }    // P6: moved inward towards center
   };
   const indicatorPositions_T42 = {
     1: { xN: T42_SETTINGS.ind1x, yN: T42_SETTINGS.ind1y },
@@ -21294,8 +20977,7 @@ document.getElementById('menuHint').addEventListener('click', () => {
 
 
 // --- Multiplayer Event Listeners ---
-// V12.9.2: Multiplayer removed from settings menu, guard handler
-if(document.getElementById('menuMultiplayer')) document.getElementById('menuMultiplayer').addEventListener('click', () => {
+document.getElementById('menuMultiplayer').addEventListener('click', () => {
   document.getElementById('settingsMenu').classList.remove('open');
   mpBuildModeSelector();
   document.getElementById('mpRoomSection').style.display = 'none';
@@ -22291,164 +21973,11 @@ document.getElementById('notesClearBtn').addEventListener('click', () => {
 // Auto-save notes on change
 
 // Sound settings toggle
-// V12.9.2: Game Settings as separate view with back button
-(function(){
-  var settingsMenu = document.getElementById('settingsMenu');
-  var gsPanel = document.getElementById('soundSettingsPanel');
-  var gsBtn = document.getElementById('menuSoundSettings');
-
-  // Gather all direct children of settingsMenu that are NOT the game settings panel
-  function getMainItems(){
-    return Array.from(settingsMenu.children).filter(function(el){
-      return el !== gsPanel;
-    });
-  }
-
-  // Track state
-  var gsViewOpen = false;
-
-  // Create back button (inserted dynamically)
-  var backBtn = document.createElement('div');
-  backBtn.className = 'settingsItem';
-  backBtn.style.cssText = 'padding:8px 16px;font-weight:bold;color:#60a5fa;';
-  backBtn.textContent = '← Back';
-  backBtn.style.display = 'none';
-  settingsMenu.insertBefore(backBtn, settingsMenu.firstChild);
-
-  gsBtn.addEventListener('click', function(e){
-    e.stopPropagation();
-    if(gsViewOpen) return;
-    gsViewOpen = true;
-    // Hide all main items
-    getMainItems().forEach(function(el){ el._gsWasDisplay = el.style.display; el.style.display = 'none'; });
-    // Show back button and panel
-    backBtn.style.display = 'block';
-    gsPanel.style.display = 'block';
-  });
-
-  backBtn.addEventListener('click', function(e){
-    e.stopPropagation();
-    gsViewOpen = false;
-    // Restore all main items
-    getMainItems().forEach(function(el){ el.style.display = el._gsWasDisplay || ''; });
-    // Hide back button and panel
-    backBtn.style.display = 'none';
-    gsPanel.style.display = 'none';
-  });
-
-  // When settings menu closes, reset to main view
-  var observer = new MutationObserver(function(muts){
-    muts.forEach(function(m){
-      if(m.type === 'attributes' && m.attributeName === 'class'){
-        if(!settingsMenu.classList.contains('open') && gsViewOpen){
-          gsViewOpen = false;
-          getMainItems().forEach(function(el){ el.style.display = el._gsWasDisplay || ''; });
-          backBtn.style.display = 'none';
-          gsPanel.style.display = 'none';
-        }
-      }
-    });
-  });
-  observer.observe(settingsMenu, { attributes: true });
-})();
-
-// V12.9.2: Letterbox toggle
-(function(){
-  var letterboxOn = true; // default ON
-  try {
-    var saved = localStorage.getItem('tn51_letterbox');
-    if(saved === 'off') letterboxOn = false;
-  } catch(e){}
-
-  function applyLetterbox(){
-    var gw = document.getElementById('gameWrapper');
-    if(!gw) return;
-    if(letterboxOn){
-      gw.style.width = '';
-      gw.style.height = '';
-    } else {
-      gw.style.width = '100vw';
-      gw.style.height = '100vh';
-    }
-  }
-
-  function updateToggleUI(){
-    var knob = document.getElementById('letterboxKnob');
-    var track = document.getElementById('letterboxToggle');
-    var label = document.getElementById('letterboxLabel');
-    if(knob){ knob.style.left = letterboxOn ? '20px' : '2px'; }
-    if(track){ track.style.background = letterboxOn ? 'rgba(34,197,94,0.8)' : 'rgba(255,255,255,0.2)'; }
-    if(label){ label.textContent = letterboxOn ? 'ON' : 'OFF'; }
-  }
-
-  applyLetterbox();
-  // UI update deferred until DOM ready
-  setTimeout(updateToggleUI, 100);
-
-  document.addEventListener('click', function(e){
-    if(e.target.closest('#letterboxToggle')){
-      letterboxOn = !letterboxOn;
-      try { localStorage.setItem('tn51_letterbox', letterboxOn ? 'on' : 'off'); } catch(e){}
-      applyLetterbox();
-      updateToggleUI();
-      // Trigger resize to recalculate layout
-      window.dispatchEvent(new Event('resize'));
-    }
-  });
-
-  window._letterboxEnabled = function(){ return letterboxOn; };
-})();
-
-// V12.9.2: Game Log toggle for multiplayer (default OFF)
-(function(){
-  var logsEnabled = false; // default OFF
-  try {
-    var saved = localStorage.getItem('tn51_mp_logs');
-    if(saved === 'on') logsEnabled = true;
-  } catch(e){}
-
-  function updateLogMenuItems(){
-    var inMP = (typeof mpSeat !== 'undefined' && mpSeat >= 0);
-    var show = logsEnabled || !inMP; // Always show in single player, only show in MP if enabled
-    var gameLog = document.getElementById('menuGameLog');
-    var aiLog = document.getElementById('menuAdvancedLog');
-    var mpLog = document.getElementById('menuMPLog');
-    var mcItem = document.getElementById('menuMonteCarlo');
-    if(gameLog) gameLog.style.display = show ? '' : 'none';
-    if(aiLog) aiLog.style.display = show ? '' : 'none';
-    if(mpLog) mpLog.style.display = (show && inMP) ? '' : 'none';
-    if(mcItem) mcItem.style.display = show ? '' : 'none';
-  }
-
-  function updateToggleUI(){
-    var knob = document.getElementById('mpLogKnob');
-    var track = document.getElementById('mpLogToggle');
-    var label = document.getElementById('mpLogLabel');
-    if(knob){ knob.style.left = logsEnabled ? '20px' : '2px'; }
-    if(track){ track.style.background = logsEnabled ? 'rgba(34,197,94,0.8)' : 'rgba(255,255,255,0.2)'; }
-    if(label){ label.textContent = logsEnabled ? 'ON' : 'OFF'; }
-  }
-
-  setTimeout(function(){ updateToggleUI(); updateLogMenuItems(); }, 200);
-
-  document.addEventListener('click', function(e){
-    if(e.target.closest('#mpLogToggle')){
-      logsEnabled = !logsEnabled;
-      try { localStorage.setItem('tn51_mp_logs', logsEnabled ? 'on' : 'off'); } catch(e){}
-      updateToggleUI();
-      updateLogMenuItems();
-    }
-  });
-
-  // Re-check whenever settings menu opens (MP state may have changed)
-  var sm = document.getElementById('settingsMenu');
-  if(sm){
-    var obs = new MutationObserver(function(){ updateLogMenuItems(); });
-    obs.observe(sm, { attributes: true });
-  }
-
-  window._mpLogsEnabled = function(){ return logsEnabled; };
-})();
+document.getElementById('menuSoundSettings').addEventListener('click', function(e){
+  e.stopPropagation();
+  const panel = document.getElementById('soundSettingsPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+});
 
 // SFX volume
 // V12.6: Animation speed slider
@@ -23689,17 +23218,14 @@ document.getElementById('ppHandoffBtn').addEventListener('click', () => {
   // --- Update Run button state ---
   function mcUpdateRunBtn() {
     const btn = document.getElementById('mcRunBtn');
-    const anySelected = mcSelectedOrder.length > 0;
-    btn.disabled = !anySelected;
-    btn.style.opacity = anySelected ? '1' : '0.5';
-    // Show mode indicator
-    const isPartial = mcSelectedOrder.length > 0 && mcSelectedOrder.length < mcPlayerHand.length;
-    btn.textContent = isPartial ? 'Run Control Analysis' : 'Run Simulation';
+    const allSelected = mcSelectedOrder.length === mcPlayerHand.length;
+    btn.disabled = !allSelected;
+    btn.style.opacity = allSelected ? '1' : '0.5';
   }
 
   // --- Start simulation ---
   function mcStartSimulation() {
-    if (mcSelectedOrder.length === 0) return;
+    if (mcSelectedOrder.length !== mcPlayerHand.length) return;
     mcRunning = true;
     document.getElementById('mcCopyRow').style.display = 'none';
 
@@ -23733,21 +23259,9 @@ document.getElementById('ppHandoffBtn').addEventListener('click', () => {
     const handSet = new Set(mcPlayerHand.map(t => t[0] + ',' + t[1]));
     const remainingPool = allTiles.filter(t => !handSet.has(t[0] + ',' + t[1]));
 
-    const isPartial = mcSelectedOrder.length < mcPlayerHand.length;
-    const isMoon = GAME_MODE === 'MOON';
-
-    // Get existing game scores for cumulative display
-    const existingScores = isMoon
-      ? (session.game.team_points || [0,0,0]).slice()
-      : (session.game.team_points || [0,0]).slice();
-
     // Results accumulators
     const results = {
       total: numSims,
-      isPartial: isPartial,
-      isMoon: isMoon,
-      existingScores: existingScores,
-      tilesPlayed: mcSelectedOrder.length,
       keptControl: 0, keptControlBidMade: 0,
       lostToPartner: 0, lostToPartnerBidMade: 0,
       lostToOpponent: 0, lostToOpponentBidMade: 0,
@@ -23756,15 +23270,7 @@ document.getElementById('ppHandoffBtn').addEventListener('click', () => {
       madeCount: 0, failedCount: 0,
       setCount: 0,
       nelloWon: 0, nelloLost: 0,
-      trickControlLost: new Array(7).fill(0),
-      // V12.9.3: Per-scenario score tracking
-      keptControlYourPts: 0, keptControlTheirPts: 0,
-      lostPartnerYourPts: 0, lostPartnerTheirPts: 0,
-      lostOppYourPts: 0, lostOppTheirPts: 0,
-      // Moon: per-player score tracking (3 players)
-      moonScores: { kept: [0,0,0], lostPartner: [0,0,0], lostOpp: [0,0,0] },
-      // Set opponent bid tracking
-      setOppBidCount: 0
+      trickControlLost: new Array(7).fill(0)
     };
 
     let simsDone = 0;
@@ -23807,14 +23313,12 @@ document.getElementById('ppHandoffBtn').addEventListener('click', () => {
     const _simPC = session.game.player_count;
     const _simHS = session.game.hand_size;
     const _simMP = session.game.max_pip;
-    const isMoon = results.isMoon;
-    const isPartial = results.isPartial;
     const hands = new Array(_simPC);
     hands[0] = playerHand.map(t => [t[0], t[1]]);
     let pi = 0;
     for (let s = 1; s < _simPC; s++) {
       if (contract === "NELLO" && (s === 2 || s === 4)) {
-        hands[s] = [];
+        hands[s] = [];  // Partners sit out in Nello
       } else {
         hands[s] = pool.slice(pi, pi + _simHS);
         pi += _simHS;
@@ -23835,11 +23339,11 @@ document.getElementById('ppHandoffBtn').addEventListener('click', () => {
 
     // Track control
     let inControl = true;
-    let controlLostTo = null;
+    let controlLostTo = null;  // 'partner' or 'opponent'
     let controlLostTrick = -1;
-    let leadOrderIdx = 0;
-    let tricksPlayedByP1 = 0;
+    let leadOrderIdx = 0;  // Next tile in P1's preferred order to lead
 
+    // Play up to 6 tricks
     let safety = 0;
     while (!sim.hand_is_over() && safety < 100) {
       safety++;
@@ -23848,14 +23352,17 @@ document.getElementById('ppHandoffBtn').addEventListener('click', () => {
       let tileIdx = -1;
 
       if (currentSeat === 0 && inControl && isLeading && leadOrderIdx < playOrder.length) {
+        // P1 leads in preferred order
         const preferredTile = playerHand[playOrder[leadOrderIdx]];
         const hand = sim.hands[0];
         tileIdx = hand.findIndex(t => t[0] === preferredTile[0] && t[1] === preferredTile[1]);
         if (tileIdx === -1) {
+          // Tile not found (already played?), fallback to AI
           try { tileIdx = choose_tile_ai(sim, 0, contract, false, bid); } catch(_) { tileIdx = 0; }
         }
         leadOrderIdx++;
       } else {
+        // AI plays for everyone else, or for P1 when not in control / following
         try {
           tileIdx = choose_tile_ai(sim, currentSeat, contract, false, bid);
         } catch(_) {
@@ -23864,9 +23371,12 @@ document.getElementById('ppHandoffBtn').addEventListener('click', () => {
         }
       }
 
+      // Validate tileIdx
       const legal = sim.legal_indices_for_player(currentSeat);
       if (legal.length === 0) break;
-      if (!legal.includes(tileIdx)) tileIdx = legal[0];
+      if (!legal.includes(tileIdx)) {
+        tileIdx = legal[0];
+      }
 
       let result;
       try {
@@ -23875,105 +23385,59 @@ document.getElementById('ppHandoffBtn').addEventListener('click', () => {
         break;
       }
 
+      // Check if trick completed (result[2] === true means trick finished)
       if (result && result[2]) {
+        // CRITICAL: Clear current_trick — play_tile does NOT do this.
+        // Without this, plays accumulate across tricks and scoring breaks.
         sim.current_trick = [];
         const winner = result[1];
         const winnerTeam = sim.team_of(winner);
-        const p1Team = isMoon ? 0 : 0;
-
-        if (currentSeat === 0 || isLeading) tricksPlayedByP1++;
+        const p1Team = 0;  // seat 0 is team 0
 
         if (inControl && winner !== 0) {
+          // P1 lost control
           inControl = false;
-          if (isMoon) {
-            controlLostTo = 'opponent';
-          } else if (winnerTeam === p1Team) {
+          if (winnerTeam === p1Team) {
             controlLostTo = 'partner';
           } else {
             controlLostTo = 'opponent';
           }
-          controlLostTrick = sim.trick_number;
+          controlLostTrick = sim.trick_number;  // trick_number was already incremented
           if (controlLostTrick >= 1 && controlLostTrick <= 6) {
             results.trickControlLost[controlLostTrick]++;
           }
-
-          // In partial mode, STOP when control is lost
-          if (isPartial) break;
         }
 
-        // In partial mode, stop when all selected tiles have been led
-        if (isPartial && leadOrderIdx >= playOrder.length && inControl) break;
-
-        // Full mode: check for early set / bid made
-        if (!isPartial) {
-          const bidderTeamIndex = isMoon ? bidWinnerSeat : (bidWinnerSeat % 2 === 0 ? 0 : 1);
-          const bidderPoints = sim.team_points[bidderTeamIndex];
-          const totalAwarded = sim.team_points.reduce((a,b) => a+b, 0);
-          const maxPts = isMoon ? 21 : 51;
-          const pointsRemaining = maxPts - totalAwarded;
-          if (contract !== "NELLO" && bidderPoints + pointsRemaining < bid) break;
-          if (contract !== "NELLO" && bidderPoints >= bid) break;
+        // Check for early set
+        const bidderTeamIndex = (bidWinnerSeat % 2 === 0) ? 0 : 1;
+        const bidderPoints = sim.team_points[bidderTeamIndex];
+        const totalAwarded = sim.team_points[0] + sim.team_points[1];
+        const pointsRemaining = 51 - totalAwarded;
+        if (contract !== "NELLO" && bidderPoints + pointsRemaining < bid) {
+          break;  // Set - no need to continue
+        }
+        // Check if bid already made (early exit)
+        if (contract !== "NELLO" && bidderPoints >= bid) {
+          break;
         }
       }
     }
 
-    // Collect scores from simulation
-    const simPts = sim.team_points.slice();
-    const p1Team = isMoon ? 0 : 0;
-
-    // Per-scenario score accumulation
-    if (isMoon) {
-      if (inControl) {
-        for (let i = 0; i < 3; i++) results.moonScores.kept[i] += simPts[i];
-      } else if (controlLostTo === 'partner') {
-        for (let i = 0; i < 3; i++) results.moonScores.lostPartner[i] += simPts[i];
-      } else {
-        for (let i = 0; i < 3; i++) results.moonScores.lostOpp[i] += simPts[i];
-      }
-    } else {
-      if (inControl) {
-        results.keptControlYourPts += simPts[p1Team];
-        results.keptControlTheirPts += simPts[1 - p1Team];
-      } else if (controlLostTo === 'partner') {
-        results.lostPartnerYourPts += simPts[p1Team];
-        results.lostPartnerTheirPts += simPts[1 - p1Team];
-      } else {
-        results.lostOppYourPts += simPts[p1Team];
-        results.lostOppTheirPts += simPts[1 - p1Team];
-      }
-    }
-
-    // Evaluate bid outcome
-    const bidderTeamIndex = isMoon ? bidWinnerSeat : (bidWinnerSeat % 2 === 0 ? 0 : 1);
+    // Evaluate final result
+    const bidderTeamIndex = (bidWinnerSeat % 2 === 0) ? 0 : 1;
     const bidderPoints = sim.team_points[bidderTeamIndex];
 
     let bidMade = false;
     if (contract === "NELLO") {
-      bidMade = (sim.tricks_team ? sim.tricks_team[bidderTeamIndex].length === 0 : false);
+      // Nello: bidder's team must win 0 tricks
+      bidMade = sim.tricks_team[bidderTeamIndex].length === 0;
       if (bidMade) results.nelloWon++;
       else results.nelloLost++;
-    } else if (!isPartial) {
+    } else {
       bidMade = bidderPoints >= bid;
     }
 
-    // For partial mode: check cumulative score against bid
-    if (isPartial && contract !== "NELLO") {
-      const existScores = results.existingScores;
-      const cumulBidder = existScores[bidderTeamIndex] + simPts[bidderTeamIndex];
-      bidMade = cumulBidder >= bid;
-
-      // Check if we set opponent's bid
-      if (bidWinnerSeat !== 0 && !isMoon) {
-        const oppBidderTeam = bidderTeamIndex;
-        const cumulOppBidder = existScores[oppBidderTeam] + simPts[oppBidderTeam];
-        const maxPts = 51;
-        const totalSoFar = existScores.reduce((a,b) => a+b, 0) + simPts.reduce((a,b) => a+b, 0);
-        const remaining = maxPts - totalSoFar;
-        if (cumulOppBidder + remaining < bid) results.setOppBidCount++;
-      }
-    }
-
-    // Classify
+    // Classify control outcome
     if (inControl) {
       results.keptControl++;
       if (bidMade) results.keptControlBidMade++;
@@ -23985,23 +23449,20 @@ document.getElementById('ppHandoffBtn').addEventListener('click', () => {
       if (bidMade) results.lostToOpponentBidMade++;
     }
 
-    if (!isPartial) {
-      if (bidMade) {
-        results.totalBidMade++;
-        results.scoreWhenMade += bidderPoints;
-        results.madeCount++;
-      } else {
-        results.scoreWhenFailed += bidderPoints;
-        results.failedCount++;
-        if (contract !== "NELLO") {
-          const totalAwarded = sim.team_points.reduce((a,b) => a+b, 0);
-          const maxPts = isMoon ? 21 : 51;
-          if (bidderPoints + (maxPts - totalAwarded) < bid) results.setCount++;
+    if (bidMade) {
+      results.totalBidMade++;
+      results.scoreWhenMade += bidderPoints;
+      results.madeCount++;
+    } else {
+      results.scoreWhenFailed += bidderPoints;
+      results.failedCount++;
+      if (contract !== "NELLO") {
+        const totalAwarded = sim.team_points[0] + sim.team_points[1];
+        const pointsRemaining = 51 - totalAwarded;
+        if (bidderPoints + pointsRemaining < bid) {
+          results.setCount++;
         }
       }
-    } else {
-      if (bidMade) { results.totalBidMade++; results.madeCount++; }
-      else { results.failedCount++; }
     }
   }
 
@@ -24010,11 +23471,13 @@ document.getElementById('ppHandoffBtn').addEventListener('click', () => {
     const div = document.getElementById('mcResults');
     div.style.display = 'block';
 
+    // Build play order string
     const orderStr = mcSelectedOrder.map(idx => {
       const t = mcPlayerHand[idx];
       return t[0] + '-' + t[1];
     }).join(', ');
 
+    // Trump info
     const g = session.game;
     let trumpStr = 'NT';
     if (g.trump_mode === 'PIP') trumpStr = g.trump_suit + 's';
@@ -24028,16 +23491,13 @@ document.getElementById('ppHandoffBtn').addEventListener('click', () => {
 
     // Header
     html += '<div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:10px;margin-bottom:8px;">';
-    html += '<div style="font-size:13px;font-weight:700;color:#fbbf24;margin-bottom:6px;">';
-    html += r.isPartial ? 'CONTROL ANALYSIS' : 'MONTE CARLO RESULTS';
-    html += ' (' + r.total + ' sims)</div>';
-    html += '<div style="font-size:11px;color:rgba(255,255,255,0.7);margin-bottom:3px;">Play order: ' + orderStr;
-    if (r.isPartial) html += ' (' + r.tilesPlayed + '/' + mcPlayerHand.length + ' tiles)';
-    html += '</div>';
+    html += '<div style="font-size:13px;font-weight:700;color:#fbbf24;margin-bottom:6px;">MONTE CARLO RESULTS (' + r.total + ' simulations)</div>';
+    html += '<div style="font-size:11px;color:rgba(255,255,255,0.7);margin-bottom:3px;">Play order: ' + orderStr + '</div>';
     html += '<div style="font-size:11px;color:rgba(255,255,255,0.7);">Trump: ' + trumpStr + ' | Bid: ' + bid + (contract === 'NELLO' ? ' | Nel-O' : '') + '</div>';
     html += '</div>';
 
-    if (contract === 'NELLO' && !r.isPartial) {
+    if (contract === 'NELLO') {
+      // Nello results
       html += '<div style="background:rgba(0,0,0,0.15);border-radius:10px;padding:10px;margin-bottom:8px;">';
       html += '<div style="font-size:12px;font-weight:700;color:#60a5fa;margin-bottom:8px;">NEL-O RESULTS</div>';
       html += mcResultRow('Won (0 tricks taken)', r.nelloWon, r.total, '#4ade80');
@@ -24046,112 +23506,49 @@ document.getElementById('ppHandoffBtn').addEventListener('click', () => {
     } else {
       // Control analysis
       html += '<div style="background:rgba(0,0,0,0.15);border-radius:10px;padding:10px;margin-bottom:8px;">';
-      html += '<div style="font-size:12px;font-weight:700;color:#60a5fa;margin-bottom:8px;">CONTROL</div>';
+      html += '<div style="font-size:12px;font-weight:700;color:#60a5fa;margin-bottom:8px;">CONTROL ANALYSIS</div>';
 
+      // Kept full control
       html += mcResultRow('Kept full control', r.keptControl, r.total, '#4ade80');
-      if (r.keptControl > 0 && !r.isPartial) {
+      if (r.keptControl > 0) {
         html += mcSubRow('Bid made', r.keptControlBidMade, r.keptControl);
       }
 
-      if (!r.isMoon) {
-        html += mcResultRow('Lost to PARTNER', r.lostToPartner, r.total, '#fbbf24');
-        if (r.lostToPartner > 0 && !r.isPartial) {
-          html += mcSubRow('Bid made', r.lostToPartnerBidMade, r.lostToPartner);
-        }
+      // Lost to partner
+      html += mcResultRow('Lost control to PARTNER', r.lostToPartner, r.total, '#fbbf24');
+      if (r.lostToPartner > 0) {
+        html += mcSubRow('Bid made', r.lostToPartnerBidMade, r.lostToPartner);
       }
 
-      html += mcResultRow('Lost to OPPONENT', r.lostToOpponent, r.total, '#f87171');
-      if (r.lostToOpponent > 0 && !r.isPartial) {
+      // Lost to opponent
+      html += mcResultRow('Lost control to OPPONENT', r.lostToOpponent, r.total, '#f87171');
+      if (r.lostToOpponent > 0) {
         html += mcSubRow('Bid made', r.lostToOpponentBidMade, r.lostToOpponent);
       }
       html += '</div>';
 
-      // Points breakdown per scenario
+      // Overall
       html += '<div style="background:rgba(0,0,0,0.15);border-radius:10px;padding:10px;margin-bottom:8px;">';
-      html += '<div style="font-size:12px;font-weight:700;color:#60a5fa;margin-bottom:8px;">POINTS BREAKDOWN</div>';
-
-      if (r.isMoon) {
-        // Moon: individual scores
-        var pNames = ['You (P1)', 'P2', 'P3'];
-        var scenarios = [
-          { label: 'Kept control', count: r.keptControl, scores: r.moonScores.kept, color: '#4ade80' },
-          { label: 'Lost to opp', count: r.lostToOpponent, scores: r.moonScores.lostOpp, color: '#f87171' }
-        ];
-        scenarios.forEach(function(sc){
-          if (sc.count === 0) return;
-          html += '<div style="font-size:11px;font-weight:600;color:' + sc.color + ';margin-bottom:4px;">' + sc.label + ' (' + sc.count + ' sims):</div>';
-          for (var pi = 0; pi < 3; pi++) {
-            var avgPts = avg(sc.scores[pi], sc.count);
-            var cumul = (r.existingScores[pi] + (sc.count > 0 ? sc.scores[pi] / sc.count : 0)).toFixed(1);
-            html += '<div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,0.7);padding-left:12px;margin-bottom:2px;">';
-            html += '<span>' + pNames[pi] + ': ' + avgPts + ' pts</span>';
-            html += '<span>Cumulative: ' + cumul + '</span>';
-            html += '</div>';
-          }
-        });
-      } else {
-        // Team game: your team vs their team
-        var scenarios = [
-          { label: 'Kept control', count: r.keptControl, yourPts: r.keptControlYourPts, theirPts: r.keptControlTheirPts, color: '#4ade80' },
-          { label: 'Lost to partner', count: r.lostToPartner, yourPts: r.lostPartnerYourPts, theirPts: r.lostPartnerTheirPts, color: '#fbbf24' },
-          { label: 'Lost to opponent', count: r.lostToOpponent, yourPts: r.lostOppYourPts, theirPts: r.lostOppTheirPts, color: '#f87171' }
-        ];
-
-        // Table header
-        html += '<div style="display:grid;grid-template-columns:1fr 80px 80px 80px 80px;gap:2px;font-size:9px;color:rgba(255,255,255,0.5);margin-bottom:4px;padding:0 2px;">';
-        html += '<span></span><span style="text-align:center;">Your Pts</span><span style="text-align:center;">Opp Pts</span><span style="text-align:center;">Cumul You</span><span style="text-align:center;">Cumul Opp</span>';
-        html += '</div>';
-
-        scenarios.forEach(function(sc){
-          if (sc.count === 0) return;
-          var yourAvg = avg(sc.yourPts, sc.count);
-          var theirAvg = avg(sc.theirPts, sc.count);
-          var cumulYou = (r.existingScores[0] + (sc.count > 0 ? sc.yourPts / sc.count : 0)).toFixed(1);
-          var cumulOpp = (r.existingScores[1] + (sc.count > 0 ? sc.theirPts / sc.count : 0)).toFixed(1);
-          html += '<div style="display:grid;grid-template-columns:1fr 80px 80px 80px 80px;gap:2px;font-size:10px;margin-bottom:3px;padding:4px 2px;background:rgba(255,255,255,0.03);border-radius:4px;">';
-          html += '<span style="color:' + sc.color + ';font-weight:600;">' + sc.label + '</span>';
-          html += '<span style="text-align:center;color:rgba(255,255,255,0.8);">' + yourAvg + '</span>';
-          html += '<span style="text-align:center;color:rgba(255,255,255,0.8);">' + theirAvg + '</span>';
-          html += '<span style="text-align:center;color:rgba(255,255,255,0.8);">' + cumulYou + '</span>';
-          html += '<span style="text-align:center;color:rgba(255,255,255,0.8);">' + cumulOpp + '</span>';
-          html += '</div>';
-        });
-      }
+      html += '<div style="font-size:12px;font-weight:700;color:#60a5fa;margin-bottom:8px;">OVERALL</div>';
+      html += mcResultRow('Bid made', r.totalBidMade, r.total, '#4ade80');
+      html += mcResultRow('Set (early loss)', r.setCount, r.total, '#f87171');
+      html += '<div style="display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,0.7);margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.1);">';
+      html += '<span>Avg score when made: ' + Math.min(51, parseFloat(avg(r.scoreWhenMade, r.madeCount))).toFixed(1) + '</span>';
+      html += '<span>Avg score when failed: ' + avg(r.scoreWhenFailed, r.failedCount) + '</span>';
+      html += '</div>';
       html += '</div>';
 
-      // Bid outcome stats
-      if (r.isPartial) {
-        html += '<div style="background:rgba(0,0,0,0.15);border-radius:10px;padding:10px;margin-bottom:8px;">';
-        html += '<div style="font-size:12px;font-weight:700;color:#60a5fa;margin-bottom:8px;">BID OUTCOME (cumulative)</div>';
-        html += mcResultRow('Made bid (' + session.current_bid + ')', r.totalBidMade, r.total, '#4ade80');
-        if (r.setOppBidCount > 0) {
-          html += mcResultRow('Set opponent bid', r.setOppBidCount, r.total, '#a78bfa');
-        }
-        html += '</div>';
-      } else {
-        // Full mode overall
-        html += '<div style="background:rgba(0,0,0,0.15);border-radius:10px;padding:10px;margin-bottom:8px;">';
-        html += '<div style="font-size:12px;font-weight:700;color:#60a5fa;margin-bottom:8px;">OVERALL</div>';
-        html += mcResultRow('Bid made', r.totalBidMade, r.total, '#4ade80');
-        html += mcResultRow('Set (early loss)', r.setCount, r.total, '#f87171');
-        html += '<div style="display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,0.7);margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.1);">';
-        html += '<span>Avg when made: ' + Math.min(51, parseFloat(avg(r.scoreWhenMade, r.madeCount))).toFixed(1) + '</span>';
-        html += '<span>Avg when failed: ' + avg(r.scoreWhenFailed, r.failedCount) + '</span>';
-        html += '</div>';
-        html += '</div>';
-      }
-
       // Trick where control was lost
-      var hasLostData = false;
-      for (var i = 1; i <= 6; i++) {
+      let hasLostData = false;
+      for (let i = 1; i <= 6; i++) {
         if (r.trickControlLost[i] > 0) { hasLostData = true; break; }
       }
       if (hasLostData) {
         html += '<div style="background:rgba(0,0,0,0.15);border-radius:10px;padding:10px;">';
         html += '<div style="font-size:12px;font-weight:700;color:#60a5fa;margin-bottom:8px;">CONTROL LOST ON TRICK</div>';
-        var totalLost = r.lostToPartner + r.lostToOpponent;
-        for (var i = 1; i <= 6; i++) {
+        for (let i = 1; i <= 6; i++) {
           if (r.trickControlLost[i] > 0) {
+            const totalLost = r.lostToPartner + r.lostToOpponent;
             html += mcResultRow('Trick ' + i, r.trickControlLost[i], totalLost, '#a78bfa');
           }
         }
@@ -25657,174 +25054,80 @@ var BUILTIN_DEVICE_PRESETS = {
     "screenHeight": 1133
   },
   "iPad 10th/Air 11": {
-      "portrait": {
-          "tn51": {
-              "p1Scale": 1.99,
-              "p1x": 0.9,
-              "p1y": 0.895,
-              "p1Spacing": 0.1618,
-              "p2Scale": 0.63,
-              "p2x": 0.05,
-              "p2y": 0.63,
-              "p2Spacing": 0.028,
-              "p3Scale": 0.63,
-              "p3x": 0.05,
-              "p3y": 0.57,
-              "p3Spacing": 0.028,
-              "p4Scale": 0.63,
-              "p4x": 0.38,
-              "p4y": 0.42,
-              "p4Spacing": 0.048,
-              "p5Scale": 0.63,
-              "p5x": 0.95,
-              "p5y": 0.57,
-              "p5Spacing": 0.028,
-              "p6Scale": 0.63,
-              "p6x": 0.95,
-              "p6y": 0.63,
-              "p6Spacing": 0.028,
-              "trickScale": 0.63,
-              "p2xOff": -0.005,
-              "p3xOff": -0.005,
-              "p5xOff": -0.005,
-              "p6xOff": -0.005,
-              "p1TrickX": 0.5,
-              "p1TrickY": 0.665,
-              "p2TrickX": 0.42,
-              "p2TrickY": 0.625,
-              "p3TrickX": 0.42,
-              "p3TrickY": 0.58,
-              "p4TrickX": 0.5,
-              "p4TrickY": 0.54,
-              "p5TrickX": 0.58,
-              "p5TrickY": 0.58,
-              "p6TrickX": 0.58,
-              "p6TrickY": 0.625,
-              "leadScale": 0.393,
-              "leadX": 0.495,
-              "leadY": 0.6,
-              "ind1x": 0.5,
-              "ind1y": 0.775,
-              "ind2x": 0.18,
-              "ind2y": 0.67,
-              "ind3x": 0.18,
-              "ind3y": 0.525,
-              "ind4x": 0.5,
-              "ind4y": 0.47,
-              "ind5x": 0.815,
-              "ind5y": 0.53,
-              "ind6x": 0.82,
-              "ind6y": 0.67,
-              "thScale": 0.63,
-              "thBaseX": 0.125,
-              "thBaseY": 0.19,
-              "thRowSpacing": 0.107,
-              "thColSpacing": 0.033
-          },
-          "t42": {
-              "p1Scale": 1.7,
-              "p1Spacing": 0.137,
-              "p1x": 0.905,
-              "p1y": 0.905,
-              "p2Scale": 0.98,
-              "p2x": 0.08,
-              "p2y": 0.635,
-              "p2Spacing": 0.051,
-              "p3Scale": 0.98,
-              "p3x": 0.28,
-              "p3y": 0.44,
-              "p3Spacing": 0.072,
-              "p4Scale": 0.98,
-              "p4x": 0.92,
-              "p4y": 0.635,
-              "p4Spacing": 0.049,
-              "trickScale": 0.98,
-              "p1TrickX": 0.495,
-              "p1TrickY": 0.725,
-              "p2TrickX": 0.35,
-              "p2TrickY": 0.65,
-              "p3TrickX": 0.495,
-              "p3TrickY": 0.585,
-              "p4TrickX": 0.63,
-              "p4TrickY": 0.65,
-              "leadScale": 0.8,
-              "leadX": 0.49,
-              "leadY": 0.65,
-              "ind1x": 0.495,
-              "ind1y": 0.8,
-              "ind2x": 0.215,
-              "ind2y": 0.65,
-              "ind3x": 0.495,
-              "ind3y": 0.505,
-              "ind4x": 0.775,
-              "ind4y": 0.65,
-              "thScale": 0.76,
-              "thBaseX": 0.11,
-              "thBaseY": 0.21,
-              "thRowSpacing": 0.1111,
-              "thColSpacing": 0.039
-          },
-          "moon": {
-              "ind1x": 0.495,
-              "ind1y": 0.8,
-              "ind2x": 0.175,
-              "ind2y": 0.65,
-              "ind3x": 0.835,
-              "ind3y": 0.65,
-              "p1HandScale": 1.49,
-              "p1HandX": 0.895,
-              "p1HandY": 0.915,
-              "p1HandSpacing": 0.132,
-              "p2HandScale": 0.695,
-              "p2HandX": 0.1,
-              "p2HandY": 0.65,
-              "p2HandSpacing": 0.049,
-              "p3HandScale": 0.94,
-              "p3HandX": 0.925,
-              "p3HandY": 0.65,
-              "p3HandSpacing": 0.049,
-              "trickScale": 0.415,
-              "thScale": 0.415,
-              "thColSpacing": 0.062,
-              "thRowSpacing": 0.022,
-              "thBlockGap": 0.003,
-              "thBaseX": 0.12,
-              "widowLabelY": -30,
-              "widowHorizontal": true,
-              "widowScale": 1.37,
-              "widowSwapX": 0.5,
-              "widowSwapY": 0.655,
-              "widowSwapScale": 1,
-              "trickHistoryX": 0,
-              "trickHistoryY": 13,
-              "bidPopupX": 0.47,
-              "bidPopupY": 0.145
-          },
-          "moonPlaceholders": {
-              "players": {
-                  "1": {
-                      "xN": 0.495,
-                      "yN": 0.725
-                  },
-                  "2": {
-                      "xN": 0.35,
-                      "yN": 0.65
-                  },
-                  "3": {
-                      "xN": 0.63,
-                      "yN": 0.65
-                  }
-              },
-              "lead": {
-                  "xN": 0.495,
-                  "yN": 0.65
-              }
-          }
+    "portrait": {
+      "tn51": {
+        "p1Scale": 1.766,
+        "p1x": 0.9,
+        "p1y": 0.9,
+        "p1Spacing": 0.2534,
+        "p2Scale": 0.648,
+        "p2x": 0.1242,
+        "p2y": 0.627,
+        "p2Spacing": 0.0423,
+        "p3Scale": 0.648,
+        "p3x": 0.1242,
+        "p3y": 0.572,
+        "p3Spacing": 0.0423,
+        "p4Scale": 0.648,
+        "p4x": 0.356,
+        "p4y": 0.411,
+        "p4Spacing": 0.0871,
+        "p5Scale": 0.648,
+        "p5x": 0.8698,
+        "p5y": 0.572,
+        "p5Spacing": 0.0423,
+        "p6Scale": 0.648,
+        "p6x": 0.8698,
+        "p6y": 0.627,
+        "p6Spacing": 0.0423,
+        "trickScale": 0.648,
+        "p2xOff": 0,
+        "p3xOff": 0,
+        "p5xOff": 0,
+        "p6xOff": 0
       },
-      "screenWidth": 820,
-      "screenHeight": 1180
+      "t42": {
+        "p1Scale": 1.517,
+        "p1Spacing": 0.2146,
+        "p1x": 0.905,
+        "p1y": 0.925,
+        "p2Scale": 0.973,
+        "p2x": 0.09,
+        "p2y": 0.65,
+        "p2Spacing": 0.0768,
+        "p3Scale": 0.973,
+        "p3x": 0.235,
+        "p3y": 0.43,
+        "p3Spacing": 0.1363,
+        "p4Scale": 0.973,
+        "p4x": 0.905,
+        "p4y": 0.65,
+        "p4Spacing": 0.0768,
+        "trickScale": 0.973,
+        "p1TrickX": 0.495,
+        "p1TrickY": 0.725,
+        "p2TrickX": 0.35,
+        "p2TrickY": 0.65,
+        "p3TrickX": 0.495,
+        "p3TrickY": 0.585,
+        "p4TrickX": 0.63,
+        "p4TrickY": 0.65,
+        "leadScale": 0.841,
+        "leadX": 0.485,
+        "leadY": 0.65,
+        "ind1x": 0.495,
+        "ind1y": 0.8,
+        "ind2x": 0.215,
+        "ind2y": 0.65,
+        "ind3x": 0.495,
+        "ind3y": 0.505,
+        "ind4x": 0.775,
+        "ind4y": 0.65
+      }
+    },
+    "screenWidth": 820,
+    "screenHeight": 1180
   },
-
   "iPad Pro 11": {
     "portrait": {
       "tn51": {
@@ -26042,46 +25345,6 @@ if ('serviceWorker' in navigator) {
       <div class="t42s-section">Trick Area</div>
       <div class="t42s-group"><label>Trick Scale</label><input type="range" min="0.2" max="0.8" step="0.01" id="tn51s_trickScale"><span id="tn51sv_trickScale"></span></div>
 
-      <div class="t42s-section">Trick Positions</div>
-      <div class="t42s-group"><label>P1 Trick X</label><input type="range" min="0.2" max="0.8" step="0.005" id="tn51s_p1TrickX"><span id="tn51sv_p1TrickX"></span></div>
-      <div class="t42s-group"><label>P1 Trick Y</label><input type="range" min="0.4" max="0.9" step="0.005" id="tn51s_p1TrickY"><span id="tn51sv_p1TrickY"></span></div>
-      <div class="t42s-group"><label>P2 Trick X</label><input type="range" min="0.1" max="0.6" step="0.005" id="tn51s_p2TrickX"><span id="tn51sv_p2TrickX"></span></div>
-      <div class="t42s-group"><label>P2 Trick Y</label><input type="range" min="0.4" max="0.8" step="0.005" id="tn51s_p2TrickY"><span id="tn51sv_p2TrickY"></span></div>
-      <div class="t42s-group"><label>P3 Trick X</label><input type="range" min="0.1" max="0.6" step="0.005" id="tn51s_p3TrickX"><span id="tn51sv_p3TrickX"></span></div>
-      <div class="t42s-group"><label>P3 Trick Y</label><input type="range" min="0.3" max="0.7" step="0.005" id="tn51s_p3TrickY"><span id="tn51sv_p3TrickY"></span></div>
-      <div class="t42s-group"><label>P4 Trick X</label><input type="range" min="0.2" max="0.8" step="0.005" id="tn51s_p4TrickX"><span id="tn51sv_p4TrickX"></span></div>
-      <div class="t42s-group"><label>P4 Trick Y</label><input type="range" min="0.3" max="0.7" step="0.005" id="tn51s_p4TrickY"><span id="tn51sv_p4TrickY"></span></div>
-      <div class="t42s-group"><label>P5 Trick X</label><input type="range" min="0.4" max="0.9" step="0.005" id="tn51s_p5TrickX"><span id="tn51sv_p5TrickX"></span></div>
-      <div class="t42s-group"><label>P5 Trick Y</label><input type="range" min="0.3" max="0.7" step="0.005" id="tn51s_p5TrickY"><span id="tn51sv_p5TrickY"></span></div>
-      <div class="t42s-group"><label>P6 Trick X</label><input type="range" min="0.4" max="0.9" step="0.005" id="tn51s_p6TrickX"><span id="tn51sv_p6TrickX"></span></div>
-      <div class="t42s-group"><label>P6 Trick Y</label><input type="range" min="0.4" max="0.8" step="0.005" id="tn51s_p6TrickY"><span id="tn51sv_p6TrickY"></span></div>
-
-      <div class="t42s-section">Lead Domino</div>
-      <div class="t42s-group"><label>Lead Scale</label><input type="range" min="0.2" max="0.8" step="0.01" id="tn51s_leadScale"><span id="tn51sv_leadScale"></span></div>
-      <div class="t42s-group"><label>Lead X</label><input type="range" min="0.2" max="0.8" step="0.005" id="tn51s_leadX"><span id="tn51sv_leadX"></span></div>
-      <div class="t42s-group"><label>Lead Y</label><input type="range" min="0.3" max="0.8" step="0.005" id="tn51s_leadY"><span id="tn51sv_leadY"></span></div>
-
-      <div class="t42s-section">Trick History</div>
-      <div class="t42s-group"><label>TH Scale</label><input type="range" min="0.15" max="0.6" step="0.005" id="tn51s_thScale"><span id="tn51sv_thScale"></span></div>
-      <div class="t42s-group"><label>TH Base X</label><input type="range" min="0.02" max="0.30" step="0.005" id="tn51s_thBaseX"><span id="tn51sv_thBaseX"></span></div>
-      <div class="t42s-group"><label>TH Base Y</label><input type="range" min="0.05" max="0.40" step="0.005" id="tn51s_thBaseY"><span id="tn51sv_thBaseY"></span></div>
-      <div class="t42s-group"><label>TH Row Spacing</label><input type="range" min="0.05" max="0.20" step="0.001" id="tn51s_thRowSpacing"><span id="tn51sv_thRowSpacing"></span></div>
-      <div class="t42s-group"><label>TH Col Spacing</label><input type="range" min="0.01" max="0.06" step="0.001" id="tn51s_thColSpacing"><span id="tn51sv_thColSpacing"></span></div>
-
-      <div class="t42s-section">Player Indicators</div>
-      <div class="t42s-group"><label>P1 Ind X</label><input type="range" min="0.2" max="0.8" step="0.005" id="tn51s_ind1x"><span id="tn51sv_ind1x"></span></div>
-      <div class="t42s-group"><label>P1 Ind Y</label><input type="range" min="0.5" max="0.9" step="0.005" id="tn51s_ind1y"><span id="tn51sv_ind1y"></span></div>
-      <div class="t42s-group"><label>P2 Ind X</label><input type="range" min="0.1" max="0.6" step="0.005" id="tn51s_ind2x"><span id="tn51sv_ind2x"></span></div>
-      <div class="t42s-group"><label>P2 Ind Y</label><input type="range" min="0.4" max="0.9" step="0.005" id="tn51s_ind2y"><span id="tn51sv_ind2y"></span></div>
-      <div class="t42s-group"><label>P3 Ind X</label><input type="range" min="0.1" max="0.6" step="0.005" id="tn51s_ind3x"><span id="tn51sv_ind3x"></span></div>
-      <div class="t42s-group"><label>P3 Ind Y</label><input type="range" min="0.3" max="0.7" step="0.005" id="tn51s_ind3y"><span id="tn51sv_ind3y"></span></div>
-      <div class="t42s-group"><label>P4 Ind X</label><input type="range" min="0.2" max="0.8" step="0.005" id="tn51s_ind4x"><span id="tn51sv_ind4x"></span></div>
-      <div class="t42s-group"><label>P4 Ind Y</label><input type="range" min="0.2" max="0.6" step="0.005" id="tn51s_ind4y"><span id="tn51sv_ind4y"></span></div>
-      <div class="t42s-group"><label>P5 Ind X</label><input type="range" min="0.4" max="0.9" step="0.005" id="tn51s_ind5x"><span id="tn51sv_ind5x"></span></div>
-      <div class="t42s-group"><label>P5 Ind Y</label><input type="range" min="0.3" max="0.7" step="0.005" id="tn51s_ind5y"><span id="tn51sv_ind5y"></span></div>
-      <div class="t42s-group"><label>P6 Ind X</label><input type="range" min="0.4" max="0.9" step="0.005" id="tn51s_ind6x"><span id="tn51sv_ind6x"></span></div>
-      <div class="t42s-group"><label>P6 Ind Y</label><input type="range" min="0.4" max="0.9" step="0.005" id="tn51s_ind6y"><span id="tn51sv_ind6y"></span></div>
-
       <div style="text-align:center;margin-top:12px;">
         <button class="glossBtn" id="btnTn51Reset" style="padding:6px 14px;font-size:12px;">Reset Defaults</button>
         <button class="glossBtn" id="btnTn51Export" style="padding:6px 14px;font-size:12px;margin-left:8px;">Export Values</button>
@@ -26150,13 +25413,6 @@ if ('serviceWorker' in navigator) {
       <div class="t42s-group"><label>P3 Indicator Y</label><input type="range" min="0.35" max="0.60" step="0.005" id="t42s_ind3y"><span id="t42sv_ind3y"></span></div>
       <div class="t42s-group"><label>P4 Indicator X</label><input type="range" min="0.60" max="0.95" step="0.005" id="t42s_ind4x"><span id="t42sv_ind4x"></span></div>
       <div class="t42s-group"><label>P4 Indicator Y</label><input type="range" min="0.40" max="0.80" step="0.005" id="t42s_ind4y"><span id="t42sv_ind4y"></span></div>
-
-      <div class="t42s-section">Trick History</div>
-      <div class="t42s-group"><label>TH Scale</label><input type="range" min="0.15" max="0.6" step="0.005" id="t42s_thScale"><span id="t42sv_thScale"></span></div>
-      <div class="t42s-group"><label>TH Base X</label><input type="range" min="0.02" max="0.30" step="0.005" id="t42s_thBaseX"><span id="t42sv_thBaseX"></span></div>
-      <div class="t42s-group"><label>TH Base Y</label><input type="range" min="0.05" max="0.40" step="0.005" id="t42s_thBaseY"><span id="t42sv_thBaseY"></span></div>
-      <div class="t42s-group"><label>TH Row Spacing</label><input type="range" min="0.05" max="0.20" step="0.001" id="t42s_thRowSpacing"><span id="t42sv_thRowSpacing"></span></div>
-      <div class="t42s-group"><label>TH Col Spacing</label><input type="range" min="0.01" max="0.06" step="0.001" id="t42s_thColSpacing"><span id="t42sv_thColSpacing"></span></div>
 
       <div style="text-align:center;margin-top:12px;">
         <button class="glossBtn" id="btnT42Reset" style="padding:6px 14px;font-size:12px;">Reset Defaults</button>
@@ -27273,7 +26529,7 @@ if ('serviceWorker' in navigator) {
 
     // Pip Scale
     pdHTML += '<div style="font-weight:600;margin:10px 0 6px;color:rgba(255,255,255,0.7);">General</div>';
-    pdHTML += sliderRow('pdPipScale', 'Pip Scale', 0.5, 2.1, 0.05, DOMINO_STYLE.PIP_SCALE);
+    pdHTML += sliderRow('pdPipScale', 'Pip Scale', 0.5, 4, 0.05, DOMINO_STYLE.PIP_SCALE);
 
     // Preset selector
     pdHTML += '<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,0.1);padding-top:10px;"><div style="font-weight:600;margin-bottom:6px;color:rgba(255,255,255,0.7);">Presets</div>';
@@ -27383,7 +26639,7 @@ if ('serviceWorker' in navigator) {
       },
       'Custom Dark': {
         colors: {0:"rgba(0,0,0,0.98)",1:"rgba(0,103,94,0.98)",2:"rgba(0,130,0,0.98)",3:"rgba(182,19,17,0.98)",4:"rgba(102,56,0,0.98)",5:"rgba(0,0,169,0.98)",6:"rgba(255,126,19,0.98)",7:"rgba(255,38,133,0.98)"},
-        details: {PIPFX_RING_WIDTH_RATIO:0.3,PIPFX_RING_OPACITY:0.09,PIPFX_HI1_OPACITY:0.79,PIPFX_HI2_OPACITY:0.39,PIPFX_HI1_SIZE:0.5,PIPFX_HI2_SIZE:1.25,PIPFX_HI1_DX:-0.6,PIPFX_HI1_DY:-0.46,PIPFX_HI2_DX:-0.36,PIPFX_HI2_DY:-0.35,PIPFX_GRADIENT:true,PIPFX_HI_LOCK_SCREEN:true,PIP_SCALE:2.1,FANCY_LINE_COLOR:'rgba(0,0,0,0.90)',CENTER_LINE_HI_COLOR:'rgba(255,255,255,1)',CENTER_LINE_HI_OPACITY:0.4,CENTER_LINE_HI_WIDTH_RATIO:0.35,CENTER_LINE_HI_Y_OFFSET_PX:-0.7,CENTER_LINE_SH_COLOR:'rgba(0,0,0,1)',CENTER_LINE_SH_OPACITY:0,CENTER_LINE_SH_WIDTH_RATIO:0.2,CENTER_LINE_SH_Y_OFFSET_PX:1.6},
+        details: {PIPFX_RING_WIDTH_RATIO:0.3,PIPFX_RING_OPACITY:0.09,PIPFX_HI1_OPACITY:0.79,PIPFX_HI2_OPACITY:0.39,PIPFX_HI1_SIZE:0.5,PIPFX_HI2_SIZE:1.25,PIPFX_HI1_DX:-0.6,PIPFX_HI1_DY:-0.46,PIPFX_HI2_DX:-0.36,PIPFX_HI2_DY:-0.35,PIPFX_GRADIENT:true,PIPFX_HI_LOCK_SCREEN:true,PIP_SCALE:4,FANCY_LINE_COLOR:'rgba(0,0,0,0.90)',CENTER_LINE_HI_COLOR:'rgba(255,255,255,1)',CENTER_LINE_HI_OPACITY:0.4,CENTER_LINE_HI_WIDTH_RATIO:0.35,CENTER_LINE_HI_Y_OFFSET_PX:-0.7,CENTER_LINE_SH_COLOR:'rgba(0,0,0,1)',CENTER_LINE_SH_OPACITY:0,CENTER_LINE_SH_WIDTH_RATIO:0.2,CENTER_LINE_SH_Y_OFFSET_PX:1.6},
         pipFx: true, fancyLine: true
       }
     };
@@ -27400,7 +26656,7 @@ if ('serviceWorker' in navigator) {
       var dump = {};
       // Pip preset (colors + details + toggles)
       dump.pipPreset = collectCurrentPreset();
-      // DOMINO_STYLE face/back/edge colors + all style params
+      // DOMINO_STYLE face/back/edge colors
       dump.dominoStyle = {
         FACE: JSON.parse(JSON.stringify(DOMINO_STYLE.FACE)),
         BACK: JSON.parse(JSON.stringify(DOMINO_STYLE.BACK)),
@@ -27414,10 +26670,7 @@ if ('serviceWorker' in navigator) {
         BEVEL_WIDTH: DOMINO_STYLE.BEVEL_WIDTH,
         INVALID_OPACITY: DOMINO_STYLE.INVALID_OPACITY,
         PIP_SCALE: DOMINO_STYLE.PIP_SCALE,
-        DISPLAY_PIP_SCALE: DOMINO_STYLE.DISPLAY_PIP_SCALE,
-        EDGE_THICKNESS: DOMINO_STYLE.EDGE_THICKNESS,
-        sizeOffset: window._dsSizeOffset || 0,
-        spacingOffset: window._dsSpacingOffset || 0
+        DISPLAY_PIP_SCALE: DOMINO_STYLE.DISPLAY_PIP_SCALE
       };
       // CSS tile dimensions
       var _rs = getComputedStyle(document.documentElement);
@@ -27426,7 +26679,7 @@ if ('serviceWorker' in navigator) {
         tileH: _rs.getPropertyValue('--tileH'),
         borderRadius: _rs.getPropertyValue('--r')
       };
-      // Boneyard style + panel position
+      // Boneyard settings
       dump.boneyard = {
         BY2_GAP: window.BY2_GAP,
         BY2_PLAYED_OPACITY: window.BY2_PLAYED_OPACITY,
@@ -27435,66 +26688,27 @@ if ('serviceWorker' in navigator) {
         BY2_INNER_COLOR: window.BY2_INNER_COLOR,
         BY2_OUTER_SIZE: window.BY2_OUTER_SIZE,
         BY2_OUTER_RADIUS: window.BY2_OUTER_RADIUS,
-        BY2_OUTER_COLOR: window.BY2_OUTER_COLOR,
-        panelX: parseFloat(_rs.getPropertyValue('--th-left')) || 4.5,
-        panelY: parseFloat(_rs.getPropertyValue('--th-top')) || 14,
-        panelW: parseFloat(_rs.getPropertyValue('--th-width')) || 90,
-        panelH: parseFloat(_rs.getPropertyValue('--th-height')) || 22
+        BY2_OUTER_COLOR: window.BY2_OUTER_COLOR
       };
-      // Moon settings + widow pos + placeholders
+      // Moon settings
       if(typeof MOON_SETTINGS !== 'undefined') dump.moonSettings = JSON.parse(JSON.stringify(MOON_SETTINGS));
+      // Moon placeholder config
       if(typeof PLACEHOLDER_CONFIG_MOON !== 'undefined') dump.moonPlaceholders = JSON.parse(JSON.stringify(PLACEHOLDER_CONFIG_MOON));
-      if(typeof MOON_WIDOW_POS !== 'undefined') dump.moonWidowPos = JSON.parse(JSON.stringify(MOON_WIDOW_POS));
-      // T42 settings + placeholders
-      if(typeof T42_SETTINGS !== 'undefined') dump.t42Settings = JSON.parse(JSON.stringify(T42_SETTINGS));
-      if(typeof PLACEHOLDER_CONFIG_T42 !== 'undefined') dump.t42Placeholders = JSON.parse(JSON.stringify(PLACEHOLDER_CONFIG_T42));
-      // TN51 settings + placeholders
-      if(typeof TN51_SETTINGS !== 'undefined') dump.tn51Settings = JSON.parse(JSON.stringify(TN51_SETTINGS));
-      if(typeof PLACEHOLDER_CONFIG !== 'undefined') dump.tn51Placeholders = JSON.parse(JSON.stringify(PLACEHOLDER_CONFIG));
-      // Game rule settings
+      // Game settings
       dump.gameSettings = {
         FLIP_TRUMP_ENABLED: window.FLIP_TRUMP_ENABLED,
         HINT_MODE: window.HINT_MODE,
         nelloDeclareMode: window.nelloDeclareMode,
         nelloRestrictFirst: window.nelloRestrictFirst,
         nelloDoublesMode: window.nelloDoublesMode,
-        callForDoubleEnabled: window.callForDoubleEnabled,
-        doublesFollowMe: window.doublesFollowMe
+        callForDoubleEnabled: window.callForDoubleEnabled
       };
-      // Animation speed
-      dump.animSpeed = (typeof SPEED_MULTIPLIER !== 'undefined') ? Math.round(SPEED_MULTIPLIER * 100) : 200;
-      // Deal mode
-      dump.dealMode = (typeof SHUFFLE_SETTINGS !== 'undefined' && SHUFFLE_SETTINGS.clickToPick) ? 'pick' : 'auto';
-      // Shuffle settings
-      if(typeof SHUFFLE_SETTINGS !== 'undefined') dump.shuffleSettings = JSON.parse(JSON.stringify(SHUFFLE_SETTINGS));
       // Hint settings
       dump.hintStyle = {
         thickness: window._hintThickness,
         feather: window._hintFeather,
         color: window._hintColor
       };
-      // Sound settings
-      dump.soundSettings = {
-        sfxVolume: (typeof SFX !== 'undefined' && SFX.sfxVolume !== undefined) ? SFX.sfxVolume : 1,
-        sfxMuted: (typeof SFX !== 'undefined' && SFX.sfxMuted !== undefined) ? SFX.sfxMuted : false,
-        bgmVolume: (typeof SFX !== 'undefined' && SFX.bgmVolume !== undefined) ? SFX.bgmVolume : 0.5,
-        bgmMuted: (typeof SFX !== 'undefined' && SFX.bgmMuted !== undefined) ? SFX.bgmMuted : false
-      };
-      // Aspect ratio
-      try {
-        var arW = parseFloat(_rs.getPropertyValue('--ar-w')) || 414;
-        var arH = parseFloat(_rs.getPropertyValue('--ar-h')) || 896;
-        dump.aspectRatio = { w: arW, h: arH };
-      } catch(e){}
-      // V12.10: Screen info + letterbox state
-      dump.screenInfo = {
-        width: window.innerWidth,
-        height: window.innerHeight,
-        devicePixelRatio: window.devicePixelRatio || 1,
-        screenWidth: window.screen ? window.screen.width : null,
-        screenHeight: window.screen ? window.screen.height : null
-      };
-      dump.letterboxEnabled = (typeof window._letterboxEnabled === 'function') ? window._letterboxEnabled() : true;
       // Show in popup textarea
       var area = document.createElement('textarea');
       area.value = JSON.stringify(dump, null, 2);
@@ -27916,9 +27130,7 @@ if ('serviceWorker' in navigator) {
     ind1x:0.495, ind1y:0.80,
     ind2x:0.215, ind2y:0.65,
     ind3x:0.495, ind3y:0.505,
-    ind4x:0.775, ind4y:0.65,
-    thScale:0.393, thBaseX:0.106, thBaseY:0.2281,
-    thRowSpacing:0.1111, thColSpacing:0.0311
+    ind4x:0.775, ind4y:0.65
   };
   const T42_KEYS = Object.keys(T42_DEFAULTS);
 
@@ -27963,14 +27175,9 @@ if ('serviceWorker' in navigator) {
       const label = document.getElementById('tn51sv_' + k);
       if(slider){ slider.value = TN51_SETTINGS[k]; if(label) label.textContent = TN51_SETTINGS[k].toFixed(3); }
     });
-    // V12.9.4: Show ghost dominos
-    showTN51GhostDominos();
-    if(_tn51GhostTimer) clearTimeout(_tn51GhostTimer);
   }
   function hideTn51Settings(){
     document.getElementById('tn51SettingsBackdrop').style.display = 'none';
-    // V12.9.4: Remove ghosts when menu closes
-    removeTN51GhostDominos();
   }
   const TN51_KEYS = Object.keys(TN51_SETTINGS);
   const TN51_DEFAULTS = Object.assign({}, TN51_SETTINGS);
@@ -27993,7 +27200,6 @@ if(!TN51_DEFAULTS.p6xOff) TN51_DEFAULTS.p6xOff = 0;
         TN51_SETTINGS[k] = val;
         if(label) label.textContent = val.toFixed(3);
         applyTn51Settings();
-        refreshTN51Ghosts();
         saveToStorage(getTn51Key(), TN51_SETTINGS);
       });
     }
@@ -28008,7 +27214,6 @@ if(!TN51_DEFAULTS.p6xOff) TN51_DEFAULTS.p6xOff = 0;
       if(label){ label.textContent = TN51_DEFAULTS[k].toFixed(3); }
     });
     applyTn51Settings();
-    refreshTN51Ghosts();
     saveToStorage(getTn51Key(), TN51_SETTINGS);
   });
 
@@ -28466,8 +27671,6 @@ if(!TN51_DEFAULTS.p6xOff) TN51_DEFAULTS.p6xOff = 0;
     var data = preset[orient]; if(!data){ alert('No '+orient+' data for '+name); return; }
     if(data.tn51){ Object.assign(TN51_SETTINGS, data.tn51); try{localStorage.setItem('tn51_tn51_layout_'+orient, JSON.stringify(TN51_SETTINGS));}catch(e){} if(typeof applyTn51Settings==='function') applyTn51Settings(); }
     if(data.t42){ Object.assign(T42_SETTINGS, data.t42); try{localStorage.setItem('tn51_t42_layout_'+orient, JSON.stringify(T42_SETTINGS));}catch(e){} if(typeof applyT42Settings==='function') applyT42Settings(); }
-    if(data.moon){ Object.assign(MOON_SETTINGS, data.moon); try{localStorage.setItem('tn51_moon_settings', JSON.stringify(MOON_SETTINGS));}catch(e){} if(typeof applyMoonSettings==='function') applyMoonSettings(); }
-    if(data.moonPlaceholders){ if(data.moonPlaceholders.players){for(var mp in data.moonPlaceholders.players){if(PLACEHOLDER_CONFIG_MOON.players[mp]){PLACEHOLDER_CONFIG_MOON.players[mp].xN=data.moonPlaceholders.players[mp].xN;PLACEHOLDER_CONFIG_MOON.players[mp].yN=data.moonPlaceholders.players[mp].yN;}}} if(data.moonPlaceholders.lead){PLACEHOLDER_CONFIG_MOON.lead.xN=data.moonPlaceholders.lead.xN;PLACEHOLDER_CONFIG_MOON.lead.yN=data.moonPlaceholders.lead.yN;} try{localStorage.setItem('tn51_moon_placeholders',JSON.stringify({p1x:PLACEHOLDER_CONFIG_MOON.players[1].xN,p1y:PLACEHOLDER_CONFIG_MOON.players[1].yN,p2x:PLACEHOLDER_CONFIG_MOON.players[2].xN,p2y:PLACEHOLDER_CONFIG_MOON.players[2].yN,p3x:PLACEHOLDER_CONFIG_MOON.players[3].xN,p3y:PLACEHOLDER_CONFIG_MOON.players[3].yN,leadX:PLACEHOLDER_CONFIG_MOON.lead.xN,leadY:PLACEHOLDER_CONFIG_MOON.lead.yN}));}catch(e){} if(typeof createPlaceholders==='function') createPlaceholders(); }
   };
 
   window.showBuiltInPresetPicker = function(){
